@@ -2291,11 +2291,11 @@ table tfoot td{
                                 </div>
                             </div>
                             <div class="chart-legend">
-                                <span><span class="dot" style="background:#009E5F;"></span>≥90% Excellent</span>
-                                <span><span class="dot" style="background:#65A30D;"></span>70-89% Good</span>
-                                <span><span class="dot" style="background:#F59E0B;"></span>50-69% Monitor</span>
-                                <span><span class="dot" style="background:#F77F00;"></span>20-49% Low</span>
-                                <span><span class="dot" style="background:#E21B23;"></span>&lt;20% Very Low</span>
+                                <span><span class="dot" style="background:#31D39A;"></span>≥90% Excellent</span>
+                                <span><span class="dot" style="background:#27C45A;"></span>70-89% Good</span>
+                                <span><span class="dot" style="background:#F4D03F;"></span>50-69% Monitor</span>
+                                <span><span class="dot" style="background:#F28C3A;"></span>20-49% Low</span>
+                                <span><span class="dot" style="background:#F06B78;"></span>&lt;20% Very Low</span>
                             </div>
                         </div>
                     </div>
@@ -2990,12 +2990,9 @@ table tfoot td{
             
             if (remainChart) {
                 const remainValues = remainChart.data.datasets[0].data;
-                const remainColors = remainValues.map(v => {
-                    if (v > 100) return '#E21B23';
-                    if (v > 50) return '#F77F00';
-                    if (v > 20) return '#F59E0B';
-                    return '#0066CC';
-                });
+                const remainColors = remainValues.map((v, i) =>
+                    getRemainColor(i, remainValues.length)
+                );
                 remainChart.data.datasets[0].backgroundColor = remainColors;
                 remainChart.data.datasets[0].borderColor = remainColors;
                 remainChart.options.scales.y.grid.color = getGridColor();
@@ -3100,12 +3097,32 @@ table tfoot td{
             });
         }
 
+        /* =====================================================
+           PREMIUM INDICATOR COLORS
+           Palette mengikuti referensi:
+           Teal → Green → Yellow → Orange → Coral/Pink
+           ===================================================== */
         function getAchColor(val) {
-            if (val >= 90) return '#009E5F';
-            if (val >= 70) return '#65A30D';
-            if (val >= 50) return '#F59E0B';
-            if (val >= 20) return '#F77F00';
-            return '#E21B23';
+            if (val >= 90) return '#31D39A';  // Excellent
+            if (val >= 70) return '#27C45A';  // Good
+            if (val >= 50) return '#F4D03F';  // Monitor
+            if (val >= 20) return '#F28C3A';  // Low
+            return '#F06B78';                 // Very Low
+        }
+
+        function getRemainColor(index, total) {
+            /*
+             * Remaining-volume chart menggunakan gradasi indikator
+             * seperti referensi: highest = teal, berikutnya yellow,
+             * middle = orange, lower = coral/pink.
+             */
+            if (total <= 1) return '#31D39A';
+            const ratio = index / Math.max(total - 1, 1);
+
+            if (index === 0) return '#31D39A';
+            if (ratio <= 0.18) return '#F4C62E';
+            if (ratio <= 0.50) return '#F28C3A';
+            return '#F06B78';
         }
 
         function formatAchievement(ach) {
@@ -3347,12 +3364,9 @@ table tfoot td{
             const topRemainPlants = remainPlants.slice(0, 15);
             const remainLabels = topRemainPlants.map(p => p.name.length > 25 ? p.name.substring(0, 23) + '…' : p.name);
             const remainValues = topRemainPlants.map(p => p.remaining);
-            const remainColors = remainValues.map(v => {
-                if (v > 100) return '#E21B23';
-                if (v > 50) return '#F77F00';
-                if (v > 20) return '#F59E0B';
-                return '#0066CC';
-            });
+            const remainColors = remainValues.map((v, i) =>
+                getRemainColor(i, remainValues.length)
+            );
 
             if (remainChart) {
                 remainChart.destroy();
@@ -3500,6 +3514,17 @@ table tfoot td{
 </body>
 </html>     
 
+
+/* Premium indicator dots */
+.dot{
+    width:10px !important;
+    height:10px !important;
+    border-radius:50% !important;
+    display:inline-block;
+    box-shadow:0 0 7px currentColor;
+    margin-right:5px;
+}
+
 /* =========================================================
    SMOOTH THEME TRANSITION
    ========================================================= */
@@ -3540,5 +3565,3 @@ body,.dashboard,.card,.kpi-card,.chart-card,.table-card,.findings-card,.summary-
     },true);
 })();
 </script>
-</body>
-</html>
