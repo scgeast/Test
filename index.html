@@ -2077,6 +2077,67 @@ table tfoot td{
     }
 }
 
+/* =========================================================
+   PREMIUM INDICATOR DOTS
+   ========================================================= */
+.dot{
+    width:10px !important;
+    height:10px !important;
+    border-radius:50% !important;
+    display:inline-block;
+    box-shadow:0 0 7px currentColor;
+    margin-right:5px;
+}
+
+/* =========================================================
+   SMOOTH THEME TRANSITION
+   ========================================================= */
+:root{--theme-transition:420ms cubic-bezier(.22,.61,.36,1)}
+body,.dashboard,.card,.kpi-card,.chart-card,.table-card,.findings-card,.summary-card,
+.tabs,.tab-btn,.upload-area,.upload-area input,.upload-area select,.date-badge,
+.download-btn,.theme-divider,table,thead,tbody,tr,th,td,.section-title,.card-title,
+.kpi-value,.kpi-label{
+    transition:background-color var(--theme-transition),background var(--theme-transition),
+    border-color var(--theme-transition),box-shadow var(--theme-transition),color var(--theme-transition),
+    fill var(--theme-transition),stroke var(--theme-transition) !important;
+}
+.theme-transition-flash{position:fixed;inset:0;z-index:99999;pointer-events:none;background:var(--theme-flash,transparent);opacity:0;animation:themeFlash 420ms ease-out}
+@keyframes themeFlash{0%{opacity:.10}100%{opacity:0}}
+.header-actions .theme-btn:active{transform:scale(.94)!important}
+@keyframes activeThemeGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+.header-actions .theme-btn.active{animation:activeThemeGlow 2.2s ease-in-out infinite}
+
+/* =========================================================
+   ACHIEVEMENT TABLE — COLORED PROGRESS BARS
+   Same palette as Top Plant Achievement
+   >=90 teal | 70-89 green | 50-69 yellow |
+   20-49 orange | <20 coral/pink
+   ========================================================= */
+.achievement-bar{
+  width:54px!important;
+  height:7px!important;
+  min-width:54px!important;
+  background:rgba(20,42,61,.95)!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  display:inline-block!important;
+  vertical-align:middle!important;
+}
+.achievement-fill{
+  height:100%!important;
+  min-width:3px;
+  border-radius:999px!important;
+  width:var(--achievement-width,0%)!important;
+  background:var(--achievement-color,#31D39A)!important;
+  box-shadow:0 0 7px var(--achievement-color,#31D39A)!important;
+  transition:width 420ms ease,background-color 420ms ease,box-shadow 420ms ease!important;
+}
+.achievement-fill.ach-excellent{--achievement-color:#31D39A}
+.achievement-fill.ach-good{--achievement-color:#27C45A}
+.achievement-fill.ach-monitor{--achievement-color:#F4D03F}
+.achievement-fill.ach-low{--achievement-color:#F28C3A}
+.achievement-fill.ach-very-low{--achievement-color:#F06B78}
+
 </style>
 </head>
 <body>
@@ -2335,10 +2396,11 @@ table tfoot td{
                                     <canvas id="remainChart"></canvas>
                                 </div>
                                 <div class="chart-legend">
-                                    <span><span class="dot" style="background:#E21B23;"></span>&gt;100 m³</span>
-                                    <span><span class="dot" style="background:#F77F00;"></span>50-100 m³</span>
-                                    <span><span class="dot" style="background:#F59E0B;"></span>20-50 m³</span>
-                                    <span><span class="dot" style="background:#0066CC;"></span>&lt;20 m³</span>
+                                    <span><span class="dot" style="background:#E21B23;"></span>Highest Remain</span>
+                                    <span><span class="dot" style="background:#F28C3A;"></span>High Remain</span>
+                                    <span><span class="dot" style="background:#F4D03F;"></span>Medium Remain</span>
+                                    <span><span class="dot" style="background:#27C45A;"></span>Low Remain</span>
+                                    <span><span class="dot" style="background:#31D39A;"></span>Lowest Remain</span>
                                 </div>
                             </div>
                         </div>
@@ -2908,7 +2970,7 @@ table tfoot td{
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    devicePixelRatio: 4, // Increased for sharper rendering
+                    devicePixelRatio: 4,
                     layout: {
                         padding: {
                             left: 10,
@@ -2926,8 +2988,6 @@ table tfoot td{
                                 color: tickColor
                             },
                             afterFit: function(axis) {
-                                // Extra headroom so the right-side data labels
-                                // never touch/cut against the canvas edge.
                                 axis.max += 10;
                             }
                         },
@@ -3110,19 +3170,21 @@ table tfoot td{
             return '#F06B78';                 // Very Low
         }
 
+        /* =====================================================
+           REMAIN COLOR - TERBALIK dari achievement
+           Tertinggi = Merah (peringatan)
+           Terendah = Hijau/Teal (aman)
+           ===================================================== */
         function getRemainColor(index, total) {
-            /*
-             * Remaining-volume chart menggunakan gradasi indikator
-             * seperti referensi: highest = teal, berikutnya yellow,
-             * middle = orange, lower = coral/pink.
-             */
             if (total <= 1) return '#31D39A';
             const ratio = index / Math.max(total - 1, 1);
-
-            if (index === 0) return '#31D39A';
-            if (ratio <= 0.18) return '#F4C62E';
-            if (ratio <= 0.50) return '#F28C3A';
-            return '#F06B78';
+            
+            // Tertinggi (index 0) = Merah, terendah = Hijau/Teal
+            if (index === 0) return '#E21B23';      // Tertinggi = MERAH
+            if (ratio <= 0.20) return '#F28C3A';    // Orange
+            if (ratio <= 0.50) return '#F4D03F';    // Kuning
+            if (ratio <= 0.75) return '#27C45A';    // Hijau
+            return '#31D39A';                       // Teal (terendah)
         }
 
         function formatAchievement(ach) {
@@ -3209,7 +3271,7 @@ table tfoot td{
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    devicePixelRatio: 4, // Increased for sharper rendering
+                    devicePixelRatio: 4,
                     layout: {
                         padding: {
                             left: 10,
@@ -3360,13 +3422,30 @@ table tfoot td{
 
             updateAchievementChart(plants);
 
-            const remainPlants = [...plants].filter(p => p.remaining > 0).sort((a, b) => b.remaining - a.remaining);
+            // ===== REMAIN CHART - DENGAN WARNA TERBALIK =====
+            const remainPlants = [...plants]
+                .filter(p => p.remaining > 0)
+                .sort((a, b) => b.remaining - a.remaining);
+                
             const topRemainPlants = remainPlants.slice(0, 15);
-            const remainLabels = topRemainPlants.map(p => p.name.length > 25 ? p.name.substring(0, 23) + '…' : p.name);
-            const remainValues = topRemainPlants.map(p => p.remaining);
-            const remainColors = remainValues.map((v, i) =>
-                getRemainColor(i, remainValues.length)
+            const remainLabels = topRemainPlants.map(p => 
+                p.name.length > 25 ? p.name.substring(0, 23) + '…' : p.name
             );
+            const remainValues = topRemainPlants.map(p => p.remaining);
+
+            // Warna berdasarkan posisi (tertinggi = merah, terendah = hijau)
+            const remainColors = remainValues.map((v, i) => {
+                const total = remainValues.length;
+                if (total <= 1) return '#31D39A';
+                const ratio = i / (total - 1);
+                
+                // Gradasi: Merah -> Orange -> Kuning -> Hijau -> Teal
+                if (i === 0) return '#E21B23';          // Tertinggi = MERAH
+                if (ratio <= 0.20) return '#F28C3A';    // Orange
+                if (ratio <= 0.50) return '#F4D03F';    // Kuning
+                if (ratio <= 0.75) return '#27C45A';    // Hijau
+                return '#31D39A';                       // Teal (terendah)
+            });
 
             if (remainChart) {
                 remainChart.destroy();
@@ -3398,7 +3477,7 @@ table tfoot td{
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    devicePixelRatio: 4, // Increased for sharper rendering
+                    devicePixelRatio: 4,
                     layout: {
                         padding: {
                             left: 10,
@@ -3422,8 +3501,8 @@ table tfoot td{
                         },
                         y: {
                             suggestedMax: (() => {
-                                const maxRemain = Math.max(...(remainValues.length ? remainValues : [0]));
-                                return maxRemain > 0 ? maxRemain * 1.14 : 10;
+                                const maxRemainVal = Math.max(...(remainValues.length ? remainValues : [0]));
+                                return maxRemainVal > 0 ? maxRemainVal * 1.14 : 10;
                             })(),
                             grid: { color: gridColor },
                             ticks: { 
@@ -3451,6 +3530,18 @@ table tfoot td{
                 },
                 plugins: [ChartDataLabels]
             });
+
+            // UPDATE LEGEND remain chart menjadi terbalik
+            const remainLegend = document.querySelector('#remainChartCard .chart-legend');
+            if (remainLegend) {
+                remainLegend.innerHTML = `
+                    <span><span class="dot" style="background:#E21B23;"></span>Highest Remain</span>
+                    <span><span class="dot" style="background:#F28C3A;"></span>High Remain</span>
+                    <span><span class="dot" style="background:#F4D03F;"></span>Medium Remain</span>
+                    <span><span class="dot" style="background:#27C45A;"></span>Low Remain</span>
+                    <span><span class="dot" style="background:#31D39A;"></span>Lowest Remain</span>
+                `;
+            }
 
             renderPlantTable(plants);
 
@@ -3512,120 +3603,4 @@ table tfoot td{
         });
     </script>
 </body>
-</html>     
-
-
-/* Premium indicator dots */
-.dot{
-    width:10px !important;
-    height:10px !important;
-    border-radius:50% !important;
-    display:inline-block;
-    box-shadow:0 0 7px currentColor;
-    margin-right:5px;
-}
-
-/* =========================================================
-   SMOOTH THEME TRANSITION
-   ========================================================= */
-:root{--theme-transition:420ms cubic-bezier(.22,.61,.36,1)}
-body,.dashboard,.card,.kpi-card,.chart-card,.table-card,.findings-card,.summary-card,
-.tabs,.tab-btn,.upload-area,.upload-area input,.upload-area select,.date-badge,
-.download-btn,.theme-divider,table,thead,tbody,tr,th,td,.section-title,.card-title,
-.kpi-value,.kpi-label{
-    transition:background-color var(--theme-transition),background var(--theme-transition),
-    border-color var(--theme-transition),box-shadow var(--theme-transition),color var(--theme-transition),
-    fill var(--theme-transition),stroke var(--theme-transition) !important;
-}
-.theme-transition-flash{position:fixed;inset:0;z-index:99999;pointer-events:none;background:var(--theme-flash,transparent);opacity:0;animation:themeFlash 420ms ease-out}
-@keyframes themeFlash{0%{opacity:.10}100%{opacity:0}}
-.header-actions .theme-btn:active{transform:scale(.94)!important}
-@keyframes activeThemeGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
-.header-actions .theme-btn.active{animation:activeThemeGlow 2.2s ease-in-out infinite}
-
-
-<script>
-/* =========================================================
-   SMOOTH THEME SWITCHER
-   ========================================================= */
-(function(){
-    const themeColors={default:'#ff0000','green-neon':'#00e676','neon-red':'#ff00cc','neon-blue':'#008cff','neon-yellow':'#ffb800'};
-    window.smoothThemeTransition=function(theme){
-        document.documentElement.style.setProperty('--theme-flash',themeColors[theme]||'#008cff');
-        const old=document.querySelector('.theme-transition-flash');
-        if(old) old.remove();
-        const flash=document.createElement('div');
-        flash.className='theme-transition-flash';
-        document.body.appendChild(flash);
-        setTimeout(()=>flash.remove(),450);
-    };
-    document.addEventListener('click',function(e){
-        const btn=e.target.closest('.theme-btn');
-        if(btn) smoothThemeTransition(btn.dataset.theme);
-    },true);
-})();
-</script>
-
-<style>
-
-/* =========================================================
-   ACHIEVEMENT TABLE — COLORED PROGRESS BARS
-   Same palette as Top Plant Achievement
-   >=90 teal | 70-89 green | 50-69 yellow |
-   20-49 orange | <20 coral/pink
-   ========================================================= */
-.achievement-bar{
-  width:54px!important;
-  height:7px!important;
-  min-width:54px!important;
-  background:rgba(20,42,61,.95)!important;
-  border-radius:999px!important;
-  overflow:hidden!important;
-  display:inline-block!important;
-  vertical-align:middle!important;
-}
-.achievement-fill{
-  height:100%!important;
-  min-width:3px;
-  border-radius:999px!important;
-  width:var(--achievement-width,0%)!important;
-  background:var(--achievement-color,#31D39A)!important;
-  box-shadow:0 0 7px var(--achievement-color,#31D39A)!important;
-  transition:width 420ms ease,background-color 420ms ease,box-shadow 420ms ease!important;
-}
-.achievement-fill.ach-excellent{--achievement-color:#31D39A}
-.achievement-fill.ach-good{--achievement-color:#27C45A}
-.achievement-fill.ach-monitor{--achievement-color:#F4D03F}
-.achievement-fill.ach-low{--achievement-color:#F28C3A}
-.achievement-fill.ach-very-low{--achievement-color:#F06B78}
-
-</style>
-
-
-<script>
-/* Achievement bar color helper */
-function achievementBarColor(v){
-  v = Number(v) || 0;
-  if(v >= 90) return '#31D39A';
-  if(v >= 70) return '#27C45A';
-  if(v >= 50) return '#F4D03F';
-  if(v >= 20) return '#F28C3A';
-  return '#F06B78';
-}
-
-function refreshAchievementBars(root=document){
-  root.querySelectorAll('.achievement-fill').forEach(bar=>{
-    const value = Math.max(0, Math.min(100, Number(
-      bar.dataset.value ||
-      bar.dataset.achievement ||
-      bar.getAttribute('data-value') ||
-      0
-    )));
-
-    bar.style.setProperty('--achievement-width', value + '%');
-    bar.style.setProperty('--achievement-color', achievementBarColor(value));
-  });
-}
-
-document.addEventListener('DOMContentLoaded', ()=>refreshAchievementBars());
-</script>
+</html>
