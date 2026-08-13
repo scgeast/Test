@@ -3565,3 +3565,67 @@ body,.dashboard,.card,.kpi-card,.chart-card,.table-card,.findings-card,.summary-
     },true);
 })();
 </script>
+
+<style>
+
+/* =========================================================
+   ACHIEVEMENT TABLE — COLORED PROGRESS BARS
+   Same palette as Top Plant Achievement
+   >=90 teal | 70-89 green | 50-69 yellow |
+   20-49 orange | <20 coral/pink
+   ========================================================= */
+.achievement-bar{
+  width:54px!important;
+  height:7px!important;
+  min-width:54px!important;
+  background:rgba(20,42,61,.95)!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  display:inline-block!important;
+  vertical-align:middle!important;
+}
+.achievement-fill{
+  height:100%!important;
+  min-width:3px;
+  border-radius:999px!important;
+  width:var(--achievement-width,0%)!important;
+  background:var(--achievement-color,#31D39A)!important;
+  box-shadow:0 0 7px var(--achievement-color,#31D39A)!important;
+  transition:width 420ms ease,background-color 420ms ease,box-shadow 420ms ease!important;
+}
+.achievement-fill.ach-excellent{--achievement-color:#31D39A}
+.achievement-fill.ach-good{--achievement-color:#27C45A}
+.achievement-fill.ach-monitor{--achievement-color:#F4D03F}
+.achievement-fill.ach-low{--achievement-color:#F28C3A}
+.achievement-fill.ach-very-low{--achievement-color:#F06B78}
+
+</style>
+
+
+<script>
+/* Achievement bar color helper */
+function achievementBarColor(v){
+  v = Number(v) || 0;
+  if(v >= 90) return '#31D39A';
+  if(v >= 70) return '#27C45A';
+  if(v >= 50) return '#F4D03F';
+  if(v >= 20) return '#F28C3A';
+  return '#F06B78';
+}
+
+function refreshAchievementBars(root=document){
+  root.querySelectorAll('.achievement-fill').forEach(bar=>{
+    const value = Math.max(0, Math.min(100, Number(
+      bar.dataset.value ||
+      bar.dataset.achievement ||
+      bar.getAttribute('data-value') ||
+      0
+    )));
+
+    bar.style.setProperty('--achievement-width', value + '%');
+    bar.style.setProperty('--achievement-color', achievementBarColor(value));
+  });
+}
+
+document.addEventListener('DOMContentLoaded', ()=>refreshAchievementBars());
+</script>
