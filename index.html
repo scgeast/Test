@@ -638,6 +638,47 @@ function setSyncStatus(status, msg) {
     label.textContent = msg || (status==='online'?'Real-time':status==='offline'?'Mode Lokal':'Menghubungkan...');
 }
 
+/* ===================== CLEANUP DATA SAAT LOGOUT ===================== */
+function cleanupUserData() {
+    // Hentikan listener Firestore
+    if (unsubscribe) {
+        try { unsubscribe(); } catch(e) {}
+        unsubscribe = null;
+    }
+    // Kosongkan semua data transaksi
+    allTxs = [];
+    storeMode = 'unknown';
+    isInitialLoad = true;
+    selectedOwnerUid = null;
+    // Reset tampilan
+    document.getElementById('skeletonLoader').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+    // Hapus chart
+    if (dChart) { dChart.destroy(); dChart = null; }
+    if (bChart) { bChart.destroy(); bChart = null; }
+    if (sixChart) { sixChart.destroy(); sixChart = null; }
+    // Reset label user
+    document.getElementById('currentUserLabel').textContent = '-';
+    // Reset dashboard
+    document.getElementById('dashBalance').textContent = 'Rp 0';
+    document.getElementById('dashIncome').textContent = 'Rp 0';
+    document.getElementById('dashExpense').textContent = 'Rp 0';
+    document.getElementById('dashSaving').textContent = '0%';
+    // Reset stats
+    document.getElementById('vIncome').textContent = 'Rp 0';
+    document.getElementById('vExpense').textContent = 'Rp 0';
+    document.getElementById('vBalance').textContent = 'Rp 0';
+    document.getElementById('vRatio').textContent = '0%';
+    document.getElementById('vRatioBar').style.width = '0%';
+    // Reset health
+    document.getElementById('healthScore').textContent = '--';
+    document.getElementById('healthLabel').textContent = '-';
+    document.getElementById('healthDesc').textContent = 'Memuat data...';
+    // Reset tx list
+    document.getElementById('txList').innerHTML = '';
+    document.getElementById('txCount').style.display = 'none';
+}
+
 /* ===================== DATA STORE ===================== */
 function txCollection(uid){
     if(!uid) uid = selectedOwnerUid;
@@ -1393,6 +1434,9 @@ async function selectOwner(uid){
   renderAll();
 }
 async function onAuthenticated(user, profile){
+  // CLEANUP data sebelumnya sebelum user baru login
+  cleanupUserData();
+  
   currentUser=user;currentProfile=profile||{};
   isPublisher=currentProfile.role==='publisher'||currentProfile.userId==='publisher'||user.email===publisherEmail;
   if(isPublisher){currentProfile.role='publisher';currentProfile.userId='publisher';await ensurePublisherProfile();}
@@ -1433,11 +1477,22 @@ document.getElementById('loginForm').addEventListener('submit',async function(e)
   btn.disabled=true;btn.querySelector('span').textContent='Memproses...';
   try{await doLogin(uid,pw);}catch(err){showAuthError(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'?'User ID atau password salah.':err.message);}finally{btn.disabled=false;btn.querySelector('span').textContent='Masuk ke DuitKu';}
 });
-document.getElementById('btnLogout').addEventListener('click',async function(){if(unsubscribe){try{unsubscribe();}catch(e){}}unsubscribe=null;await auth.signOut();});
+document.getElementById('btnLogout').addEventListener('click',async function(){
+  // Cleanup data sebelum logout
+  cleanupUserData();
+  if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
+  await auth.signOut();
+  setAppVisibility(false);
+  toast('Berhasil keluar','ok');
+});
 document.getElementById('publisherUserSelect').addEventListener('change',function(){selectOwner(this.value);});
 document.getElementById('dashboardRefresh').addEventListener('click',function(){renderDashboard();});
 auth.onAuthStateChanged(async function(user){
-  if(!user){setAppVisibility(false);return;}
+  if(!user){
+    setAppVisibility(false);
+    cleanupUserData();
+    return;
+  }
   try{
     var snap=await db.collection('appUsers').doc(user.uid).get();
     var p=snap.exists?snap.data():null;
