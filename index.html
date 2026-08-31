@@ -286,12 +286,12 @@
   <div class="auth-box">
     <div class="auth-logo"><i class="fa-solid fa-wallet"></i></div>
     <div class="auth-title">Duit<span style="color:var(--accent)">Ku</span></div>
-    <div class="auth-sub">Masuk menggunakan <b>User ID</b>. Email Firebase tidak perlu ditampilkan di halaman login.</div>
+    <div class="auth-sub">Kelola keuangan bulanan dengan mudah dan aman.</div>
     <div class="auth-error" id="authError"></div>
     <form id="loginForm">
       <div class="form-group">
         <label class="form-label" for="loginUserId">User ID</label>
-        <input id="loginUserId" class="form-input" autocomplete="username" placeholder="contoh: santoso" required>
+        <input id="loginUserId" class="form-input" autocomplete="username" placeholder="Masukkan User ID Anda" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="loginPassword">Password</label>
@@ -299,10 +299,6 @@
       </div>
       <button class="btn-submit" id="loginBtn" type="submit"><i class="fa-solid fa-right-to-bracket"></i><span>Masuk ke DuitKu</span></button>
     </form>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px">
-      <span style="font-size:10px;color:var(--fg-muted)">Publisher login: User ID <b>publisher</b></span>
-      <span class="user-badge"><i class="fa-solid fa-shield-halved"></i> Firebase Auth</span>
-    </div>
   </div>
 </div>
 
@@ -683,7 +679,6 @@ var store = {
                         self._showContent();
                         if (isInitialLoad) {
                             isInitialLoad = false;
-                            /* Tidak membuat data demo otomatis pada akun nyata. */
                         }
                     },
                     function(error) {
@@ -731,7 +726,6 @@ var store = {
         allTxs = this._loadLocal();
         this._showContent();
         renderAll();
-        /* Tidak membuat data demo otomatis pada akun nyata. */
         toast('Mode lokal aktif' + (reason ? ' ('+reason+')' : ''), 'inf');
     },
 
@@ -1422,13 +1416,15 @@ async function onAuthenticated(user, profile){
 async function doLogin(userId,password){
   userId=normalizeUserId(userId);
   if(!userId||!password)throw new Error('User ID dan password wajib diisi.');
+  
+  // Publisher login
   if(userId==='publisher'){
     try{
       await auth.signInWithEmailAndPassword(publisherEmail,password);
     }catch(e){
       if(e.code!=='auth/user-not-found' && e.code!=='auth/invalid-credential')throw e;
+      // First time publisher login - create account
       if(password!==publisherPassword)throw new Error('User ID atau password salah.');
-      /* Bootstrap sekali: setelah berhasil dibuat, kredensial tetap dikelola Firebase Authentication. */
       var sa=await setupSecondaryAuth();
       try{await sa.createUserWithEmailAndPassword(publisherEmail,publisherPassword);}catch(x){if(x.code!=='auth/email-already-in-use')throw x;}
       await sa.signOut();
@@ -1438,15 +1434,29 @@ async function doLogin(userId,password){
     await db.collection('appUsers').doc(auth.currentUser.uid).set(p,{merge:true});
     return;
   }
+  
+  // Regular user login
   var profile=await getProfileByUserId(userId);
   if(!profile||profile.disabled)throw new Error('User ID tidak ditemukan atau dinonaktifkan.');
-  await auth.signInWithEmailAndPassword(profile.email,password);
+  
+  try {
+    await auth.signInWithEmailAndPassword(profile.email,password);
+  } catch(e) {
+    if(e.code==='auth/user-not-found') {
+      throw new Error('User ID tidak ditemukan.');
+    } else if(e.code==='auth/wrong-password') {
+      throw new Error('Password salah.');
+    } else {
+      throw new Error('Login gagal: '+e.message);
+    }
+  }
 }
+
 document.getElementById('loginForm').addEventListener('submit',async function(e){
   e.preventDefault();clearAuthError();
   var btn=document.getElementById('loginBtn'),uid=document.getElementById('loginUserId').value,pw=document.getElementById('loginPassword').value;
   btn.disabled=true;btn.querySelector('span').textContent='Memproses...';
-  try{await doLogin(uid,pw);}catch(err){showAuthError(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'?'User ID atau password salah.':err.message);}finally{btn.disabled=false;btn.querySelector('span').textContent='Masuk ke DuitKu';}
+  try{await doLogin(uid,pw);}catch(err){showAuthError(err.message||'Login gagal. Periksa kembali User ID dan password.');}finally{btn.disabled=false;btn.querySelector('span').textContent='Masuk ke DuitKu';}
 });
 document.getElementById('btnLogout').addEventListener('click',async function(){if(unsubscribe){try{unsubscribe();}catch(e){}}unsubscribe=null;await auth.signOut();});
 document.getElementById('publisherUserSelect').addEventListener('change',function(){selectOwner(this.value);});
@@ -1456,7 +1466,10 @@ auth.onAuthStateChanged(async function(user){
   try{
     var snap=await db.collection('appUsers').doc(user.uid).get();
     var p=snap.exists?snap.data():null;
-    if(!p){p={uid:user.uid,userId:user.email===publisherEmail?'publisher':deriveUserId(user.email),email:user.email,role:user.email===publisherEmail?'publisher':'user'};await db.collection('appUsers').doc(user.uid).set(p,{merge:true});
+    if(!p){
+      var derivedEmail = user.email || '';
+      p={uid:user.uid,userId:user.email===publisherEmail?'publisher':deriveUserId(derivedEmail),email:user.email,role:user.email===publisherEmail?'publisher':'user'};
+      await db.collection('appUsers').doc(user.uid).set(p,{merge:true});
       if(p.role==='user')await db.collection('loginDirectory').doc(p.userId).set({uid:user.uid,userId:p.userId,email:p.email,disabled:!!p.disabled},{merge:true});
     }
     if(p.role==='user')await db.collection('loginDirectory').doc(p.userId).set({uid:user.uid,userId:p.userId,email:p.email,disabled:!!p.disabled},{merge:true});
