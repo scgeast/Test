@@ -525,7 +525,7 @@
             <div class="card more-card" data-more-view="calendar"><i class="fa-solid fa-calendar-days more-icon"></i><span class="more-arrow">›</span><h4>Calendar</h4><p>Visualisasikan aktivitas pemasukan dan pengeluaran berdasarkan tanggal.</p><button class="btn-secondary more-open" data-view="calendar">Buka</button></div>
             <div class="card more-card"><i class="fa-solid fa-file-export more-icon"></i><h4>Export Data</h4><p>Backup transaksi bulan aktif dengan cepat dalam format CSV.</p><button class="btn-secondary" onclick="document.getElementById('btnExport').click()">Export CSV</button></div>
             <div class="card more-card" data-more-view="recurring"><i class="fa-solid fa-repeat more-icon"></i><span class="more-arrow">›</span><h4>Recurring</h4><p>Simpan daftar transaksi rutin seperti gaji, kos, listrik dan langganan.</p><button class="btn-secondary more-open" data-view="recurring">Kelola</button></div>
-            <div class="card more-card" data-more-view="safety"><i class="fa-solid fa-shield-halved more-icon"></i><span class="more-arrow">›</span><h4>Data Safety</h4><p>Backup dan restore data lokal agar data tetap aman saat offline.</p><button class="btn-secondary more-open" data-view="safety">Kelola</button></div>
+            <div class="card more-card publisher-only" data-more-view="safety"><i class="fa-solid fa-shield-halved more-icon"></i><span class="more-arrow">›</span><h4>Data Safety</h4><p>Backup dan restore data lokal agar data tetap aman saat offline.</p><button class="btn-secondary more-open" data-view="safety">Kelola</button></div>
             <div class="card more-card" data-more-view="settings"><i class="fa-solid fa-sliders more-icon"></i><span class="more-arrow">›</span><h4>Settings</h4><p>Atur tampilan, mata uang, animasi dan preferensi aplikasi.</p><button class="btn-secondary more-open" data-view="settings">Pengaturan</button></div>
         </div>
         <div class="card more-workspace" id="moreWorkspace" style="display:none"></div>
@@ -1103,7 +1103,8 @@ document.getElementById('txList').addEventListener('click', async function(e){
         var id = btnDel.getAttribute('data-id');
         if(!id) return;
         var tx = allTxs.find(function(t){ return t.id===id; });
-        var desc = tx ? ((tx.note||catLookup[tx.category]?.l||tx.category)+' '+fmtRp(tx.amount)) : '';
+        var catName = tx ? (catLookup[tx.category] ? catLookup[tx.category].l : tx.category) : '';
+        var desc = tx ? ((tx.note||catName)+' '+fmtRp(tx.amount)) : '';
         showConfirm('Hapus Transaksi?', desc+' akan dihapus secara permanen.', async function(){
             loading = true;
             try { await store.remove(id); toast('Transaksi dihapus','inf'); }
@@ -1144,15 +1145,14 @@ function activatePanel(name){
     if(name==='more') { 
         var mw=document.getElementById('moreWorkspace'); 
         if(mw){mw.style.display='none';mw.innerHTML='';}
-        // Sembunyikan menu Users untuk user biasa
-        var userMgmt = document.querySelector('.more-card[data-more-view="users"]');
-        if(userMgmt){
+        // Sembunyikan menu Users dan Safety untuk user biasa
+        document.querySelectorAll('.publisher-only').forEach(function(el){
             if(isPublisher){
-                userMgmt.style.display = 'block';
+                el.style.display = 'block';
             } else {
-                userMgmt.style.display = 'none';
+                el.style.display = 'none';
             }
-        }
+        });
     }
     if(name==='analytics') renderAnalytics();
     if(name==='dashboard') renderDashboard();
@@ -1203,7 +1203,6 @@ function getBudgets(){
     var defaultBudget = isPublisher ? DEFAULT_PUBLISHER_BUDGET : DEFAULT_BUDGET;
     try{
         var saved = JSON.parse(localStorage.getItem(budgetStorageKey())||'{}');
-        // Filter hanya kategori yang valid untuk user
         var validKeys = getBudgetCategories();
         var result = {};
         validKeys.forEach(function(k){
@@ -1270,6 +1269,7 @@ function openMoreView(view){
         title='Recurring Transactions';actions='<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
         var rr=getRecurring();html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Disimpan di perangkat lokal.</div></div>'+actions+'</div><div class="more-list">'+(rr.length?rr.map(function(r,i){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+'</div>';
     } else if(view==='safety'){
+        if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
         title='Data Safety & Sync';actions='<button class="btn-secondary" id="moreBackup"><i class="fa-solid fa-download"></i> Backup JSON</button>';
         html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Backup transaksi + data lokal user aktif.</div></div>'+actions+'</div><div class="more-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-cloud" style="color:var(--accent);width:18px"></i> Cloud</div><div class="more-item-sub">Firestore Real-time</div></div><span class="more-pill">AKTIF</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">Restore Backup JSON</div><div class="more-item-sub">Restore ke lokal untuk user aktif.</div></div><button class="btn-secondary" id="moreRestore">Restore</button></div></div>';
     } else if(view==='settings'){
@@ -1322,7 +1322,7 @@ function openMoreView(view){
         }
         var clearBtn = document.getElementById('moreClear');
         if(clearBtn) {
-            clearBtn.onclick=function(){['duitku_txs',localKey('duitku_budget'),localKey('duitku_accounts'),'duitku_recurring','duitku_motion'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});toast('Cache lokal dibersihkan.','ok');};
+            clearBtn.onclick=function(){['duitku_txs',budgetStorageKey(),accountsStorageKey(),'duitku_recurring','duitku_motion'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});toast('Cache lokal dibersihkan.','ok');};
         }
     }
     moreWorkspace.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1375,7 +1375,11 @@ async function populatePublisherSwitcher(){
   sel.value=selectedOwnerUid||currentUser.uid;
 }
 async function selectOwner(uid){
-  if(!isPublisher && uid!==currentUser.uid)return;
+  // Hanya publisher yang bisa melihat user lain
+  if(!isPublisher && uid!==currentUser.uid){
+    toast('Anda tidak memiliki akses ke data pengguna lain','err');
+    return;
+  }
   selectedOwnerUid=uid;
   var snap=await db.collection('appUsers').doc(uid).get();
   selectedOwnerProfile=snap.exists?snap.data():{uid:uid,userId:uid};
