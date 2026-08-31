@@ -330,7 +330,7 @@
             <h1 style="font-size:28px;font-weight:700;letter-spacing:-.5px;color:var(--fg)">Duit<span style="background:linear-gradient(135deg,var(--accent),#00ffc8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Ku</span></h1>
         </div>
         <div class="header-actions" style="display:flex;align-items:center;gap:10px">
-            <div class="publisher-switcher publisher-only" id="publisherSwitcher">
+            <div class="publisher-switcher publisher-only" id="publisherSwitcher" style="display:none">
                 <label>View</label><select id="publisherUserSelect"></select>
             </div>
             <div class="user-badge" id="currentUserBadge"><i class="fa-solid fa-user"></i><span id="currentUserLabel">-</span></div>
@@ -597,7 +597,7 @@ var storeMode = 'unknown';
 var auth = firebase.auth();
 var secondaryApp = null, secondaryAuth = null;
 var currentUser = null, currentProfile = null;
-var selectedOwnerUid = null, selectedOwnerProfile = null;
+var selectedOwnerUid = null;
 var publisherEmail = 'santoso@duitku.com';
 var publisherPassword = '123456';
 var isPublisher = false;
@@ -1381,11 +1381,13 @@ async function selectOwner(uid){
     return;
   }
   selectedOwnerUid=uid;
-  var snap=await db.collection('appUsers').doc(uid).get();
-  selectedOwnerProfile=snap.exists?snap.data():{uid:uid,userId:uid};
   if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
   storeMode='unknown';allTxs=[];isInitialLoad=true;
-  if(document.getElementById('currentUserLabel')) document.getElementById('currentUserLabel').textContent=(isPublisher?'Publisher melihat: ':'')+(selectedOwnerProfile.userId||'user');
+  if(document.getElementById('currentUserLabel')) {
+    var snap = await db.collection('appUsers').doc(uid).get();
+    var profile = snap.exists ? snap.data() : {userId:uid};
+    document.getElementById('currentUserLabel').textContent = (isPublisher && uid !== currentUser.uid ? 'Publisher melihat: ' : '') + (profile.userId||'user');
+  }
   if(isPublisher)await populatePublisherSwitcher();
   store._tryFirestore();
   renderAll();
@@ -1394,7 +1396,7 @@ async function onAuthenticated(user, profile){
   currentUser=user;currentProfile=profile||{};
   isPublisher=currentProfile.role==='publisher'||currentProfile.userId==='publisher'||user.email===publisherEmail;
   if(isPublisher){currentProfile.role='publisher';currentProfile.userId='publisher';await ensurePublisherProfile();}
-  selectedOwnerUid=user.uid;selectedOwnerProfile=currentProfile;
+  selectedOwnerUid=user.uid;
   setAppVisibility(true);
   document.getElementById('currentUserLabel').textContent=currentProfile.userId||'user';
   document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'block':'none';});
@@ -1470,7 +1472,7 @@ function renderDashboard(){
   var st=getMonthStats(getMonthTxs()), rate=st.income?((st.income-st.expense)/st.income*100):0;
   var set=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
   set('dashBalance',fmtRp(st.balance));set('dashIncome',fmtRp(st.income));set('dashExpense',fmtRp(st.expense));set('dashSaving',rate.toFixed(1)+'%');
-  set('dashboardSubtitle',(isPublisher?'Publisher dashboard — melihat '+(selectedOwnerProfile&&selectedOwnerProfile.userId||'user'):'Ringkasan keuangan pribadi')+' · '+BULAN[curMonth.getMonth()]+' '+curMonth.getFullYear());
+  set('dashboardSubtitle',(isPublisher?'Publisher dashboard — melihat '+(selectedOwnerUid !== currentUser.uid ? 'user '+selectedOwnerUid : 'dirinya sendiri'):'Ringkasan keuangan pribadi')+' · '+BULAN[curMonth.getMonth()]+' '+curMonth.getFullYear());
   var target=0, pct=0; document.getElementById('dashboardBudgetSummary').innerHTML='<div class="metric-row"><span class="metric-name">Target tabungan</span><span class="metric-value">'+fmtRp(target)+'</span></div><div class="metric-row"><span class="metric-name">Progress target</span><span class="metric-value">'+pct.toFixed(0)+'%</span></div><div class="mini-bar"><span style="width:'+pct+'%"></span></div><div class="metric-row"><span class="metric-name">Skor kesehatan</span><span class="metric-value">'+(document.getElementById('healthScore').textContent||'--')+'</span></div>';
   document.getElementById('dashboardMenuSummary').innerHTML='<div class="metric-row"><span class="metric-name">Transaksi</span><span class="metric-value">'+getMonthTxs().length+'</span></div><div class="metric-row"><span class="metric-name">Budget & Target</span><span class="metric-value">Aktif</span></div><div class="metric-row"><span class="metric-name">Analytics</span><span class="metric-value">6 bulan</span></div><div class="metric-row"><span class="metric-name">Calendar</span><span class="metric-value">Tabel bulanan</span></div><div class="metric-row"><span class="metric-name">More</span><span class="metric-value">Accounts · Export · Safety</span></div>';
   var recent=getMonthTxs().slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).slice(0,5);
