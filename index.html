@@ -209,7 +209,7 @@
         .calendar-head{font-size:9px;color:var(--fg-muted);text-align:center;padding:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
         .calendar-day{min-height:72px;border:0;border-radius:0;padding:8px;background:var(--bg-raised);font-size:10px;cursor:pointer;color:var(--fg);transition:background .2s}
         .calendar-day:hover{background:var(--bg-card-hover)}
-        .calendar-day.muted{opacity:.25;cursor:default}
+        .calendar-day.muted{opacity:.25;cursor:default}.calendar-day.muted:not([data-date]){pointer-events:none}.calendar-day.muted[data-date]{opacity:.42}
         .calendar-day.muted:hover{background:var(--bg-raised)}
         .calendar-day.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
         .calendar-day .day-num{font-weight:700}
@@ -575,6 +575,7 @@
         <div class="section-head"><div><div class="section-kicker">Utilities</div><div class="section-title">More</div><div class="section-sub">Fitur pendukung untuk menjaga data tetap rapi.</div></div></div>
         <div class="more-grid">
             <div class="card more-card publisher-only" data-more-view="users"><i class="fa-solid fa-users more-icon"></i><span class="more-arrow">›</span><h4>Users</h4><p>Tambah pengguna, lihat User ID dan status perubahan password.</p><button class="btn-secondary more-open" data-view="users">Kelola User</button></div>
+            <div class="card more-card publisher-only" data-more-view="categories"><i class="fa-solid fa-tags more-icon"></i><span class="more-arrow">›</span><h4>Categories</h4><p>Publisher dapat menambah kategori Pemasukan atau Pengeluaran baru.</p><button class="btn-secondary more-open" data-view="categories">Kelola Kategori</button></div>
             <div class="card more-card" data-more-view="accounts"><i class="fa-solid fa-wallet more-icon"></i><span class="more-arrow">›</span><h4>Accounts</h4><p>Kelola dompet dan rekening, lalu lihat total saldo masing-masing akun.</p><button class="btn-secondary more-open" data-view="accounts">Buka</button></div>
             <div class="card more-card" data-more-view="calendar"><i class="fa-solid fa-calendar-days more-icon"></i><span class="more-arrow">›</span><h4>Calendar</h4><p>Visualisasikan aktivitas pemasukan dan pengeluaran berdasarkan tanggal.</p><button class="btn-secondary more-open" data-view="calendar">Buka</button></div>
             <div class="card more-card"><i class="fa-solid fa-file-export more-icon"></i><h4>Export Data</h4><p>Backup transaksi periode aktif dengan cepat dalam format CSV.</p><button class="btn-secondary" onclick="document.getElementById('btnExport').click()">Export CSV</button></div>
@@ -628,13 +629,40 @@ var CAT_COLORS = {
     pendidikan:'#748ffc',lain_keluar:'#868e96'
 };
 var catLookup = {};
-CATS.income.concat(CATS.expense).forEach(function(c){ catLookup[c.v] = c; });
+var CUSTOM_CATEGORY_KEY = 'duitku_custom_categories';
 
+function getCustomCategories() {
+    try {
+        var raw = localStorage.getItem(CUSTOM_CATEGORY_KEY);
+        var data = raw ? JSON.parse(raw) : {income:[],expense:[]};
+        return {
+            income: Array.isArray(data.income) ? data.income : [],
+            expense: Array.isArray(data.expense) ? data.expense : []
+        };
+    } catch(e) {
+        return {income:[],expense:[]};
+    }
+}
+
+function saveCustomCategories(data) {
+    localStorage.setItem(CUSTOM_CATEGORY_KEY, JSON.stringify(data));
+}
+
+function rebuildCategoryLookup() {
+    catLookup = {};
+    CATS.income.concat(CATS.expense).forEach(function(c){ catLookup[c.v] = c; });
+    var custom = getCustomCategories();
+    custom.income.concat(custom.expense).forEach(function(c){ catLookup[c.v] = c; });
+    if (typeof PUBLISHER_EXPENSE_CATS !== 'undefined') {
+        PUBLISHER_EXPENSE_CATS.forEach(function(c){ catLookup[c.v] = c; });
+    }
+}
 var PUBLISHER_EXPENSE_CATS = [
     {v:'belanja_harian',l:'Belanja Harian',ic:'fa-basket-shopping'},
     {v:'makan_siang_kantor',l:'Makan Siang di Kantor',ic:'fa-utensils'},
     {v:'rokok',l:'Cigar/Cigarette',ic:'fa-smoking'}
 ];
+rebuildCategoryLookup();
 
 /* ===================== STATE ===================== */
 var curMonth = new Date();
@@ -1552,7 +1580,7 @@ function renderDashboard() {
         var period = getCurrentPaydayPeriod();
         openingBalance = getPaydayOpeningBalance();
         totalBalance = openingBalance + st.income - st.expense;
-        periodLabel = '📅 ' + period.startDate + ' — ' + period.endDate;
+        periodLabel = 'Periode: ' + period.startDate + ' — ' + period.endDate;
     } else {
         openingBalance = getCurrentMonthOpeningBalance();
         totalBalance = openingBalance + st.income - st.expense;
@@ -1714,19 +1742,36 @@ function setType(type) {
     fillCats(type);
 }
 
-function getExpenseCategories() {
-    var cats = CATS.expense.slice();
-    if (isPublisher) {
-        PUBLISHER_EXPENSE_CATS.forEach(function(c){ cats.push(c); });
+function getCategories(type) {
+    var base = type === 'income' ? CATS.income.slice() : CATS.expense.slice();
+    if (type === 'expense' && isPublisher) {
+        PUBLISHER_EXPENSE_CATS.forEach(function(c){ base.push(c); });
     }
-    return cats;
+    var custom = getCustomCategories()[type] || [];
+    custom.forEach(function(c){ base.push(c); });
+    var seen = {};
+    return base.filter(function(c){
+        if (seen[c.v]) return false;
+        seen[c.v] = true;
+        return true;
+    });
+}
+
+function getExpenseCategories() {
+    return getCategories('expense');
 }
 
 function fillCats(type) {
+    rebuildCategoryLookup();
     var prev = fCat.value;
     fCat.innerHTML = '<option value="" disabled selected>Pilih kategori</option>';
-    var list = type === 'income' ? CATS.income.slice() : getExpenseCategories();
-    list.forEach(function(c){ var o=document.createElement('option'); o.value=c.v; o.textContent=c.l; fCat.appendChild(o); });
+    var list = getCategories(type);
+    list.forEach(function(c){ 
+        var o=document.createElement('option'); 
+        o.value=c.v; 
+        o.textContent=c.l; 
+        fCat.appendChild(o); 
+    });
     if (list.some(function(c){ return c.v===prev; })) fCat.value = prev;
 }
 
@@ -1887,26 +1932,33 @@ function openMoreView(view){
         title='Calendar';
         var now = new Date();
         var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        var defaultStart = firstDay.toISOString().split('T')[0];
-        var defaultEnd = now.toISOString().split('T')[0];
-        
+        var defaultStart = firstDay.getFullYear()+'-'+pad(firstDay.getMonth()+1)+'-'+pad(firstDay.getDate());
+        var defaultEnd = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+
         if (calStartDate) defaultStart = calStartDate;
         if (calEndDate) defaultEnd = calEndDate;
-        
+
+        if (defaultStart > defaultEnd) {
+            var swap = defaultStart; defaultStart = defaultEnd; defaultEnd = swap;
+            calStartDate = defaultStart; calEndDate = defaultEnd;
+        }
+
         actions = '<div class="calendar-filter-wrap">' +
             '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calStartDate" value="'+defaultStart+'"></div>' +
             '<span class="date-separator">—</span>' +
             '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calEndDate" value="'+defaultEnd+'"></div>' +
             '</div>';
-        
+
         var startDate = new Date(defaultStart + 'T00:00:00');
         var endDate = new Date(defaultEnd + 'T23:59:59');
-        
+
         var filteredTxs = allTxs.filter(function(t) {
             var d = new Date(t.date + 'T00:00:00');
             return d >= startDate && d <= endDate;
+        }).sort(function(a,b){
+            return new Date(a.date+'T'+(a.time||'00:00')) - new Date(b.date+'T'+(b.time||'00:00'));
         });
-        
+
         var y = startDate.getFullYear();
         var m = startDate.getMonth();
         var first = new Date(y, m, 1);
@@ -1915,59 +1967,154 @@ function openMoreView(view){
         var cells = '';
         ['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){cells+='<div class="calendar-head">'+d+'</div>';});
         for(var i=0;i<start;i++)cells+='<div class="calendar-day muted"></div>';
+
         for(var day=1;day<=days;day++){
             var ds = y+'-'+pad(m+1)+'-'+pad(day);
             var arr = filteredTxs.filter(function(t){return t.date === ds;});
             var net = arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0);
             var dot = arr.length ? '<span class="day-dot"></span>' : '';
             var isToday = (day === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
-            cells+='<div class="calendar-day '+(isToday?'today':'')+'" data-date="'+ds+'">'+
+            var inRange = ds >= defaultStart && ds <= defaultEnd;
+            cells+='<div class="calendar-day '+(isToday?'today ':'')+(inRange?'':'muted')+'" data-date="'+ds+'">'+
                 '<strong>'+day+'</strong>'+dot+
                 (arr.length ? '<div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>' : '')+
                 '</div>';
         }
-        
+
+        var totalIn = filteredTxs.filter(function(t){return t.type==='income';}).reduce(function(v,t){return v+t.amount;},0);
+        var totalOut = filteredTxs.filter(function(t){return t.type==='expense';}).reduce(function(v,t){return v+t.amount;},0);
+
+        var rangeRows = filteredTxs.length ? filteredTxs.map(function(t){
+            var cat = catLookup[t.category] || {l:t.category,ic:'fa-circle'};
+            return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+
+                (t.type==='income'?'🟢 ':'🔴 ')+(t.note||cat.l)+'</div><div class="more-item-sub">'+
+                t.date+(t.time?' · '+t.time:'')+' · '+cat.l+'</div></div><span class="more-pill" style="color:'+
+                (t.type==='income'?'var(--income)':'var(--expense)')+'">'+
+                (t.type==='income'?'+':'-')+fmtRp(t.amount)+'</span></div>';
+        }).join('') : '<div class="empty" style="padding:30px 10px"><div class="empty-ic"><i class="fa-solid fa-calendar-xmark"></i></div><p>Tidak ada transaksi pada rentang tanggal ini.</p><p class="sub">Ubah tanggal filter untuk melihat data lainnya.</p></div>';
+
         var detailHtml = '<div id="calendarDetail" style="margin-top:12px"></div>';
-        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Filter berdasarkan rentang tanggal</div></div>'+actions+'</div>' +
-               '<div class="calendar-grid">'+cells+'</div>'+detailHtml;
-               
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Data otomatis mengikuti rentang tanggal yang dipilih.</div></div>'+actions+'</div>' +
+               '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+               '<span class="more-pill">Transaksi: '+filteredTxs.length+'</span>'+
+               '<span class="more-pill" style="color:var(--income)">Masuk: '+fmtRp(totalIn)+'</span>'+
+               '<span class="more-pill" style="color:var(--expense)">Keluar: '+fmtRp(totalOut)+'</span>'+
+               '</div>'+
+               '<div class="calendar-grid">'+cells+'</div>'+
+               detailHtml+
+               '<div style="margin-top:14px"><div class="more-toolbar-title" style="margin-bottom:8px">Daftar transaksi terfilter</div><div class="more-list">'+rangeRows+'</div></div>';
+
         window._calendarFilteredTxs = filteredTxs;
-        
+
         document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){
             el.onclick=function(){
                 var date = this.getAttribute('data-date');
-                var arr = window._calendarFilteredTxs ? 
-                    window._calendarFilteredTxs.filter(function(t){return t.date === date;}) : 
-                    allTxs.filter(function(t){return t.date === date;});
+                var arr = window._calendarFilteredTxs.filter(function(t){return t.date === date;});
                 var box = document.getElementById('calendarDetail');
                 box.innerHTML = '<div class="card" style="padding:13px;background:var(--bg-raised)">'+
                     '<strong style="font-size:12px;color:var(--fg)">'+date+'</strong>'+
                     '<div class="section-sub" style="margin-bottom:6px">'+
                     (arr.length ? arr.map(function(t){
+                        var cat = catLookup[t.category] || {l:t.category};
                         var timeDisplay = t.time ? ' ' + t.time : '';
                         return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+timeDisplay+
-                        ' — '+((t.note||catLookup[t.category]||{l:t.category}).l);
+                        ' — '+(t.note||cat.l);
                     }).join('<br>') : 'Tidak ada transaksi pada tanggal ini.')+
                     '</div></div>';
             };
         });
-        
+
         var startInput = document.getElementById('calStartDate');
         var endInput = document.getElementById('calEndDate');
-        
+
         function updateCalendarFilter() {
-            calStartDate = startInput.value;
-            calEndDate = endInput.value;
+            var s = startInput.value, e = endInput.value;
+            if (!s || !e) return;
+            if (s > e) {
+                if (this === startInput) e = s; else s = e;
+                startInput.value = s; endInput.value = e;
+            }
+            calStartDate = s;
+            calEndDate = e;
             openMoreView('calendar');
         }
-        
+
         if (startInput) {
+            startInput.addEventListener('input', updateCalendarFilter);
             startInput.addEventListener('change', updateCalendarFilter);
         }
         if (endInput) {
+            endInput.addEventListener('input', updateCalendarFilter);
             endInput.addEventListener('change', updateCalendarFilter);
         }
-        
+
+    } else if(view==='categories'){
+        if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
+        title='Category Management';
+        actions='<button class="btn-secondary" id="moreAddCategory"><i class="fa-solid fa-plus"></i> Tambah Kategori</button>';
+
+        rebuildCategoryLookup();
+        var custom = getCustomCategories();
+        var renderCategoryRows = function(type){
+            var list = getCategories(type).filter(function(c){
+                return !(CATS[type] || []).some(function(base){return base.v===c.v;}) &&
+                       !(type==='expense' && PUBLISHER_EXPENSE_CATS.some(function(base){return base.v===c.v;}));
+            });
+            return list.length ? list.map(function(c,i){
+                return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+(c.ic||'fa-tag')+'" style="color:var(--accent);width:18px"></i> '+c.l+
+                    '</div><div class="more-item-sub">'+(type==='income'?'Pemasukan':'Pengeluaran')+' · kategori buatan Publisher</div></div>'+
+                    '<div style="display:flex;align-items:center;gap:6px"><button class="btn-icon del category-del" data-type="'+type+'" data-key="'+c.v+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div></div>';
+            }).join('') : '<div class="section-sub">Belum ada kategori tambahan.</div>';
+        };
+
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Kategori Transaksi</div><div class="section-sub">Kategori bawaan tetap tersedia. Kategori tambahan dibuat oleh Publisher dan disimpan di browser ini.</div></div>'+actions+'</div>'+
+             '<div class="settings-row"><div class="settings-label"><strong>Pemasukan</strong><span>Kategori tambahan untuk transaksi masuk</span></div></div>'+
+             '<div class="more-list" style="margin-bottom:16px">'+renderCategoryRows('income')+'</div>'+
+             '<div class="settings-row"><div class="settings-label"><strong>Pengeluaran</strong><span>Kategori tambahan untuk transaksi keluar</span></div></div>'+
+             '<div class="more-list">'+renderCategoryRows('expense')+'</div>';
+
+        document.getElementById('moreAddCategory').onclick=function(){
+            var type = prompt('Tipe kategori: ketik P untuk Pemasukan atau K untuk Pengeluaran','K');
+            if(type===null)return;
+            type = String(type).trim().toLowerCase();
+            type = (type==='p'||type==='pemasukan'||type==='income') ? 'income' : (type==='k'||type==='pengeluaran'||type==='expense') ? 'expense' : '';
+            if(!type){toast('Tipe kategori tidak valid','err');return;}
+            var label = prompt('Nama kategori baru');
+            if(!label || !label.trim()) return;
+            label = label.trim();
+
+            var slug = label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40);
+            if(!slug){toast('Nama kategori tidak valid','err');return;}
+
+            var customNow = getCustomCategories();
+            var exists = CATS.income.concat(CATS.expense).concat(PUBLISHER_EXPENSE_CATS).some(function(c){return c.v===slug;}) ||
+                         customNow.income.concat(customNow.expense).some(function(c){return c.v===slug;});
+            if(exists){toast('Kategori tersebut sudah ada','err');return;}
+
+            customNow[type].push({v:slug,l:label,ic:type==='income'?'fa-tag':'fa-tag'});
+            saveCustomCategories(customNow);
+            rebuildCategoryLookup();
+            fillCats(fType.value);
+            openMoreView('categories');
+            toast('Kategori '+(type==='income'?'pemasukan':'pengeluaran')+' ditambahkan','ok');
+        };
+
+        document.querySelectorAll('.category-del').forEach(function(btn){
+            btn.onclick=function(){
+                var type=this.dataset.type, key=this.dataset.key;
+                var data=getCustomCategories();
+                var idx=data[type].findIndex(function(c){return c.v===key;});
+                if(idx<0)return;
+                showConfirm('Hapus kategori?', data[type][idx].l+' akan dihapus dari daftar kategori tambahan.', function(){
+                    data[type].splice(idx,1);
+                    saveCustomCategories(data);
+                    rebuildCategoryLookup();
+                    fillCats(fType.value);
+                    openMoreView('categories');
+                    toast('Kategori dihapus','inf');
+                });
+            };
+        });
     } else if(view==='recurring'){
         title='Recurring Transactions';actions='<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
         var rr=getRecurring();html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Disimpan di perangkat lokal.</div></div>'+actions+'</div><div class="more-list">'+(rr.length?rr.map(function(r,i){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+'</div>';
@@ -2131,7 +2278,7 @@ async function onAuthenticated(user, profile){
   selectedOwnerUid=user.uid;
   setAppVisibility(true);
   document.getElementById('currentUserLabel').textContent=currentProfile.userId||'user';
-  document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'block':'none';});
+  document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'':'none';});
   if(isPublisher){document.getElementById('publisherSwitcher').style.display='flex';await populatePublisherSwitcher();}
   else document.getElementById('publisherSwitcher').style.display='none';
   store.init();
