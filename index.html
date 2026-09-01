@@ -247,6 +247,27 @@
         .publisher-switcher{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);background:var(--bg);border-radius:10px}.publisher-switcher select{max-width:180px;border:0;background:transparent;color:var(--fg);outline:none;font:700 11px 'DM Sans'}.publisher-switcher label{font-size:9px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.7px;font-weight:800}
         .dash-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}.dash-card{padding:16px}.dash-card .dash-label{font-size:9px;color:var(--fg-muted);font-weight:800;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:4px}.dash-card .dash-value{font:700 20px 'Space Grotesk';margin-top:6px;color:var(--fg);line-height:1.2}.dash-mini{font-size:10px;color:var(--fg-muted);margin-top:4px;opacity:.7}
         .publisher-only{display:none}
+        
+        .publisher-view-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+        .publisher-view-stat{padding:13px;border:1px solid var(--border);background:var(--bg-raised);border-radius:11px}
+        .publisher-view-stat .label{font-size:9px;color:var(--fg-muted);font-weight:800;text-transform:uppercase;letter-spacing:.7px}
+        .publisher-view-stat .value{font:700 19px 'Space Grotesk';margin-top:5px;color:var(--fg)}
+        .publisher-user-activity{display:grid;gap:8px}
+        .publisher-user-row{display:grid;grid-template-columns:minmax(130px,1.1fr) minmax(130px,1fr) minmax(120px,.8fr) minmax(110px,.7fr);align-items:center;gap:12px;padding:12px 13px;border:1px solid var(--border);background:var(--bg-raised);border-radius:11px}
+        .publisher-user-row:hover{border-color:var(--border-light);background:var(--bg-card-hover)}
+        .publisher-user-head{background:transparent;border:0;padding:5px 13px;color:var(--fg-muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px}
+        .presence{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800}
+        .presence-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+        .presence.online{color:var(--accent)} .presence.online .presence-dot{background:var(--accent);animation:lp 1.8s ease-in-out infinite}
+        .presence.offline{color:var(--fg-muted)} .presence.offline .presence-dot{background:var(--fg-muted)}
+        .routine-wrap{min-width:105px}
+        .routine-top{display:flex;justify-content:space-between;gap:6px;font-size:10px;font-weight:800}
+        .routine-track{height:5px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:5px}
+        .routine-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#00ffc8)}
+        .publisher-view-note{font-size:10px;color:var(--fg-muted);line-height:1.5;margin-top:8px}
+        @media(max-width:900px){.publisher-view-grid{grid-template-columns:1fr 1fr}.publisher-user-row{grid-template-columns:1fr 1fr}}
+        @media(max-width:560px){.publisher-view-grid{grid-template-columns:1fr 1fr}.publisher-user-row{grid-template-columns:1fr}.publisher-user-head{display:none}}
+
         .user-management-list{display:grid;gap:8px}.user-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--border);background:var(--bg-raised);border-radius:11px}.user-row-main{min-width:0}.user-row-title{font-size:12px;font-weight:800;color:var(--fg)}.user-row-sub{font-size:10px;color:var(--fg-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis}.role-pill{font-size:9px;font-weight:800;padding:4px 7px;border-radius:99px;background:var(--accent-glow);color:var(--accent)}
         @media(max-width:900px){.dash-grid{grid-template-columns:1fr 1fr}.publisher-switcher select{max-width:120px}}
         @media(max-width:560px){.dash-grid{grid-template-columns:1fr}.auth-box{padding:24px 18px}.publisher-switcher{width:100%;justify-content:space-between}}
@@ -582,6 +603,7 @@
         <div class="section-head"><div><div class="section-kicker">Utilities</div><div class="section-title">More</div><div class="section-sub">Fitur pendukung untuk menjaga data tetap rapi.</div></div></div>
         <div class="more-grid">
             <div class="card more-card publisher-only" data-more-view="users"><i class="fa-solid fa-users more-icon"></i><span class="more-arrow">›</span><h4>Users</h4><p>Tambah pengguna, lihat User ID dan status perubahan password.</p><button class="btn-secondary more-open" data-view="users">Kelola User</button></div>
+            <div class="card more-card publisher-only" data-more-view="user-activity"><i class="fa-solid fa-chart-user more-icon"></i><span class="more-arrow">›</span><h4>View</h4><p>Lihat user yang sedang online, terakhir mengakses aplikasi, dan tingkat kerutinan penggunaan.</p><button class="btn-secondary more-open" data-view="user-activity">Lihat Aktivitas</button></div>
             <div class="card more-card publisher-only" data-more-view="categories"><i class="fa-solid fa-tags more-icon"></i><span class="more-arrow">›</span><h4>Categories</h4><p>Publisher dapat menambah kategori Pemasukan atau Pengeluaran baru.</p><button class="btn-secondary more-open" data-view="categories">Kelola Kategori</button></div>
             <div class="card more-card" data-more-view="accounts"><i class="fa-solid fa-wallet more-icon"></i><span class="more-arrow">›</span><h4>Accounts</h4><p>Kelola dompet dan rekening, lalu lihat total saldo masing-masing akun.</p><button class="btn-secondary more-open" data-view="accounts">Buka</button></div>
             <div class="card more-card" data-more-view="calendar"><i class="fa-solid fa-calendar-days more-icon"></i><span class="more-arrow">›</span><h4>Calendar</h4><p>Visualisasikan aktivitas pemasukan dan pengeluaran berdasarkan tanggal.</p><button class="btn-secondary more-open" data-view="calendar">Buka</button></div>
@@ -761,6 +783,9 @@ var publisherPassword = '123456';
 var isPublisher = false;
 var calStartDate = null;
 var calEndDate = null;
+var publisherActivityUnsubscribe = null;
+var presenceHeartbeatTimer = null;
+var presenceUserUid = null;
 
 /* ===================== HELPER FUNCTIONS ===================== */
 
@@ -812,6 +837,11 @@ function setAppVisibility(show){
 }
 
 function cleanupUserData() {
+    if (publisherActivityUnsubscribe) {
+        try { publisherActivityUnsubscribe(); } catch(e) {}
+        publisherActivityUnsubscribe = null;
+    }
+    if (presenceUserUid) stopPresenceTracking();
     if (categoryUnsubscribe) {
         try { categoryUnsubscribe(); } catch(e) {}
         categoryUnsubscribe = null;
@@ -1988,6 +2018,206 @@ function renderAnalytics(){
     document.getElementById('spendingHabits').innerHTML=dayKeys.length?'<div class="metric-row"><span class="metric-name">Hari paling boros</span><span class="metric-value">Tanggal '+dayKeys[0]+'</span></div><div class="metric-row"><span class="metric-name">Nilai terbesar dalam 1 hari</span><span class="metric-value">'+fmtRp(days[dayKeys[0]])+'</span></div><div class="metric-row"><span class="metric-name">Jumlah transaksi keluar</span><span class="metric-value">'+ex.length+'</span></div>':'<div class="section-sub">Belum ada data kebiasaan.</div>';
 }
 
+
+/* ===================== USER PRESENCE / ACTIVITY ===================== */
+var PRESENCE_ONLINE_MS = 90 * 1000;
+var ACTIVITY_WINDOW_DAYS = 30;
+
+function timestampToDate(v){
+    if(!v) return null;
+    if(v.toDate && typeof v.toDate === 'function') return v.toDate();
+    if(v instanceof Date) return v;
+    var d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function activityDayKey(d){
+    d = d || new Date();
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+
+function isUserOnline(profile){
+    var last = timestampToDate(profile && profile.lastSeenAt);
+    return !!(profile && profile.online === true && last && (Date.now()-last.getTime()) <= PRESENCE_ONLINE_MS);
+}
+
+function formatRelativeTime(v){
+    var d = timestampToDate(v);
+    if(!d) return 'Belum pernah';
+    var diff = Math.max(0,Date.now()-d.getTime()), sec = Math.floor(diff/1000);
+    if(sec < 60) return 'Baru saja';
+    var min = Math.floor(sec/60);
+    if(min < 60) return min+' menit lalu';
+    var hr = Math.floor(min/60);
+    if(hr < 24) return hr+' jam lalu';
+    var day = Math.floor(hr/24);
+    if(day < 30) return day+' hari lalu';
+    return formatDateTime(d);
+}
+
+async function writeAccessActivity(uid,isLogin){
+    if(!uid) return;
+    var dayKey = activityDayKey(new Date());
+    var userRef = db.collection('appUsers').doc(uid);
+    try{
+        var update = {
+            online:true,
+            lastSeenAt:firebase.firestore.FieldValue.serverTimestamp(),
+            lastAccessAt:firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if(isLogin) update.lastLoginAt = firebase.firestore.FieldValue.serverTimestamp();
+        await userRef.set(update,{merge:true});
+
+        await userRef.collection('accessLogs').doc(dayKey).set({
+            uid:uid,
+            day:dayKey,
+            lastAccessAt:firebase.firestore.FieldValue.serverTimestamp(),
+            loginCount:isLogin
+                ? firebase.firestore.FieldValue.increment(1)
+                : firebase.firestore.FieldValue.increment(0)
+        },{merge:true});
+    }catch(e){
+        console.warn('Activity tracking:',e.message||e);
+    }
+}
+
+async function setPresenceOffline(uid){
+    if(!uid) return;
+    try{
+        await db.collection('appUsers').doc(uid).set({
+            online:false,
+            lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()
+        },{merge:true});
+    }catch(e){}
+}
+
+function presenceUnloadHandler(){
+    if(presenceUserUid) setPresenceOffline(presenceUserUid);
+}
+
+function startPresenceTracking(uid){
+    if(!uid) return;
+    stopPresenceTracking();
+    presenceUserUid = uid;
+    writeAccessActivity(uid,true);
+
+    presenceHeartbeatTimer = setInterval(function(){
+        if(currentUser && currentUser.uid===uid) writeAccessActivity(uid,false);
+    },30000);
+
+    window.addEventListener('beforeunload',presenceUnloadHandler);
+}
+
+function stopPresenceTracking(){
+    if(presenceHeartbeatTimer){
+        clearInterval(presenceHeartbeatTimer);
+        presenceHeartbeatTimer=null;
+    }
+    if(presenceUserUid) setPresenceOffline(presenceUserUid);
+    presenceUserUid=null;
+    window.removeEventListener('beforeunload',presenceUnloadHandler);
+}
+
+async function getUserRoutineStats(uid){
+    var end = new Date();
+    var start = new Date(end);
+    start.setDate(start.getDate()-(ACTIVITY_WINDOW_DAYS-1));
+    start.setHours(0,0,0,0);
+
+    var snap = await db.collection('appUsers').doc(uid).collection('accessLogs')
+        .where('day','>=',activityDayKey(start))
+        .where('day','<=',activityDayKey(end))
+        .get();
+
+    var activeDays = snap.size;
+    var elapsedDays = Math.max(1,Math.min(ACTIVITY_WINDOW_DAYS,
+        Math.floor((end.getTime()-start.getTime())/86400000)+1));
+    var rate = Math.min(100,Math.round((activeDays/elapsedDays)*100));
+    var sessions = snap.docs.reduce(function(sum,d){
+        var x=d.data()||{};
+        return sum + Math.max(0,Number(x.loginCount||0));
+    },0);
+
+    return {activeDays:activeDays,elapsedDays:elapsedDays,rate:rate,sessions:sessions};
+}
+
+function routineLabel(rate){
+    if(rate >= 80) return 'Sangat rutin';
+    if(rate >= 50) return 'Rutin';
+    if(rate >= 25) return 'Cukup rutin';
+    if(rate > 0) return 'Jarang';
+    return 'Belum ada data';
+}
+
+async function loadPublisherActivity(){
+    var users = await loadPublisherUsers();
+    return Promise.all(users.map(async function(u){
+        var stats;
+        try{stats=await getUserRoutineStats(u.uid);}
+        catch(e){stats={activeDays:0,elapsedDays:ACTIVITY_WINDOW_DAYS,rate:0,sessions:0};}
+        return {profile:u,stats:stats};
+    }));
+}
+
+function renderPublisherActivity(rows){
+    var box=document.getElementById('publisherActivityList');
+    if(!box)return;
+
+    var onlineCount=rows.filter(function(x){return isUserOnline(x.profile);}).length;
+    var activeCount=rows.filter(function(x){return x.stats.activeDays>0;}).length;
+    var avgRate=rows.length?Math.round(rows.reduce(function(s,x){return s+x.stats.rate;},0)/rows.length):0;
+
+    var el=document.getElementById('publisherActivityOnline'); if(el)el.textContent=onlineCount;
+    el=document.getElementById('publisherActivityActive'); if(el)el.textContent=activeCount;
+    el=document.getElementById('publisherActivityRate'); if(el)el.textContent=avgRate+'%';
+    el=document.getElementById('publisherActivityTotal'); if(el)el.textContent=rows.length;
+
+    if(!rows.length){
+        box.innerHTML='<div class="empty"><div class="empty-ic"><i class="fa-solid fa-users-slash"></i></div><p>Belum ada user.</p></div>';
+        return;
+    }
+
+    rows.sort(function(a,b){
+        var ao=isUserOnline(a.profile)?1:0, bo=isUserOnline(b.profile)?1:0;
+        if(ao!==bo)return bo-ao;
+        return b.stats.rate-a.stats.rate;
+    });
+
+    var html='<div class="publisher-user-row publisher-user-head"><div>User</div><div>Status</div><div>Terakhir akses</div><div>Kerutinan 30 hari</div></div>';
+    html+=rows.map(function(x){
+        var u=x.profile,s=x.stats,online=isUserOnline(u),last=u.lastAccessAt||u.lastLoginAt;
+        return '<div class="publisher-user-row">'+
+            '<div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-user" style="color:var(--accent);width:18px"></i> '+u.userId+'</div><div class="more-item-sub">'+(u.email||'-')+'</div></div>'+
+            '<div><span class="presence '+(online?'online':'offline')+'"><span class="presence-dot"></span>'+(online?'ONLINE':'OFFLINE')+'</span><div class="more-item-sub">'+(u.lastLoginAt?'Login: '+formatRelativeTime(u.lastLoginAt):'Belum pernah login')+'</div></div>'+
+            '<div><div class="more-item-title">'+formatRelativeTime(last)+'</div><div class="more-item-sub">'+(last?formatDateTime(last):'Belum pernah')+'</div></div>'+
+            '<div class="routine-wrap"><div class="routine-top"><span>'+routineLabel(s.rate)+'</span><strong>'+s.rate+'%</strong></div><div class="routine-track"><div class="routine-fill" style="width:'+s.rate+'%"></div></div><div class="more-item-sub">'+s.activeDays+'/'+s.elapsedDays+' hari aktif · '+s.sessions+' login</div></div>'+
+            '</div>';
+    }).join('');
+    box.innerHTML=html;
+}
+
+async function refreshPublisherActivity(){
+    var box=document.getElementById('publisherActivityList');
+    if(!box)return;
+    box.innerHTML='<div class="section-sub">Memperbarui aktivitas pengguna...</div>';
+    try{renderPublisherActivity(await loadPublisherActivity());}
+    catch(e){
+        box.innerHTML='<div class="empty"><p>Aktivitas belum dapat dimuat.</p><p class="sub">'+(e.message||'Periksa Firestore Rules.')+'</p></div>';
+    }
+}
+
+function startPublisherActivityListener(){
+    if(publisherActivityUnsubscribe){
+        try{publisherActivityUnsubscribe();}catch(e){}
+        publisherActivityUnsubscribe=null;
+    }
+    if(!isPublisher)return;
+    publisherActivityUnsubscribe=db.collection('appUsers').where('role','==','user').onSnapshot(
+        function(){refreshPublisherActivity();},
+        function(e){console.warn('Publisher activity listener:',e.message||e);}
+    );
+}
+
 /* ===================== MORE / UTILITIES ===================== */
 var moreWorkspace=document.getElementById('moreWorkspace');
 var DEFAULT_ACCOUNTS=[{id:'cash',name:'Cash',icon:'fa-money-bill-wave'},{id:'bank',name:'Bank',icon:'fa-building-columns'},{id:'ewallet',name:'E-Wallet',icon:'fa-mobile-screen-button'}];
@@ -2009,6 +2239,19 @@ function openMoreView(view){
         title='User Management';
         actions='<button class="btn-secondary" id="moreAddUser"><i class="fa-solid fa-user-plus"></i> Tambah User</button>';
         html='<div class="more-toolbar"><div><div class="more-toolbar-title">Pengguna DuitKu</div><div class="section-sub">Data login dan profil pengguna.</div></div>'+actions+'</div><div class="more-list" id="publisherUserList"><div class="section-sub">Memuat pengguna...</div></div>';
+    } else if(view==='user-activity'){
+        if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
+        title='User Activity';
+        actions='<button class="btn-secondary" id="publisherActivityRefresh"><i class="fa-solid fa-rotate"></i> Refresh</button>';
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Aktivitas Pengguna</div><div class="section-sub">Pantau user online, akses terakhir, dan kerutinan penggunaan 30 hari.</div></div>'+actions+'</div>'+
+             '<div class="publisher-view-grid">'+
+             '<div class="publisher-view-stat"><div class="label">Total User</div><div class="value" id="publisherActivityTotal">0</div></div>'+
+             '<div class="publisher-view-stat"><div class="label">Sedang Online</div><div class="value" id="publisherActivityOnline">0</div></div>'+
+             '<div class="publisher-view-stat"><div class="label">Aktif 30 Hari</div><div class="value" id="publisherActivityActive">0</div></div>'+
+             '<div class="publisher-view-stat"><div class="label">Rata-rata Kerutinan</div><div class="value" id="publisherActivityRate">0%</div></div>'+
+             '</div>'+
+             '<div class="publisher-user-activity" id="publisherActivityList"><div class="section-sub">Memuat aktivitas pengguna...</div></div>'+
+             '<div class="publisher-view-note"><i class="fa-solid fa-circle-info"></i> Kerutinan = jumlah hari user aktif ÷ jumlah hari dalam jendela 30 hari. Status online aktif selama heartbeat masih diterima.</div>';
     } else if(view==='categories'){
         if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
         title='Category Management';
@@ -2112,6 +2355,11 @@ function openMoreView(view){
     if(view==='users'){
         document.getElementById('moreAddUser').onclick=showAddUserModal;
         loadPublisherUsers().then(function(users){var box=document.getElementById('publisherUserList');if(!box)return;box.innerHTML=users.length?users.map(function(u){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-user" style="color:var(--accent);width:18px"></i> '+u.userId+'</div><div class="more-item-sub">'+u.email+' · Password terakhir diubah: '+(u.passwordChangedAt?formatDateTime(u.passwordChangedAt):'Belum pernah')+'</div></div><span class="more-pill">AKTIF</span></div>';}).join(''):'<div class="empty"><p>Belum ada user.</p></div>';}).catch(function(e){toast('Gagal memuat user: '+e.message,'err');});
+    } else if(view==='user-activity'){
+        var refreshBtn=document.getElementById('publisherActivityRefresh');
+        if(refreshBtn)refreshBtn.onclick=refreshPublisherActivity;
+        startPublisherActivityListener();
+        refreshPublisherActivity();
     } else if(view==='categories'){
         document.getElementById('moreAddCategory').onclick=async function(){
             var type=prompt('Tipe kategori: P = Pemasukan, K = Pengeluaran','K');if(type===null)return;type=String(type).trim().toLowerCase();type=(type==='p'||type==='pemasukan'||type==='income')?'income':(type==='k'||type==='pengeluaran'||type==='expense')?'expense':'';if(!type){toast('Tipe kategori tidak valid','err');return;}
@@ -2233,6 +2481,7 @@ async function onAuthenticated(user, profile){
   else document.getElementById('publisherSwitcher').style.display='none';
   // Firebase is the single source of truth for custom categories.
   startCategoryListener();
+  startPresenceTracking(user.uid);
   store.init();
   renderDashboard();
 }
