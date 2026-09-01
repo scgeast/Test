@@ -169,6 +169,22 @@
 
         .kbd{display:inline-block;padding:1px 5px;border-radius:4px;background:var(--bg);border:1px solid var(--border);font-size:10px;font-family:'Space Grotesk',monospace;color:var(--fg-muted);line-height:1.4;vertical-align:middle}
 
+        .opening-balance-badge {
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:4px 10px;
+            border-radius:8px;
+            font-size:11px;
+            font-weight:600;
+            background:var(--accent-glow);
+            color:var(--accent);
+            border:1px solid rgba(0,232,162,0.15);
+        }
+        .opening-balance-badge i {
+            font-size:10px;
+        }
+
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
 
         @media(max-width:768px){
@@ -186,7 +202,6 @@
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr!important}.stats-grid .stat-card:last-child{grid-column:auto}}
         @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
-        /* ===================== V2 PROFESSIONAL NAV / PANELS ===================== */
         .app-shell{display:grid;grid-template-columns:190px 1fr;gap:22px;align-items:start}
         .side-nav{position:sticky;top:20px;background:rgba(12,16,23,.82);border:1px solid var(--border);border-radius:18px;padding:12px;backdrop-filter:blur(18px);box-shadow:0 12px 40px rgba(0,0,0,.18)}
         .side-nav .nav-brand{padding:12px 12px 16px;font-family:'Space Grotesk';font-size:11px;color:var(--fg-muted);letter-spacing:1px;text-transform:uppercase}
@@ -205,7 +220,6 @@
         @media(max-width:560px){.insight-grid,.more-grid{grid-template-columns:1fr}.mobile-nav .nav-item span{display:none}.section-title{font-size:19px}}
     .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after{animation:none!important;transition:none!important}
 
-        /* ===================== AUTH / ROLE / PUBLISHER DASHBOARD ===================== */
         #appRoot{display:none}
         .auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:5}
         .auth-box{width:100%;max-width:430px;background:rgba(17,24,32,.94);border:1px solid var(--border);border-radius:24px;padding:32px;box-shadow:0 28px 90px rgba(0,0,0,.45);backdrop-filter:blur(20px)}
@@ -445,6 +459,17 @@
                     <span id="vRatio" style="font-size:12px;font-weight:700;color:var(--accent)">0%</span>
                 </div>
                 <div class="ratio-track"><div class="ratio-fill" id="vRatioBar" style="width:0%;background:var(--accent)"></div></div>
+                
+                <!-- Saldo Awal Bulan -->
+                <div id="openingBalanceContainer" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                        <div class="opening-balance-badge">
+                            <i class="fa-solid fa-arrow-right"></i> Saldo Awal Bulan
+                        </div>
+                        <span id="openingBalanceValue" style="font-size:14px;font-weight:700;color:var(--fg)">Rp 0</span>
+                    </div>
+                    <p style="font-size:10px;color:var(--fg-muted);margin-top:4px">Saldo dari akhir bulan sebelumnya yang dibawa otomatis</p>
+                </div>
             </div>
 
             <div class="insight-grid">
@@ -602,6 +627,67 @@ var publisherEmail = 'santoso@duitku.com';
 var publisherPassword = '123456';
 var isPublisher = false;
 
+/* ===================== SALDO AWAL BULAN ===================== */
+function getOpeningBalanceKey() {
+    return 'opening_balance_' + (selectedOwnerUid || 'default');
+}
+
+function getOpeningBalance(year, month) {
+    try {
+        var key = getOpeningBalanceKey() + '_' + year + '_' + month;
+        var val = localStorage.getItem(key);
+        return val ? parseInt(val, 10) : 0;
+    } catch(e) { return 0; }
+}
+
+function saveOpeningBalance(year, month, amount) {
+    try {
+        var key = getOpeningBalanceKey() + '_' + year + '_' + month;
+        localStorage.setItem(key, String(amount));
+    } catch(e) { console.warn('Save opening balance failed:', e); }
+}
+
+function calculatePreviousMonthBalance(year, month) {
+    // Hitung saldo akhir bulan sebelumnya dari transaksi
+    var prevMonth = month - 1;
+    var prevYear = year;
+    if (prevMonth < 0) {
+        prevMonth = 11;
+        prevYear = year - 1;
+    }
+    
+    var prevTxs = allTxs.filter(function(t) {
+        var d = new Date(t.date);
+        return d.getFullYear() === prevYear && d.getMonth() === prevMonth;
+    });
+    
+    var stats = getMonthStats(prevTxs);
+    // Saldo akhir bulan sebelumnya = saldo awal bulan sebelumnya + (pemasukan - pengeluaran)
+    var prevOpening = getOpeningBalance(prevYear, prevMonth);
+    return prevOpening + stats.income - stats.expense;
+}
+
+function getCurrentMonthOpeningBalance() {
+    var year = curMonth.getFullYear();
+    var month = curMonth.getMonth();
+    
+    // Cek apakah sudah ada saldo awal yang disimpan untuk bulan ini
+    var saved = getOpeningBalance(year, month);
+    if (saved > 0) {
+        return saved;
+    }
+    
+    // Jika belum, hitung dari bulan sebelumnya
+    var prevBalance = calculatePreviousMonthBalance(year, month);
+    if (prevBalance !== 0) {
+        // Simpan sebagai saldo awal bulan ini
+        saveOpeningBalance(year, month, prevBalance);
+        return prevBalance;
+    }
+    
+    return 0;
+}
+
 /* ===================== HELPERS ===================== */
 function fmtRp(n){ return 'Rp ' + Math.abs(n).toLocaleString('id-ID'); }
 function pad(n){ return n < 10 ? '0'+n : ''+n; }
@@ -640,43 +726,35 @@ function setSyncStatus(status, msg) {
 
 /* ===================== CLEANUP DATA SAAT LOGOUT ===================== */
 function cleanupUserData() {
-    // Hentikan listener Firestore
     if (unsubscribe) {
         try { unsubscribe(); } catch(e) {}
         unsubscribe = null;
     }
-    // Kosongkan semua data transaksi
     allTxs = [];
     storeMode = 'unknown';
     isInitialLoad = true;
     selectedOwnerUid = null;
-    // Reset tampilan
     document.getElementById('skeletonLoader').style.display = 'block';
     document.getElementById('mainContent').style.display = 'none';
-    // Hapus chart
     if (dChart) { dChart.destroy(); dChart = null; }
     if (bChart) { bChart.destroy(); bChart = null; }
     if (sixChart) { sixChart.destroy(); sixChart = null; }
-    // Reset label user
     document.getElementById('currentUserLabel').textContent = '-';
-    // Reset dashboard
     document.getElementById('dashBalance').textContent = 'Rp 0';
     document.getElementById('dashIncome').textContent = 'Rp 0';
     document.getElementById('dashExpense').textContent = 'Rp 0';
     document.getElementById('dashSaving').textContent = '0%';
-    // Reset stats
     document.getElementById('vIncome').textContent = 'Rp 0';
     document.getElementById('vExpense').textContent = 'Rp 0';
     document.getElementById('vBalance').textContent = 'Rp 0';
     document.getElementById('vRatio').textContent = '0%';
     document.getElementById('vRatioBar').style.width = '0%';
-    // Reset health
     document.getElementById('healthScore').textContent = '--';
     document.getElementById('healthLabel').textContent = '-';
     document.getElementById('healthDesc').textContent = 'Memuat data...';
-    // Reset tx list
     document.getElementById('txList').innerHTML = '';
     document.getElementById('txCount').style.display = 'none';
+    document.getElementById('openingBalanceContainer').style.display = 'none';
 }
 
 /* ===================== DATA STORE ===================== */
@@ -871,14 +949,26 @@ function getMonthStats(txs) {
 function renderStats() {
     var txs = getMonthTxs();
     var stats = getMonthStats(txs);
-    var prevDate = new Date(curMonth.getFullYear(), curMonth.getMonth()-1, 1);
-    var prevStats = getMonthStats(getMonthTxs(prevDate.getFullYear(), prevDate.getMonth()));
+    
+    // Ambil saldo awal bulan
+    var openingBalance = getCurrentMonthOpeningBalance();
+    var totalBalance = openingBalance + stats.income - stats.expense;
 
     document.getElementById('vIncome').textContent = fmtRp(stats.income);
     document.getElementById('vExpense').textContent = fmtRp(stats.expense);
     var bEl = document.getElementById('vBalance');
-    bEl.style.color = stats.balance >= 0 ? 'var(--accent)' : 'var(--expense)';
-    bEl.textContent = (stats.balance < 0 ? '- ' : '') + fmtRp(Math.abs(stats.balance));
+    bEl.style.color = totalBalance >= 0 ? 'var(--accent)' : 'var(--expense)';
+    bEl.textContent = (totalBalance < 0 ? '- ' : '') + fmtRp(Math.abs(totalBalance));
+
+    // Tampilkan saldo awal
+    var openingContainer = document.getElementById('openingBalanceContainer');
+    var openingValue = document.getElementById('openingBalanceValue');
+    if (openingBalance > 0) {
+        openingContainer.style.display = 'block';
+        openingValue.textContent = fmtRp(openingBalance);
+    } else {
+        openingContainer.style.display = 'none';
+    }
 
     var ratio = stats.income > 0 ? Math.min(stats.expense/stats.income*100, 100) : 0;
     var rBar = document.getElementById('vRatioBar');
@@ -888,31 +978,34 @@ function renderStats() {
     rLbl.textContent = ratio.toFixed(1)+'%';
     rLbl.style.color = ratio>80?'var(--expense)':ratio>50?'var(--warning)':'var(--accent)';
 
-    renderHealthScore(stats, ratio);
+    renderHealthScore(stats, ratio, totalBalance);
 }
 
-function renderHealthScore(stats, ratio) {
+function renderHealthScore(stats, ratio, totalBalance) {
     var score=0, label='', desc='', color='';
-    if (stats.income===0 && stats.expense===0) {
+    var effectiveIncome = stats.income + (totalBalance > 0 ? totalBalance : 0);
+    var effectiveRatio = effectiveIncome > 0 ? Math.min(stats.expense/effectiveIncome*100, 100) : 0;
+    
+    if (stats.income===0 && stats.expense===0 && totalBalance===0) {
         score=0; label='Belum ada data'; desc='Mulai catat transaksi untuk melihat skor kesehatan keuanganmu.'; color='var(--fg-muted)';
-    } else if (ratio<=30) {
+    } else if (effectiveRatio<=30) {
         score=95; label='Sangat Sehat'; desc='Pengeluaranmu sangat terkendali. Pertahankan kebiasaan ini!'; color='var(--income)';
-    } else if (ratio<=50) {
+    } else if (effectiveRatio<=50) {
         score=80; label='Sehat'; desc='Keuanganmu dalam kondisi baik. Masih ada ruang untuk menabung.'; color='var(--income)';
-    } else if (ratio<=70) {
+    } else if (effectiveRatio<=70) {
         score=60; label='Cukup'; desc='Pengeluaran mulai mendekati pemasukan. Evaluasi belanja tidak perlu.'; color='var(--warning)';
-    } else if (ratio<=90) {
+    } else if (effectiveRatio<=90) {
         score=35; label='Waspada'; desc='Pengeluaran hampir menyamai pemasukan. Segera evaluasi pos besar.'; color='#ff8c42';
     } else {
         score=15; label='Kritis'; desc='Pengeluaran melebihi pemasukan. Segera ambil tindakan penghematan.'; color='var(--expense)';
     }
-    if (stats.balance < 0) { score=Math.min(score,10); label='Defisit'; desc='Pengeluaran melebihi pemasukan bulan ini.'; color='var(--expense)'; }
+    if (totalBalance < 0) { score=Math.min(score,10); label='Defisit'; desc='Pengeluaran melebihi pemasukan bulan ini.'; color='var(--expense)'; }
 
     var circ = 2 * Math.PI * 22;
     document.getElementById('healthCircle').style.stroke = color;
     document.getElementById('healthCircle').style.strokeDashoffset = circ - (score/100)*circ;
     var sEl = document.getElementById('healthScore');
-    sEl.textContent = (stats.income===0 && stats.expense===0) ? '--' : score;
+    sEl.textContent = (stats.income===0 && stats.expense===0 && totalBalance===0) ? '--' : score;
     sEl.style.color = color;
     document.getElementById('healthLabel').textContent = label;
     document.getElementById('healthLabel').style.color = color;
@@ -1013,12 +1106,15 @@ function renderTxList() {
 }
 
 function updateInsights(){
-    var txs=getMonthTxs(), st=getMonthStats(txs), rate=st.income>0?((st.income-st.expense)/st.income*100):0;
+    var txs=getMonthTxs(), st=getMonthStats(txs), opening=getCurrentMonthOpeningBalance();
+    var totalBalance = opening + st.income - st.expense;
+    var rate = (opening + st.income) > 0 ? ((opening + st.income - st.expense)/(opening + st.income)*100) : 0;
+    
     var ex=txs.filter(function(t){return t.type==='expense';}), map={}; ex.forEach(function(t){map[t.category]=(map[t.category]||0)+t.amount;});
     var keys=Object.keys(map).sort(function(a,b){return map[b]-map[a];}), top=keys[0], topAmt=top?map[top]:0;
     var topLabel=top?(catLookup[top]||{l:top}).l:'-';
     document.getElementById('insight1').textContent=top?topLabel+' menjadi pengeluaran terbesar: '+fmtRp(topAmt)+'.':'Belum cukup data untuk membuat insight.';
-    document.getElementById('insight2').textContent=st.income?('Saving rate bulan ini '+rate.toFixed(1)+'%. '+(rate>=20?'Pertahankan ritme tabunganmu.':'Coba sisihkan minimal 20% pemasukan.')):'Tambahkan pemasukan untuk menghitung saving rate.';
+    document.getElementById('insight2').textContent=(opening + st.income)>0?('Saving rate bulan ini '+rate.toFixed(1)+'%. '+(rate>=20?'Pertahankan ritme tabunganmu.':'Coba sisihkan minimal 20% pemasukan.')):'Tambahkan pemasukan untuk menghitung saving rate.';
     var ratio=st.income>0?st.expense/st.income*100:0;
     document.getElementById('insight3').textContent=ratio>80?'Pengeluaran sudah melewati 80% pemasukan. Saatnya rem pengeluaran non-esensial.':ratio>50?'Rasio pengeluaran berada di atas 50%. Pantau kategori terbesar.':'Kondisi pengeluaran masih relatif terkendali bulan ini.';
 }
@@ -1186,7 +1282,6 @@ function activatePanel(name){
     if(name==='more') { 
         var mw=document.getElementById('moreWorkspace'); 
         if(mw){mw.style.display='none';mw.innerHTML='';}
-        // Sembunyikan menu Users dan Safety untuk user biasa
         document.querySelectorAll('.publisher-only').forEach(function(el){
             if(isPublisher){
                 el.style.display = 'block';
@@ -1216,8 +1311,11 @@ function renderAnalytics(){
     for(var i=5;i>=0;i--){ var d=new Date(now.getFullYear(),now.getMonth()-i,1), st=getMonthStats(getMonthTxs(d.getFullYear(),d.getMonth())); labels.push(BULAN[d.getMonth()].slice(0,3)); inc.push(st.income); exp.push(st.expense); }
     var c=document.getElementById('chartSixMonth'); if(!c) return; if(sixChart) sixChart.destroy();
     sixChart=new Chart(c.getContext('2d'),{type:'line',data:{labels:labels,datasets:[{label:'Pemasukan',data:inc,borderColor:'#00e8a2',backgroundColor:'rgba(0,232,162,.08)',fill:true,tension:.4,pointRadius:3},{label:'Pengeluaran',data:exp,borderColor:'#ff5470',backgroundColor:'rgba(255,84,112,.06)',fill:true,tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b9ab5',font:{size:10,family:'DM Sans'}}},tooltip:{backgroundColor:'#111820',borderColor:'#1a2436',borderWidth:1}},scales:{x:{grid:{display:false},ticks:{color:'#4a5a73',font:{size:10}}},y:{grid:{color:'rgba(26,36,54,.7)'},ticks:{color:'#4a5a73',font:{size:10},callback:function(v){return v>=1e6?(v/1e6).toFixed(1)+'jt':v>=1e3?(v/1e3)+'rb':v;}}}}}});
-    var st=getMonthStats(getMonthTxs()), rate=st.income?((st.income-st.expense)/st.income*100):0, ratio=st.income?(st.expense/st.income*100):0;
-    document.getElementById('analyticsMetrics').innerHTML='<div class="metric-row"><span class="metric-name">Pemasukan</span><span class="metric-value" style="color:var(--income)">'+fmtRp(st.income)+'</span></div><div class="metric-row"><span class="metric-name">Pengeluaran</span><span class="metric-value" style="color:var(--expense)">'+fmtRp(st.expense)+'</span></div><div class="metric-row"><span class="metric-name">Saving rate</span><span class="metric-value">'+rate.toFixed(1)+'%</span></div><div class="metric-row"><span class="metric-name">Expense ratio</span><span class="metric-value">'+ratio.toFixed(1)+'%</span></div>';
+    var st=getMonthStats(getMonthTxs()), opening=getCurrentMonthOpeningBalance();
+    var totalBalance = opening + st.income - st.expense;
+    var rate = (opening + st.income) > 0 ? ((opening + st.income - st.expense)/(opening + st.income)*100) : 0;
+    var ratio = st.income > 0 ? (st.expense/st.income*100) : 0;
+    document.getElementById('analyticsMetrics').innerHTML='<div class="metric-row"><span class="metric-name">Saldo Awal</span><span class="metric-value">'+fmtRp(opening)+'</span></div><div class="metric-row"><span class="metric-name">Pemasukan</span><span class="metric-value" style="color:var(--income)">'+fmtRp(st.income)+'</span></div><div class="metric-row"><span class="metric-name">Pengeluaran</span><span class="metric-value" style="color:var(--expense)">'+fmtRp(st.expense)+'</span></div><div class="metric-row"><span class="metric-name">Saldo Akhir</span><span class="metric-value" style="color:'+(totalBalance>=0?'var(--income)':'var(--expense)')+'">'+fmtRp(totalBalance)+'</span></div>';
     var ex=getMonthTxs().filter(function(t){return t.type==='expense';}), map={}; ex.forEach(function(t){map[t.category]=(map[t.category]||0)+t.amount;}); var keys=Object.keys(map).sort(function(a,b){return map[b]-map[a];}).slice(0,5), total=st.expense||1;
     document.getElementById('topExpenses').innerHTML=keys.length?keys.map(function(k){var pct=map[k]/total*100,l=(catLookup[k]||{l:k}).l;return '<div class="metric-row"><div style="flex:1"><div class="metric-name">'+l+'</div><div class="mini-bar"><span style="width:'+pct+'%"></span></div></div><strong class="metric-value" style="margin-left:15px">'+pct.toFixed(1)+'%</strong></div>';}).join(''):'<div class="section-sub">Belum ada pengeluaran.</div>';
     var days={}; ex.forEach(function(t){var d=new Date(t.date).getDate();days[d]=(days[d]||0)+t.amount;}); var dayKeys=Object.keys(days).sort(function(a,b){return days[b]-days[a];});
@@ -1269,8 +1367,11 @@ function renderBudget(){
     });
     document.getElementById('budgetList').innerHTML = html;
     
-    var st=getMonthStats(getMonthTxs()), target=st.income>0?Math.max(st.balance,0):0, goal=st.income?st.income*.2:0, pct=goal?Math.min(target/goal*100,100):0;
-    document.getElementById('targetSummary').innerHTML='<div style="padding:18px 0"><div style="font-size:11px;color:var(--fg-muted)">Target tabungan bulan ini (20% pemasukan)</div><div style="font:700 25px Space Grotesk;margin:5px 0;color:var(--fg)">'+fmtRp(goal)+'</div><div class="budget-track"><div class="budget-fill" style="width:'+pct+'%"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span>Saldo tersedia: <b style="color:var(--fg)">'+fmtRp(target)+'</b></span><b style="color:var(--accent)">'+pct.toFixed(0)+'%</b></div><button class="btn-secondary" id="targetEditBtn" style="margin-top:12px"><i class="fa-solid fa-pen"></i> Edit Target</button></div><div class="card" style="padding:12px;background:var(--bg-raised)"><div style="font-size:11px;color:var(--fg-dim)">💡 Target ini otomatis mengikuti pemasukan bulan aktif.</div></div>';
+    var st=getMonthStats(getMonthTxs()), opening=getCurrentMonthOpeningBalance();
+    var target = (opening + st.income) > 0 ? Math.max(opening + st.income - st.expense, 0) : 0;
+    var goal = (opening + st.income) > 0 ? (opening + st.income) * 0.2 : 0;
+    var pct = goal ? Math.min(target/goal*100, 100) : 0;
+    document.getElementById('targetSummary').innerHTML='<div style="padding:18px 0"><div style="font-size:11px;color:var(--fg-muted)">Target tabungan bulan ini (20% dari total pemasukan + saldo awal)</div><div style="font:700 25px Space Grotesk;margin:5px 0;color:var(--fg)">'+fmtRp(goal)+'</div><div class="budget-track"><div class="budget-fill" style="width:'+pct+'%"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span>Saldo tersedia: <b style="color:var(--fg)">'+fmtRp(target)+'</b></span><b style="color:var(--accent)">'+pct.toFixed(0)+'%</b></div><button class="btn-secondary" id="targetEditBtn" style="margin-top:12px"><i class="fa-solid fa-pen"></i> Edit Target</button></div><div class="card" style="padding:12px;background:var(--bg-raised)"><div style="font-size:11px;color:var(--fg-dim)">💡 Target ini otomatis mengikuti total pemasukan + saldo awal bulan.</div></div>';
     document.querySelectorAll('.budget-edit').forEach(function(btn){btn.onclick=function(){var k=this.getAttribute('data-cat'), cur=b[k], val=prompt('Budget '+((catLookup[k]||{l:k}).l)+' (Rp)',String(cur)); if(val!==null){var n=parseInt(String(val).replace(/\D/g,''),10); if(n>0){b[k]=n;saveBudgets(b);renderBudget();toast('Budget diperbarui','ok');}}};});
     var te=document.getElementById('targetEditBtn');if(te)te.onclick=function(){var val=prompt('Target tabungan (Rp)',String(goal));if(val!==null){var n=parseInt(String(val).replace(/\D/g,''),10);if(n>0){goal=n;toast('Target diperbarui','ok');renderBudget();}}};
 }
@@ -1371,7 +1472,6 @@ function openMoreView(view){
 
 function localKey(base){return base+'_'+(selectedOwnerUid||'default');}
 
-// Event listener untuk tombol "more-open"
 document.addEventListener('click', function(e){
     var btn = e.target.closest('.more-open');
     if(btn){
@@ -1416,7 +1516,6 @@ async function populatePublisherSwitcher(){
   sel.value=selectedOwnerUid||currentUser.uid;
 }
 async function selectOwner(uid){
-  // Hanya publisher yang bisa melihat user lain
   if(!isPublisher && uid!==currentUser.uid){
     toast('Anda tidak memiliki akses ke data pengguna lain','err');
     return;
@@ -1434,7 +1533,6 @@ async function selectOwner(uid){
   renderAll();
 }
 async function onAuthenticated(user, profile){
-  // CLEANUP data sebelumnya sebelum user baru login
   cleanupUserData();
   
   currentUser=user;currentProfile=profile||{};
@@ -1478,7 +1576,6 @@ document.getElementById('loginForm').addEventListener('submit',async function(e)
   try{await doLogin(uid,pw);}catch(err){showAuthError(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'?'User ID atau password salah.':err.message);}finally{btn.disabled=false;btn.querySelector('span').textContent='Masuk ke DuitKu';}
 });
 document.getElementById('btnLogout').addEventListener('click',async function(){
-  // Cleanup data sebelum logout
   cleanupUserData();
   if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
   await auth.signOut();
@@ -1524,9 +1621,11 @@ async function showAddUserModal(){
   }catch(e){toast('Gagal membuat user: '+e.message,'err');try{if(secondaryAuth)await secondaryAuth.signOut();}catch(x){}}
 }
 function renderDashboard(){
-  var st=getMonthStats(getMonthTxs()), rate=st.income?((st.income-st.expense)/st.income*100):0;
+  var st=getMonthStats(getMonthTxs()), opening=getCurrentMonthOpeningBalance();
+  var totalBalance = opening + st.income - st.expense;
+  var rate = (opening + st.income) > 0 ? ((opening + st.income - st.expense)/(opening + st.income)*100) : 0;
   var set=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  set('dashBalance',fmtRp(st.balance));set('dashIncome',fmtRp(st.income));set('dashExpense',fmtRp(st.expense));set('dashSaving',rate.toFixed(1)+'%');
+  set('dashBalance',fmtRp(totalBalance));set('dashIncome',fmtRp(st.income));set('dashExpense',fmtRp(st.expense));set('dashSaving',rate.toFixed(1)+'%');
   set('dashboardSubtitle',(isPublisher?'Publisher dashboard — melihat '+(selectedOwnerUid !== currentUser.uid ? 'user '+selectedOwnerUid : 'dirinya sendiri'):'Ringkasan keuangan pribadi')+' · '+BULAN[curMonth.getMonth()]+' '+curMonth.getFullYear());
   var target=0, pct=0; document.getElementById('dashboardBudgetSummary').innerHTML='<div class="metric-row"><span class="metric-name">Target tabungan</span><span class="metric-value">'+fmtRp(target)+'</span></div><div class="metric-row"><span class="metric-name">Progress target</span><span class="metric-value">'+pct.toFixed(0)+'%</span></div><div class="mini-bar"><span style="width:'+pct+'%"></span></div><div class="metric-row"><span class="metric-name">Skor kesehatan</span><span class="metric-value">'+(document.getElementById('healthScore').textContent||'--')+'</span></div>';
   document.getElementById('dashboardMenuSummary').innerHTML='<div class="metric-row"><span class="metric-name">Transaksi</span><span class="metric-value">'+getMonthTxs().length+'</span></div><div class="metric-row"><span class="metric-name">Budget & Target</span><span class="metric-value">Aktif</span></div><div class="metric-row"><span class="metric-name">Analytics</span><span class="metric-value">6 bulan</span></div><div class="metric-row"><span class="metric-name">Calendar</span><span class="metric-value">Tabel bulanan</span></div><div class="metric-row"><span class="metric-name">More</span><span class="metric-value">Accounts · Export · Safety</span></div>';
