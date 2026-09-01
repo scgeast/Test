@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* ===== CSS SAMA SEPERTI SEBELUMNYA ===== */
         :root {
             --bg:#070a0f;--bg-raised:#0c1017;--bg-card:#111820;--bg-card-hover:#18202e;
             --fg:#ffffff;--fg-dim:#b0c0d8;--fg-muted:#6a7a95;
@@ -1953,8 +1954,8 @@ function renderAnalytics(){
 }
 
 /* ===================== MORE / UTILITIES ===================== */
-var moreWorkspace=document.getElementById('moreWorkspace');
-var DEFAULT_ACCOUNTS=[{id:'cash',name:'Cash',icon:'fa-money-bill-wave'},{id:'bank',name:'Bank',icon:'fa-building-columns'},{id:'ewallet',name:'E-Wallet',icon:'fa-mobile-screen-button'}];
+var moreWorkspace = document.getElementById('moreWorkspace');
+var DEFAULT_ACCOUNTS = [{id:'cash',name:'Cash',icon:'fa-money-bill-wave'},{id:'bank',name:'Bank',icon:'fa-building-columns'},{id:'ewallet',name:'E-Wallet',icon:'fa-mobile-screen-button'}];
 
 function accountsStorageKey(){return 'duitku_accounts_'+(selectedOwnerUid||'default');}
 function getAccounts(){try{return JSON.parse(localStorage.getItem(accountsStorageKey())||'null')||DEFAULT_ACCOUNTS.slice();}catch(e){return DEFAULT_ACCOUNTS.slice();}}
@@ -1963,24 +1964,332 @@ function getRecurring(){try{return JSON.parse(localStorage.getItem('duitku_recur
 function saveRecurring(a){localStorage.setItem('duitku_recurring',JSON.stringify(a));}
 
 function openMoreView(view){
-    if(!moreWorkspace)return;
-    moreWorkspace.style.display='block';
-    var html='', title='', actions='';
+    if(!moreWorkspace) return;
+    moreWorkspace.style.display = 'block';
+    var html = '', title = '', actions = '';
     
-    if(view==='categories'){
-        if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
-        title='Kelola Kategori';
-        actions='<button class="btn-secondary" id="moreAddCategory"><i class="fa-solid fa-plus"></i> Tambah Kategori</button>';
+    // ==================== USERS ====================
+    if(view === 'users'){
+        if(!isPublisher){ toast('Menu ini khusus publisher','err'); return; }
+        title = 'User Management';
+        actions = '<button class="btn-secondary" id="moreAddUser"><i class="fa-solid fa-user-plus"></i> Tambah User</button>';
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Data login dan profil pengguna.</div></div>'+actions+'</div><div class="more-list" id="publisherUserList"><div class="section-sub">Memuat pengguna...</div></div>';
+        moreWorkspace.innerHTML = html;
+        document.getElementById('moreAddUser').onclick = showAddUserModal;
+        loadPublisherUsers().then(function(users){
+            var box = document.getElementById('publisherUserList');
+            if(!box) return;
+            box.innerHTML = users.length ? users.map(function(u){
+                return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-user" style="color:var(--accent);width:18px"></i> '+u.userId+'</div><div class="more-item-sub">'+u.email+' · Password terakhir diubah: '+(u.passwordChangedAt ? formatDateTime(u.passwordChangedAt) : 'Belum pernah')+'</div></div><span class="more-pill">AKTIF</span></div>';
+            }).join('') : '<div class="empty"><p>Belum ada user.</p></div>';
+        });
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== ACCOUNTS ====================
+    if(view === 'accounts'){
+        title = 'Accounts / Dompet';
+        actions = '<button class="btn-secondary" id="moreAddAccount"><i class="fa-solid fa-plus"></i> Tambah Akun</button>';
+        var ac = getAccounts();
+        var total = 0;
+        var monthTx = allTxs;
+        var accountHtml = ac.map(function(a,i){
+            var bal = 0;
+            monthTx.forEach(function(t){
+                var txAcc = t.account || 'bank';
+                if(txAcc === a.id) bal += (t.type === 'income' ? t.amount : -t.amount);
+            });
+            total += bal;
+            return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+a.icon+'" style="color:var(--accent);width:18px"></i> '+a.name+'</div><div class="more-item-sub">Saldo berdasarkan transaksi yang terhubung ke akun ini</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+fmtRp(bal)+'</span><button class="btn-icon account-edit" data-index="'+i+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon del account-del" data-index="'+i+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div></div>';
+        }).join('');
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Total saldo akun: '+fmtRp(total)+'</div></div>'+actions+'</div><div class="more-list">'+accountHtml+'</div>';
+        moreWorkspace.innerHTML = html;
+        
+        document.getElementById('moreAddAccount').onclick = function(){
+            var name = prompt('Nama akun, contoh: BCA');
+            if(name && name.trim()){
+                var a = getAccounts();
+                a.push({id:'a_'+Date.now(), name:name.trim(), icon:'fa-wallet'});
+                saveAccounts(a);
+                openMoreView('accounts');
+                toast('Akun ditambahkan','ok');
+            }
+        };
+        document.querySelectorAll('.account-edit').forEach(function(b){
+            b.onclick = function(){
+                var a = getAccounts();
+                var i = parseInt(this.dataset.index, 10);
+                var name = prompt('Nama akun', a[i].name);
+                if(name && name.trim()){
+                    a[i].name = name.trim();
+                    saveAccounts(a);
+                    openMoreView('accounts');
+                    toast('Akun diperbarui','ok');
+                }
+            };
+        });
+        document.querySelectorAll('.account-del').forEach(function(b){
+            b.onclick = function(){
+                var a = getAccounts();
+                var i = parseInt(this.dataset.index, 10);
+                if(a.length <= 1){ toast('Minimal satu akun harus tersedia','err'); return; }
+                showConfirm('Hapus akun?', a[i].name+' akan dihapus.', function(){
+                    a.splice(i, 1);
+                    saveAccounts(a);
+                    openMoreView('accounts');
+                    toast('Akun dihapus','inf');
+                });
+            };
+        });
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== CALENDAR ====================
+    if(view === 'calendar'){
+        title = 'Calendar';
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        var defaultStart = calStartDate || firstDay.toISOString().split('T')[0];
+        var defaultEnd = calEndDate || now.toISOString().split('T')[0];
+        
+        actions = '<div class="calendar-filter-wrap">' +
+            '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calStartDate" value="'+defaultStart+'"></div>' +
+            '<span class="date-separator">—</span>' +
+            '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calEndDate" value="'+defaultEnd+'"></div>' +
+            '</div>';
+        
+        var startDate = new Date(defaultStart + 'T00:00:00');
+        var endDate = new Date(defaultEnd + 'T23:59:59');
+        
+        var filteredTxs = allTxs.filter(function(t) {
+            var d = new Date(t.date + 'T00:00:00');
+            return d >= startDate && d <= endDate;
+        });
+        
+        var y = startDate.getFullYear();
+        var m = startDate.getMonth();
+        var first = new Date(y, m, 1);
+        var days = new Date(y, m + 1, 0).getDate();
+        var start = first.getDay();
+        var cells = '';
+        ['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){ cells += '<div class="calendar-head">'+d+'</div>'; });
+        for(var i = 0; i < start; i++) cells += '<div class="calendar-day muted"></div>';
+        for(var day = 1; day <= days; day++){
+            var ds = y+'-'+pad(m+1)+'-'+pad(day);
+            var arr = filteredTxs.filter(function(t){ return t.date === ds; });
+            var net = arr.reduce(function(v,t){ return v + (t.type === 'income' ? t.amount : -t.amount); }, 0);
+            var dot = arr.length ? '<span class="day-dot"></span>' : '';
+            var isToday = (day === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
+            cells += '<div class="calendar-day '+(isToday?'today':'')+'" data-date="'+ds+'">'+
+                '<strong>'+day+'</strong>'+dot+
+                (arr.length ? '<div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>' : '')+
+                '</div>';
+        }
+        
+        var detailHtml = '<div id="calendarDetail" style="margin-top:12px"></div>';
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Filter berdasarkan rentang tanggal</div></div>'+actions+'</div>' +
+               '<div class="calendar-grid">'+cells+'</div>'+detailHtml;
+        moreWorkspace.innerHTML = html;
+        
+        window._calendarFilteredTxs = filteredTxs;
+        
+        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){
+            el.onclick = function(){
+                var date = this.getAttribute('data-date');
+                var arr = window._calendarFilteredTxs ? 
+                    window._calendarFilteredTxs.filter(function(t){ return t.date === date; }) : 
+                    allTxs.filter(function(t){ return t.date === date; });
+                var box = document.getElementById('calendarDetail');
+                box.innerHTML = '<div class="card" style="padding:13px;background:var(--bg-raised)">'+
+                    '<strong style="font-size:12px;color:var(--fg)">'+date+'</strong>'+
+                    '<div class="section-sub" style="margin-bottom:6px">'+
+                    (arr.length ? arr.map(function(t){
+                        var timeDisplay = t.time ? ' ' + t.time : '';
+                        return (t.type === 'income' ? '🟢 + ' : '🔴 - ')+fmtRp(t.amount)+timeDisplay+
+                        ' — '+((t.note || catLookup[t.category] || {l:t.category}).l);
+                    }).join('<br>') : 'Tidak ada transaksi pada tanggal ini.')+
+                    '</div></div>';
+            };
+        });
+        
+        var startInput = document.getElementById('calStartDate');
+        var endInput = document.getElementById('calEndDate');
+        function updateCalendarFilter() {
+            calStartDate = startInput.value;
+            calEndDate = endInput.value;
+            openMoreView('calendar');
+        }
+        if(startInput) startInput.addEventListener('change', updateCalendarFilter);
+        if(endInput) endInput.addEventListener('change', updateCalendarFilter);
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== RECURRING ====================
+    if(view === 'recurring'){
+        title = 'Recurring Transactions';
+        actions = '<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
+        var rr = getRecurring();
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Disimpan di perangkat lokal.</div></div>'+actions+'</div><div class="more-list">'+
+            (rr.length ? rr.map(function(r,i){
+                return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';
+            }).join('') : '<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+
+            '</div>';
+        moreWorkspace.innerHTML = html;
+        document.getElementById('moreAddRecurring').onclick = function(){
+            var name = prompt('Nama transaksi rutin');
+            if(!name) return;
+            var amount = parseInt((prompt('Jumlah (Rp)','0')||'').replace(/\D/g,''), 10);
+            if(!amount) return;
+            var day = parseInt(prompt('Tanggal setiap bulan','1'), 10) || 1;
+            var rr = getRecurring();
+            rr.push({name:name, amount:amount, day:Math.min(Math.max(day,1),31), type:'expense', category:'tagihan'});
+            saveRecurring(rr);
+            openMoreView('recurring');
+            toast('Transaksi rutin ditambahkan','ok');
+        };
+        document.querySelectorAll('.recurring-del').forEach(function(b){
+            b.onclick = function(){
+                var rr = getRecurring();
+                rr.splice(parseInt(this.dataset.index, 10), 1);
+                saveRecurring(rr);
+                openMoreView('recurring');
+            };
+        });
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== SAFETY ====================
+    if(view === 'safety'){
+        if(!isPublisher){ toast('Menu ini khusus publisher','err'); return; }
+        title = 'Data Safety & Sync';
+        actions = '<button class="btn-secondary" id="moreBackup"><i class="fa-solid fa-download"></i> Backup JSON</button>';
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Backup transaksi + data lokal user aktif.</div></div>'+actions+'</div><div class="more-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-cloud" style="color:var(--accent);width:18px"></i> Cloud</div><div class="more-item-sub">Firestore Real-time</div></div><span class="more-pill">AKTIF</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">Restore Backup JSON</div><div class="more-item-sub">Restore ke lokal untuk user aktif.</div></div><button class="btn-secondary" id="moreRestore">Restore</button></div></div>';
+        moreWorkspace.innerHTML = html;
+        document.getElementById('moreBackup').onclick = function(){
+            var payload = {version:2, createdAt:new Date().toISOString(), transactions:allTxs, budgets:getBudgets(), accounts:getAccounts(), recurring:getRecurring()};
+            var blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'DuitKu_Backup_'+new Date().toISOString().slice(0,10)+'.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            toast('Backup JSON berhasil dibuat','ok');
+        };
+        document.getElementById('moreRestore').onclick = function(){
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            input.onchange = function(){
+                var f = input.files[0];
+                if(!f) return;
+                var r = new FileReader();
+                r.onload = function(){
+                    try {
+                        var d = JSON.parse(r.result);
+                        if(!Array.isArray(d.transactions)) throw new Error('Format backup tidak valid');
+                        localStorage.setItem('duitku_txs', JSON.stringify(d.transactions));
+                        if(d.budgets) localStorage.setItem(budgetStorageKey(), JSON.stringify(d.budgets));
+                        if(d.accounts) localStorage.setItem(accountsStorageKey(), JSON.stringify(d.accounts));
+                        if(d.recurring) localStorage.setItem('duitku_recurring', JSON.stringify(d.recurring));
+                        allTxs = d.transactions;
+                        renderAll();
+                        toast('Backup berhasil dipulihkan','ok');
+                    } catch(e) {
+                        toast('Backup tidak valid','err');
+                    }
+                };
+                r.readAsText(f);
+            };
+            input.click();
+        };
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== SETTINGS ====================
+    if(view === 'settings'){
+        title = 'Settings';
+        var paydaySetting = localStorage.getItem('duitku_payday_setting') || '1';
+        var paydayDate = parseInt(localStorage.getItem('duitku_payday_date') || '28', 10);
+        var motion = localStorage.getItem('duitku_motion') || 'on';
+        
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">Preferensi DuitKu</div><div class="section-sub">Pengaturan tersimpan di perangkat ini.</div></div></div>' +
+            '<div class="settings-row"><div class="settings-label"><strong>Format Mata Uang</strong><span>Format nominal aplikasi</span></div><select class="settings-select" id="settingCurrency"><option value="IDR">IDR — Rupiah</option></select></div>' +
+            '<div class="settings-row"><div class="settings-label"><strong>Animasi</strong><span>Animasi counter dan perpindahan panel</span></div><select class="settings-select" id="settingMotion"><option value="on" '+(motion==='on'?'selected':'')+'>Aktif</option><option value="off" '+(motion==='off'?'selected':'')+'>Minimal</option></select></div>' +
+            '<div class="settings-row" style="border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:8px">' +
+            '<div class="settings-label"><strong style="color:var(--accent)">📅 Periode Gajian</strong><span>Atur tanggal gajian/pemasukan utama untuk perhitungan siklus keuangan</span></div>' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+            '<select class="settings-select" id="settingPayday" style="min-width:80px">' +
+            '<option value="1" '+(paydaySetting==='1'?'selected':'')+'>Aktif</option>' +
+            '<option value="0" '+(paydaySetting==='0'?'selected':'')+'>Nonaktif</option>' +
+            '</select>' +
+            '<span style="color:var(--fg-muted);font-size:11px">Tanggal</span>' +
+            '<select class="settings-select" id="settingPaydayDate" style="min-width:70px">' +
+            Array.from({length:31}, function(_,i){ return '<option value="'+(i+1)+'" '+((i+1)===paydayDate?'selected':'')+'>'+(i+1)+'</option>'; }).join('') +
+            '</select>' +
+            '</div>' +
+            '</div>' +
+            '<div style="padding:10px 14px;background:var(--bg-raised);border-radius:10px;margin:6px 0 12px;font-size:12px;color:var(--fg-dim);border-left:3px solid var(--warning)">' +
+            '<i class="fa-solid fa-bullseye" style="color:var(--warning);margin-right:6px"></i> ' +
+            '<strong>Budget & Target mengikuti siklus gajian.</strong> ' +
+            'Data tidak reset di awal bulan kalender, melainkan mengikuti periode gajian yang dipilih.' +
+            '</div>' +
+            '<div style="padding:8px 14px;background:var(--bg);border-radius:8px;margin:4px 0 10px;font-size:11px;color:var(--fg-muted)">' +
+            '<i class="fa-regular fa-calendar" style="color:var(--accent);margin-right:6px"></i> ' +
+            'Periode saat ini: <strong style="color:var(--fg)">' + getCurrentPaydayPeriod().startDate + ' — ' + getCurrentPaydayPeriod().endDate + '</strong>' +
+            '</div>' +
+            '<div class="settings-row"><div class="settings-label"><strong>Reset data lokal</strong><span>Hanya membersihkan cache browser</span></div><button class="btn-secondary" id="moreClear">Bersihkan Cache</button></div>';
+        moreWorkspace.innerHTML = html;
+        
+        document.getElementById('settingPayday').onchange = function(){
+            localStorage.setItem('duitku_payday_setting', this.value);
+            toast('Pengaturan periode gajian diperbarui','ok');
+            renderAll();
+            renderBudget();
+        };
+        document.getElementById('settingPaydayDate').onchange = function(){
+            localStorage.setItem('duitku_payday_date', this.value);
+            toast('Tanggal gajian diubah ke tanggal ' + this.value,'ok');
+            renderAll();
+            renderBudget();
+        };
+        document.getElementById('settingMotion').onchange = function(){
+            localStorage.setItem('duitku_motion', this.value);
+            document.documentElement.classList.toggle('reduce-motion', this.value === 'off');
+            toast('Preferensi disimpan','ok');
+        };
+        document.getElementById('moreClear').onclick = function(){
+            ['duitku_txs', budgetStorageKey(), accountsStorageKey(), 'duitku_recurring', 'duitku_motion', 'duitku_payday_setting', 'duitku_payday_date'].forEach(function(k){
+                try{ localStorage.removeItem(k); } catch(e){}
+            });
+            toast('Cache lokal dibersihkan.','ok');
+            renderAll();
+            renderBudget();
+        };
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+        return;
+    }
+    
+    // ==================== CATEGORIES ====================
+    if(view === 'categories'){
+        if(!isPublisher){ toast('Menu ini khusus publisher','err'); return; }
+        title = 'Kelola Kategori';
+        actions = '<button class="btn-secondary" id="moreAddCategory"><i class="fa-solid fa-plus"></i> Tambah Kategori</button>';
         var custom = getCustomCategories();
         var listHtml = '';
         var all = [];
         custom.income.forEach(function(c){ all.push({...c, type:'income'}); });
         custom.expense.forEach(function(c){ all.push({...c, type:'expense'}); });
-        if (all.length === 0) {
+        if(all.length === 0){
             listHtml = '<div class="section-sub">Belum ada kategori custom.</div>';
         } else {
             listHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-            all.forEach(function(c) {
+            all.forEach(function(c){
                 var typeLabel = c.type === 'income' ? '📈 Pemasukan' : '📉 Pengeluaran';
                 listHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-raised);border-radius:8px;border:1px solid var(--border)">' +
                     '<i class="fa-solid ' + c.ic + '" style="color:var(--accent)"></i> ' +
@@ -1993,25 +2302,26 @@ function openMoreView(view){
         }
         html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Kategori khusus publisher (tersimpan di lokal).</div></div>'+actions+'</div>' +
                '<div style="margin-top:12px">'+listHtml+'</div>';
-        moreWorkspace.innerHTML=html;
-        document.getElementById('moreAddCategory').onclick = function() {
+        moreWorkspace.innerHTML = html;
+        
+        document.getElementById('moreAddCategory').onclick = function(){
             document.getElementById('btnAddCategory').click();
         };
-        moreWorkspace.querySelectorAll('.del[data-cat-key]').forEach(function(btn) {
-            btn.onclick = function() {
+        moreWorkspace.querySelectorAll('.del[data-cat-key]').forEach(function(btn){
+            btn.onclick = function(){
                 var key = this.getAttribute('data-cat-key');
-                showConfirm('Hapus Kategori?', 'Kategori ini akan dihapus.', function() {
+                showConfirm('Hapus Kategori?', 'Kategori ini akan dihapus.', function(){
                     var custom = getCustomCategories();
                     var found = false;
-                    for (var type of ['income', 'expense']) {
-                        var idx = custom[type].findIndex(function(c) { return c.v === key; });
-                        if (idx !== -1) {
+                    for(var type of ['income', 'expense']){
+                        var idx = custom[type].findIndex(function(c){ return c.v === key; });
+                        if(idx !== -1){
                             custom[type].splice(idx, 1);
                             found = true;
                             break;
                         }
                     }
-                    if (found) {
+                    if(found){
                         saveCustomCategories(custom);
                         catLookup = buildCatLookup();
                         toast('Kategori dihapus','inf');
@@ -2021,165 +2331,184 @@ function openMoreView(view){
                 });
             };
         });
-        document.getElementById('moreBack').onclick = function() {
-            moreWorkspace.style.display = 'none';
-            moreWorkspace.innerHTML = '';
-        };
+        document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
         return;
     }
     
-    // Untuk view lainnya (users, accounts, calendar, recurring, safety, settings)
-    // Saya singkat karena panjang, tapi tetap functional
-    html='<div class="more-backbar"><button class="btn-secondary" id="moreBack"><i class="fa-solid fa-arrow-left"></i> Kembali ke More</button></div>';
-    moreWorkspace.innerHTML=html;
-    document.getElementById('moreBack').onclick=function(){moreWorkspace.style.display='none';moreWorkspace.innerHTML='';};
-    moreWorkspace.scrollIntoView({behavior:'smooth',block:'nearest'});
+    // Default back button
+    html = '<div class="more-backbar"><button class="btn-secondary" id="moreBack"><i class="fa-solid fa-arrow-left"></i> Kembali ke More</button></div>';
+    moreWorkspace.innerHTML = html;
+    document.getElementById('moreBack').onclick = function(){ moreWorkspace.style.display = 'none'; moreWorkspace.innerHTML = ''; };
+    moreWorkspace.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 /* ===================== AUTH / USER MANAGEMENT ===================== */
-function formatDateTime(v){try{return new Date(v).toLocaleString('id-ID');}catch(e){return '-';}}
-function normalizeUserId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');}
-function deriveUserId(email){return normalizeUserId(String(email||'').split('@')[0].split(/[._-]/)[0]);}
-function showAuthError(msg){var e=document.getElementById('authError');e.textContent=msg;e.style.display='block';}
-function clearAuthError(){var e=document.getElementById('authError');e.textContent='';e.style.display='none';}
+function formatDateTime(v){ try{ return new Date(v).toLocaleString('id-ID'); } catch(e){ return '-'; } }
+function normalizeUserId(v){ return String(v||'').trim().toLowerCase().replace(/[^a-z0-9._-]/g,''); }
+function deriveUserId(email){ return normalizeUserId(String(email||'').split('@')[0].split(/[._-]/)[0]); }
+function showAuthError(msg){ var e = document.getElementById('authError'); e.textContent = msg; e.style.display = 'block'; }
+function clearAuthError(){ var e = document.getElementById('authError'); e.textContent = ''; e.style.display = 'none'; }
 
 async function getProfileByUserId(userId){
-  var key=normalizeUserId(userId);
-  var snap=await db.collection('loginDirectory').doc(key).get();
-  if(!snap.exists)return null;
-  var d=snap.data();d.uid=d.uid||'';return d;
+    var key = normalizeUserId(userId);
+    var snap = await db.collection('loginDirectory').doc(key).get();
+    if(!snap.exists) return null;
+    var d = snap.data(); d.uid = d.uid || ''; return d;
 }
 async function ensurePublisherProfile(){
-  if(!auth.currentUser)return null;
-  await db.collection('appUsers').doc(auth.currentUser.uid).set({uid:auth.currentUser.uid,userId:'publisher',email:publisherEmail,role:'publisher',disabled:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-  return auth.currentUser.uid;
+    if(!auth.currentUser) return null;
+    await db.collection('appUsers').doc(auth.currentUser.uid).set({
+        uid: auth.currentUser.uid,
+        userId: 'publisher',
+        email: publisherEmail,
+        role: 'publisher',
+        disabled: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+    return auth.currentUser.uid;
 }
 async function setupSecondaryAuth(){
-  if(secondaryAuth)return secondaryAuth;
-  secondaryApp=firebase.initializeApp(firebaseConfig,'DuitKuAdminCreator');
-  secondaryAuth=secondaryApp.auth();
-  return secondaryAuth;
+    if(secondaryAuth) return secondaryAuth;
+    secondaryApp = firebase.initializeApp(firebaseConfig, 'DuitKuAdminCreator');
+    secondaryAuth = secondaryApp.auth();
+    return secondaryAuth;
 }
 async function loadPublisherUsers(){
-  var snap=await db.collection('appUsers').where('role','==','user').get();
-  return snap.docs.map(function(d){var x=d.data();x.uid=d.id;return x;}).filter(function(x){return !x.disabled;}).sort(function(a,b){return String(a.userId).localeCompare(String(b.userId));});
+    var snap = await db.collection('appUsers').where('role', '==', 'user').get();
+    return snap.docs.map(function(d){ var x = d.data(); x.uid = d.id; return x; }).filter(function(x){ return !x.disabled; }).sort(function(a,b){ return String(a.userId).localeCompare(String(b.userId)); });
 }
 async function populatePublisherSwitcher(){
-  if(!isPublisher)return;
-  var sel=document.getElementById('publisherUserSelect');if(!sel)return;
-  var users=await loadPublisherUsers();
-  sel.innerHTML='<option value="'+currentUser.uid+'">Publisher</option>'+users.map(function(u){return '<option value="'+u.uid+'">'+u.userId+'</option>';}).join('');
-  sel.value=selectedOwnerUid||currentUser.uid;
+    if(!isPublisher) return;
+    var sel = document.getElementById('publisherUserSelect');
+    if(!sel) return;
+    var users = await loadPublisherUsers();
+    sel.innerHTML = '<option value="'+currentUser.uid+'">Publisher</option>' + users.map(function(u){ return '<option value="'+u.uid+'">'+u.userId+'</option>'; }).join('');
+    sel.value = selectedOwnerUid || currentUser.uid;
 }
 async function selectOwner(uid){
-  if(!isPublisher && uid!==currentUser.uid){
-    toast('Anda tidak memiliki akses ke data pengguna lain','err');
-    return;
-  }
-  selectedOwnerUid=uid;
-  if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
-  storeMode='unknown';allTxs=[];isInitialLoad=true;
-  if(document.getElementById('currentUserLabel')) {
-    var snap=await db.collection('appUsers').doc(uid).get();
-    var profile=snap.exists?snap.data():{userId:uid};
-    document.getElementById('currentUserLabel').textContent=(isPublisher && uid!==currentUser.uid?'Publisher melihat: ':'')+(profile.userId||'user');
-  }
-  if(isPublisher)await populatePublisherSwitcher();
-  store._tryFirestore();
-  renderAll();
+    if(!isPublisher && uid !== currentUser.uid){
+        toast('Anda tidak memiliki akses ke data pengguna lain','err');
+        return;
+    }
+    selectedOwnerUid = uid;
+    if(unsubscribe){ try{ unsubscribe(); } catch(e){} unsubscribe = null; }
+    storeMode = 'unknown'; allTxs = []; isInitialLoad = true;
+    if(document.getElementById('currentUserLabel')){
+        var snap = await db.collection('appUsers').doc(uid).get();
+        var profile = snap.exists ? snap.data() : {userId: uid};
+        document.getElementById('currentUserLabel').textContent = (isPublisher && uid !== currentUser.uid ? 'Publisher melihat: ' : '') + (profile.userId || 'user');
+    }
+    if(isPublisher) await populatePublisherSwitcher();
+    store._tryFirestore();
+    renderAll();
 }
 async function onAuthenticated(user, profile){
-  cleanupUserData();
-  currentUser=user;currentProfile=profile||{};
-  isPublisher=currentProfile.role==='publisher'||currentProfile.userId==='publisher'||user.email===publisherEmail;
-  if(isPublisher){currentProfile.role='publisher';currentProfile.userId='publisher';await ensurePublisherProfile();}
-  selectedOwnerUid=user.uid;
-  setAppVisibility(true);
-  document.getElementById('currentUserLabel').textContent=currentProfile.userId||'user';
-  document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'block':'none';});
-  if(isPublisher){document.getElementById('publisherSwitcher').style.display='flex';await populatePublisherSwitcher();}
-  else document.getElementById('publisherSwitcher').style.display='none';
-  store.init();
-  renderDashboard();
-}
-async function doLogin(userId,password){
-  userId=normalizeUserId(userId);
-  if(!userId||!password)throw new Error('User ID dan password wajib diisi.');
-  if(userId==='publisher'){
-    try{
-      await auth.signInWithEmailAndPassword(publisherEmail,password);
-    }catch(e){
-      if(e.code!=='auth/user-not-found' && e.code!=='auth/invalid-credential')throw e;
-      if(password!==publisherPassword)throw new Error('User ID atau password salah.');
-      var sa=await setupSecondaryAuth();
-      try{await sa.createUserWithEmailAndPassword(publisherEmail,publisherPassword);}catch(x){if(x.code!=='auth/email-already-in-use')throw x;}
-      await sa.signOut();
-      await auth.signInWithEmailAndPassword(publisherEmail,password);
-    }
-    var p={uid:auth.currentUser.uid,userId:'publisher',email:publisherEmail,role:'publisher',disabled:false};
-    await db.collection('appUsers').doc(auth.currentUser.uid).set(p,{merge:true});
-    return;
-  }
-  var profile=await getProfileByUserId(userId);
-  if(!profile||profile.disabled)throw new Error('User ID tidak ditemukan atau dinonaktifkan.');
-  await auth.signInWithEmailAndPassword(profile.email,password);
-}
-document.getElementById('loginForm').addEventListener('submit',async function(e){
-  e.preventDefault();clearAuthError();
-  var btn=document.getElementById('loginBtn'),uid=document.getElementById('loginUserId').value,pw=document.getElementById('loginPassword').value;
-  btn.disabled=true;btn.querySelector('span').textContent='Memproses...';
-  try{await doLogin(uid,pw);}catch(err){showAuthError(err.code==='auth/wrong-password'||err.code==='auth/invalid-credential'?'User ID atau password salah.':err.message);}finally{btn.disabled=false;btn.querySelector('span').textContent='Masuk ke DuitKu';}
-});
-document.getElementById('btnLogout').addEventListener('click',async function(){
-  cleanupUserData();
-  if(unsubscribe){try{unsubscribe();}catch(e){}unsubscribe=null;}
-  await auth.signOut();
-  setAppVisibility(false);
-  toast('Berhasil keluar','ok');
-});
-document.getElementById('publisherUserSelect').addEventListener('change',function(){selectOwner(this.value);});
-document.getElementById('dashboardRefresh').addEventListener('click',function(){renderDashboard();});
-auth.onAuthStateChanged(async function(user){
-  if(!user){
-    setAppVisibility(false);
     cleanupUserData();
-    return;
-  }
-  try{
-    var snap=await db.collection('appUsers').doc(user.uid).get();
-    var p=snap.exists?snap.data():null;
-    if(!p){p={uid:user.uid,userId:user.email===publisherEmail?'publisher':deriveUserId(user.email),email:user.email,role:user.email===publisherEmail?'publisher':'user'};await db.collection('appUsers').doc(user.uid).set(p,{merge:true});
-      if(p.role==='user')await db.collection('loginDirectory').doc(p.userId).set({uid:user.uid,userId:p.userId,email:p.email,disabled:false},{merge:true});
+    currentUser = user; currentProfile = profile || {};
+    isPublisher = currentProfile.role === 'publisher' || currentProfile.userId === 'publisher' || user.email === publisherEmail;
+    if(isPublisher){ currentProfile.role = 'publisher'; currentProfile.userId = 'publisher'; await ensurePublisherProfile(); }
+    selectedOwnerUid = user.uid;
+    setAppVisibility(true);
+    document.getElementById('currentUserLabel').textContent = currentProfile.userId || 'user';
+    document.querySelectorAll('.publisher-only').forEach(function(el){ el.style.display = isPublisher ? 'block' : 'none'; });
+    if(isPublisher){ document.getElementById('publisherSwitcher').style.display = 'flex'; await populatePublisherSwitcher(); }
+    else document.getElementById('publisherSwitcher').style.display = 'none';
+    store.init();
+    renderDashboard();
+}
+async function doLogin(userId, password){
+    userId = normalizeUserId(userId);
+    if(!userId || !password) throw new Error('User ID dan password wajib diisi.');
+    if(userId === 'publisher'){
+        try{
+            await auth.signInWithEmailAndPassword(publisherEmail, password);
+        } catch(e){
+            if(e.code !== 'auth/user-not-found' && e.code !== 'auth/invalid-credential') throw e;
+            if(password !== publisherPassword) throw new Error('User ID atau password salah.');
+            var sa = await setupSecondaryAuth();
+            try{ await sa.createUserWithEmailAndPassword(publisherEmail, publisherPassword); } catch(x){ if(x.code !== 'auth/email-already-in-use') throw x; }
+            await sa.signOut();
+            await auth.signInWithEmailAndPassword(publisherEmail, password);
+        }
+        var p = {uid: auth.currentUser.uid, userId: 'publisher', email: publisherEmail, role: 'publisher', disabled: false};
+        await db.collection('appUsers').doc(auth.currentUser.uid).set(p, {merge: true});
+        return;
     }
-    if(p.role==='user')await db.collection('loginDirectory').doc(p.userId).set({uid:user.uid,userId:p.userId,email:p.email,disabled:false},{merge:true});
-    await onAuthenticated(user,p);
-  }catch(e){console.error(e);showAuthError('Gagal memuat profil: '+e.message);await auth.signOut();}
+    var profile = await getProfileByUserId(userId);
+    if(!profile || profile.disabled) throw new Error('User ID tidak ditemukan atau dinonaktifkan.');
+    await auth.signInWithEmailAndPassword(profile.email, password);
+}
+document.getElementById('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault(); clearAuthError();
+    var btn = document.getElementById('loginBtn');
+    var uid = document.getElementById('loginUserId').value;
+    var pw = document.getElementById('loginPassword').value;
+    btn.disabled = true; btn.querySelector('span').textContent = 'Memproses...';
+    try{ await doLogin(uid, pw); } catch(err){ showAuthError(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' ? 'User ID atau password salah.' : err.message); }
+    finally{ btn.disabled = false; btn.querySelector('span').textContent = 'Masuk ke DuitKu'; }
+});
+document.getElementById('btnLogout').addEventListener('click', async function(){
+    cleanupUserData();
+    if(unsubscribe){ try{ unsubscribe(); } catch(e){} unsubscribe = null; }
+    await auth.signOut();
+    setAppVisibility(false);
+    toast('Berhasil keluar','ok');
+});
+document.getElementById('publisherUserSelect').addEventListener('change', function(){ selectOwner(this.value); });
+document.getElementById('dashboardRefresh').addEventListener('click', function(){ renderDashboard(); });
+auth.onAuthStateChanged(async function(user){
+    if(!user){
+        setAppVisibility(false);
+        cleanupUserData();
+        return;
+    }
+    try{
+        var snap = await db.collection('appUsers').doc(user.uid).get();
+        var p = snap.exists ? snap.data() : null;
+        if(!p){
+            p = {uid: user.uid, userId: user.email === publisherEmail ? 'publisher' : deriveUserId(user.email), email: user.email, role: user.email === publisherEmail ? 'publisher' : 'user'};
+            await db.collection('appUsers').doc(user.uid).set(p, {merge: true});
+            if(p.role === 'user') await db.collection('loginDirectory').doc(p.userId).set({uid: user.uid, userId: p.userId, email: p.email, disabled: false}, {merge: true});
+        }
+        if(p.role === 'user') await db.collection('loginDirectory').doc(p.userId).set({uid: user.uid, userId: p.userId, email: p.email, disabled: false}, {merge: true});
+        await onAuthenticated(user, p);
+    } catch(e){ console.error(e); showAuthError('Gagal memuat profil: '+e.message); await auth.signOut(); }
 });
 async function showAddUserModal(){
-  var email=prompt('Email pengguna yang didaftarkan publisher:','');
-  if(!email)return;
-  email=email.trim().toLowerCase();
-  var derived=deriveUserId(email);
-  if(!derived){toast('Email tidak valid','err');return;}
-  var password=prompt('Password awal user (minimal 6 karakter):','123456');
-  if(!password)return;
-  if(password.length<6){toast('Password minimal 6 karakter','err');return;}
-  try{
-    var exists=await getProfileByUserId(derived);if(exists)throw new Error('User ID '+derived+' sudah digunakan.');
-    var sa=await setupSecondaryAuth();
-    var cred=await sa.createUserWithEmailAndPassword(email,password);
-    var u=cred.user;
-    await db.collection('appUsers').doc(u.uid).set({uid:u.uid,userId:derived,email:email,role:'user',disabled:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),passwordChangedAt:null});
-    await db.collection('loginDirectory').doc(derived).set({uid:u.uid,userId:derived,email:email,disabled:false});
-    await sa.signOut();
-    toast('User '+derived+' berhasil dibuat','ok');openMoreView('users');
-  }catch(e){toast('Gagal membuat user: '+e.message,'err');try{if(secondaryAuth)await secondaryAuth.signOut();}catch(x){}}
+    var email = prompt('Email pengguna yang didaftarkan publisher:','');
+    if(!email) return;
+    email = email.trim().toLowerCase();
+    var derived = deriveUserId(email);
+    if(!derived){ toast('Email tidak valid','err'); return; }
+    var password = prompt('Password awal user (minimal 6 karakter):','123456');
+    if(!password) return;
+    if(password.length < 6){ toast('Password minimal 6 karakter','err'); return; }
+    try{
+        var exists = await getProfileByUserId(derived);
+        if(exists) throw new Error('User ID '+derived+' sudah digunakan.');
+        var sa = await setupSecondaryAuth();
+        var cred = await sa.createUserWithEmailAndPassword(email, password);
+        var u = cred.user;
+        await db.collection('appUsers').doc(u.uid).set({
+            uid: u.uid,
+            userId: derived,
+            email: email,
+            role: 'user',
+            disabled: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            passwordChangedAt: null
+        });
+        await db.collection('loginDirectory').doc(derived).set({uid: u.uid, userId: derived, email: email, disabled: false});
+        await sa.signOut();
+        toast('User '+derived+' berhasil dibuat','ok');
+        openMoreView('users');
+    } catch(e){ toast('Gagal membuat user: '+e.message,'err'); try{ if(secondaryAuth) await secondaryAuth.signOut(); } catch(x){} }
 }
 
 /* ===================== EVENT LISTENERS ===================== */
 document.getElementById('filterBar').addEventListener('click', function(e){
-    var tab=e.target.closest('.ftab'); if(!tab) return;
-    curFilter=tab.getAttribute('data-f');
+    var tab = e.target.closest('.ftab'); if(!tab) return;
+    curFilter = tab.getAttribute('data-f');
     this.querySelectorAll('.ftab').forEach(function(t){ t.classList.remove('on'); });
     tab.classList.add('on');
     renderTxList();
@@ -2187,17 +2516,17 @@ document.getElementById('filterBar').addEventListener('click', function(e){
 document.getElementById('btnAdd').addEventListener('click', function(){ openModal(); });
 document.getElementById('btnCloseModal').addEventListener('click', closeModal);
 document.getElementById('btnExport').addEventListener('click', exportCSV);
-document.getElementById('btnPrev').addEventListener('click', function(){ curMonth.setMonth(curMonth.getMonth()-1); renderAll(); });
-document.getElementById('btnNext').addEventListener('click', function(){ curMonth.setMonth(curMonth.getMonth()+1); renderAll(); });
-modal.addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+document.getElementById('btnPrev').addEventListener('click', function(){ curMonth.setMonth(curMonth.getMonth() - 1); renderAll(); });
+document.getElementById('btnNext').addEventListener('click', function(){ curMonth.setMonth(curMonth.getMonth() + 1); renderAll(); });
+modal.addEventListener('click', function(e){ if(e.target === this) closeModal(); });
 document.addEventListener('keydown', function(e){
-    if(e.key==='Escape'){
+    if(e.key === 'Escape'){
         if(document.getElementById('confirmModal').classList.contains('show')){ hideConfirm(); return; }
         closeModal();
     }
-    if((e.key==='n'||e.key==='N')){
-        var tag=document.activeElement.tagName.toLowerCase();
-        if(tag!=='input'&&tag!=='textarea'&&tag!=='select'&&!modal.classList.contains('show')&&!document.getElementById('confirmModal').classList.contains('show')){
+    if((e.key === 'n' || e.key === 'N')){
+        var tag = document.activeElement.tagName.toLowerCase();
+        if(tag !== 'input' && tag !== 'textarea' && tag !== 'select' && !modal.classList.contains('show') && !document.getElementById('confirmModal').classList.contains('show')){
             e.preventDefault(); openModal();
         }
     }
@@ -2205,7 +2534,9 @@ document.addEventListener('keydown', function(e){
 tBtnIn.addEventListener('click', function(){ setType('income'); });
 tBtnOut.addEventListener('click', function(){ setType('expense'); });
 
-document.querySelectorAll('.nav-item[data-panel]').forEach(function(btn){btn.addEventListener('click',function(){activatePanel(this.getAttribute('data-panel'));});});
+document.querySelectorAll('.nav-item[data-panel]').forEach(function(btn){
+    btn.addEventListener('click', function(){ activatePanel(this.getAttribute('data-panel')); });
+});
 document.addEventListener('click', function(e){
     var btn = e.target.closest('.more-open');
     if(btn){
@@ -2215,18 +2546,18 @@ document.addEventListener('click', function(e){
 });
 
 /* ===================== INIT ===================== */
-if (!localStorage.getItem('duitku_payday_setting')) {
+if(!localStorage.getItem('duitku_payday_setting')){
     localStorage.setItem('duitku_payday_setting', '1');
 }
-if (!localStorage.getItem('duitku_payday_date')) {
+if(!localStorage.getItem('duitku_payday_date')){
     localStorage.setItem('duitku_payday_date', '28');
 }
-var motion = localStorage.getItem('duitku_motion')||'on';
-if (motion === 'off') {
+var motion = localStorage.getItem('duitku_motion') || 'on';
+if(motion === 'off'){
     document.documentElement.classList.add('reduce-motion');
 }
 setAppVisibility(false);
-window.addEventListener('beforeunload', function(){ if(unsubscribe) try{unsubscribe();}catch(e){} });
+window.addEventListener('beforeunload', function(){ if(unsubscribe) try{ unsubscribe(); } catch(e){} });
 
 })();
 </script>
