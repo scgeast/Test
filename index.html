@@ -696,6 +696,21 @@ async function addFirebaseCategory(type,label,icon){
     return slug;
 }
 
+async function updateFirebaseCategory(key,label,icon){
+    if(!isPublisher) throw new Error('Hanya Publisher yang dapat mengedit kategori.');
+    var cleanLabel=String(label||'').trim();
+    if(!cleanLabel) throw new Error('Nama kategori tidak boleh kosong.');
+    var snap=await categoryCollection().doc(key).get();
+    if(!snap.exists) throw new Error('Kategori tidak ditemukan.');
+    var data=snap.data()||{};
+    await categoryCollection().doc(key).update({
+        l:cleanLabel,
+        ic:icon||data.ic||'fa-tag',
+        updatedBy:currentUser.uid,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+
 async function deleteFirebaseCategory(type,key){
     if(!isPublisher) throw new Error('Hanya Publisher yang dapat menghapus kategori.');
     await categoryCollection().doc(key).delete();
@@ -1972,7 +1987,7 @@ function openMoreView(view){
         rebuildCategoryLookup();
         var renderCategoryRows=function(type){
             var list=(getCustomCategories()[type]||[]).slice();
-            return list.length?list.map(function(c){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+(c.ic||'fa-tag')+'" style="color:var(--accent);width:18px"></i> '+c.l+'</div><div class="more-item-sub">'+(type==='income'?'Pemasukan':'Pengeluaran')+' · Firebase</div></div><button class="btn-icon del category-del" data-type="'+type+'" data-key="'+c.v+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div>';}).join(''):'<div class="section-sub">Belum ada kategori tambahan.</div>';
+            return list.length?list.map(function(c){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+(c.ic||'fa-tag')+'" style="color:var(--accent);width:18px"></i> '+c.l+'</div><div class="more-item-sub">'+(type==='income'?'Pemasukan':'Pengeluaran')+' · Firebase</div></div><div style="display:flex;align-items:center;gap:6px"><button class="btn-icon category-edit" data-type="'+type+'" data-key="'+c.v+'" title="Edit kategori"><i class="fa-solid fa-pen"></i></button><button class="btn-icon del category-del" data-type="'+type+'" data-key="'+c.v+'" title="Hapus kategori"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="section-sub">Belum ada kategori tambahan.</div>';
         };
         html='<div class="more-toolbar"><div><div class="more-toolbar-title">Kategori Transaksi</div><div class="section-sub">Kategori Publisher disimpan di Firebase dan dibagikan ke semua user/device.</div></div>'+actions+'</div>'+ 
              '<div class="settings-row"><div class="settings-label"><strong>Pemasukan</strong><span>Kategori tambahan transaksi masuk</span></div></div><div class="more-list" style="margin-bottom:16px">'+renderCategoryRows('income')+'</div>'+ 
@@ -2035,6 +2050,21 @@ function openMoreView(view){
             var label=prompt('Nama kategori baru');if(!label||!label.trim())return;
             try{await addFirebaseCategory(type,label.trim(),'fa-tag');toast('Kategori '+(type==='income'?'pemasukan':'pengeluaran')+' berhasil disimpan ke Firebase','ok');openMoreView('categories');}catch(e){toast('Gagal menambah kategori: '+e.message,'err');}
         };
+        document.querySelectorAll('.category-edit').forEach(function(btn){
+            btn.onclick=function(){
+                var key=this.dataset.key;
+                var current=(getCustomCategories()[this.dataset.type]||[]).find(function(c){return c.v===key;});
+                if(!current){toast('Kategori tidak ditemukan','err');return;}
+                var label=prompt('Edit nama kategori',current.l);
+                if(label===null)return;
+                label=label.trim();
+                if(!label){toast('Nama kategori tidak boleh kosong','err');return;}
+                updateFirebaseCategory(key,label,current.ic).then(function(){
+                    toast('Kategori berhasil diperbarui di Firebase','ok');
+                    openMoreView('categories');
+                }).catch(function(e){toast('Gagal mengedit kategori: '+e.message,'err');});
+            };
+        });
         document.querySelectorAll('.category-del').forEach(function(btn){btn.onclick=function(){var type=this.dataset.type,key=this.dataset.key;showConfirm('Hapus kategori?', 'Kategori ini akan dihapus dari Firebase dan semua user.', function(){deleteFirebaseCategory(type,key).then(function(){toast('Kategori dihapus','ok');openMoreView('categories');}).catch(function(e){toast('Gagal menghapus kategori: '+e.message,'err');});});};});
     } else if(view==='accounts'){
         var addBtn=document.getElementById('moreAddAccount');if(addBtn)addBtn.onclick=function(){var name=prompt('Nama akun, contoh: BCA');if(name&&name.trim()){var a=getAccounts();a.push({id:'a_'+Date.now(),name:name.trim(),icon:'fa-wallet'});saveAccounts(a);openMoreView('accounts');toast('Akun ditambahkan','ok');}};
