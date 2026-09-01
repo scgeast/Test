@@ -211,6 +211,13 @@
         .calendar-day:hover{background:var(--bg-card-hover)}
         .calendar-day.muted{opacity:.25;cursor:default}.calendar-day.muted:not([data-date]){pointer-events:none}.calendar-day.muted[data-date]{opacity:.42}
         .calendar-day.muted:hover{background:var(--bg-raised)}
+        .calendar-day.range-only{opacity:1;cursor:pointer}
+        .calendar-day.range-empty{opacity:0;pointer-events:none;background:transparent}
+        .calendar-range-note{font-size:10px;color:var(--fg-muted);background:var(--bg-raised);border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-bottom:10px}
+        .calendar-month-block{margin-bottom:12px}
+        .calendar-month-title{font-size:12px;font-weight:700;color:var(--fg);padding:8px 2px}
+        .category-edit,.category-del{min-width:30px;min-height:30px}
+        .category-edit{border-color:var(--accent);color:var(--accent)}
         .calendar-day.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
         .calendar-day .day-num{font-weight:700}
         .calendar-day .day-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;margin-left:3px}
@@ -693,6 +700,10 @@ async function addFirebaseCategory(type,label,icon){
     rebuildCategoryLookup();
     if(catLookup[slug]) throw new Error('Kategori tersebut sudah ada.');
     await categoryCollection().doc(slug).set({v:slug,l:label.trim(),type:type,ic:icon||'fa-tag',createdBy:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    customCategoriesCache[type].push({v:slug,l:label.trim(),ic:icon||'fa-tag'});
+    customCategoriesCache[type].sort(function(a,b){return a.l.localeCompare(b.l);});
+    rebuildCategoryLookup();
+    if(typeof fType!=='undefined' && fType && fType.value) fillCats(fType.value);
     return slug;
 }
 
@@ -709,11 +720,23 @@ async function updateFirebaseCategory(key,label,icon){
         updatedBy:currentUser.uid,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
+    ["income","expense"].forEach(function(type){
+        var item=customCategoriesCache[type].find(function(c){return c.v===key;});
+        if(item){item.l=cleanLabel;item.ic=icon||item.ic||'fa-tag';}
+        customCategoriesCache[type].sort(function(a,b){return a.l.localeCompare(b.l);});
+    });
+    rebuildCategoryLookup();
+    if(typeof fType!=='undefined' && fType && fType.value) fillCats(fType.value);
 }
 
 async function deleteFirebaseCategory(type,key){
     if(!isPublisher) throw new Error('Hanya Publisher yang dapat menghapus kategori.');
     await categoryCollection().doc(key).delete();
+    ["income","expense"].forEach(function(type){
+        customCategoriesCache[type]=customCategoriesCache[type].filter(function(c){return c.v!==key;});
+    });
+    rebuildCategoryLookup();
+    if(typeof fType!=='undefined' && fType && fType.value) fillCats(fType.value);
 }
 
 rebuildCategoryLookup();
@@ -789,6 +812,12 @@ function setAppVisibility(show){
 }
 
 function cleanupUserData() {
+    if (categoryUnsubscribe) {
+        try { categoryUnsubscribe(); } catch(e) {}
+        categoryUnsubscribe = null;
+    }
+    customCategoriesCache = {income:[], expense:[]};
+    rebuildCategoryLookup();
     if (unsubscribe) {
         try { unsubscribe(); } catch(e) {}
         unsubscribe = null;
@@ -2001,28 +2030,67 @@ function openMoreView(view){
     } else if(view==='calendar'){
         title='Calendar';
         var today=new Date();
-        var defaultStart=calStartDate||new Date(today.getFullYear(),today.getMonth(),1).getFullYear()+'-'+pad(new Date(today.getFullYear(),today.getMonth(),1).getMonth()+1)+'-01';
+        var defaultStart=calStartDate||today.getFullYear()+'-'+pad(today.getMonth()+1)+'-01';
         var defaultEnd=calEndDate||today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
         if(defaultStart>defaultEnd){var sw=defaultStart;defaultStart=defaultEnd;defaultEnd=sw;}
         calStartDate=defaultStart;calEndDate=defaultEnd;
         actions='<div class="calendar-filter-wrap"><div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calStartDate" value="'+defaultStart+'"></div><span class="date-separator">—</span><div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calEndDate" value="'+defaultEnd+'"></div></div>';
+
         var sd=new Date(defaultStart+'T00:00:00'), ed=new Date(defaultEnd+'T23:59:59');
-        var filteredTxs=allTxs.filter(function(t){var d=new Date(t.date+'T00:00:00');return d>=sd&&d<=ed;}).sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));});
-        var monthCursor=new Date(sd.getFullYear(),sd.getMonth(),1), lastMonth=new Date(ed.getFullYear(),ed.getMonth(),1), monthHtml='';
-        while(monthCursor<=lastMonth){
-            var y=monthCursor.getFullYear(),m=monthCursor.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=first.getDay();
-            var cells=['Min','Sen','Sel','Rab','Kam','Jum','Sab'].map(function(d){return '<div class="calendar-head">'+d+'</div>';}).join('');
-            for(var blank=0;blank<offset;blank++)cells+='<div class="calendar-day muted"></div>';
-            for(var day=1;day<=days;day++){
-                var ds=y+'-'+pad(m+1)+'-'+pad(day), arr=filteredTxs.filter(function(t){return t.date===ds;}), net=arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0), inRange=ds>=defaultStart&&ds<=defaultEnd, isToday=ds===today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
-                cells+='<div class="calendar-day '+(inRange?'':'muted')+' '+(isToday?'today':'')+'" data-date="'+ds+'"><strong>'+day+'</strong>'+(arr.length?'<span class="day-dot"></span><div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>':'')+'</div>';
-            }
-            monthHtml+='<div class="calendar-month-block"><div class="calendar-month-title">'+BULAN[m]+' '+y+'</div><div class="calendar-grid">'+cells+'</div></div>';
-            monthCursor.setMonth(monthCursor.getMonth()+1);
+        var filteredTxs=allTxs.filter(function(t){
+            if(!t.date)return false;
+            return t.date>=defaultStart && t.date<=defaultEnd;
+        }).sort(function(a,b){
+            return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));
+        });
+
+        // IMPORTANT: render ONLY dates inside the selected range.
+        // No days before startDate or after endDate are rendered.
+        var rangeDays=[];
+        var cursor=new Date(sd);
+        while(cursor<=ed){
+            var ds=cursor.getFullYear()+'-'+pad(cursor.getMonth()+1)+'-'+pad(cursor.getDate());
+            rangeDays.push({date:ds,day:cursor.getDate(),month:cursor.getMonth(),year:cursor.getFullYear(),dow:cursor.getDay()});
+            cursor.setDate(cursor.getDate()+1);
         }
-        var totalIn=filteredTxs.filter(function(t){return t.type==='income';}).reduce(function(v,t){return v+t.amount;},0),totalOut=filteredTxs.filter(function(t){return t.type==='expense';}).reduce(function(v,t){return v+t.amount;},0);
-        var rows=filteredTxs.length?filteredTxs.map(function(t){var c=catLookup[t.category]||{l:t.category};return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+(t.type==='income'?'🟢 ':'🔴 ')+(t.note||c.l)+'</div><div class="more-item-sub">'+t.date+(t.time?' · '+t.time:'')+' · '+c.l+'</div></div><span class="more-pill" style="color:'+(t.type==='income'?'var(--income)':'var(--expense)')+'">'+(t.type==='income'?'+':'-')+fmtRp(t.amount)+'</span></div>';}).join(''):'<div class="empty" style="padding:30px 10px"><div class="empty-ic"><i class="fa-solid fa-calendar-xmark"></i></div><p>Tidak ada transaksi pada rentang tanggal ini.</p></div>';
-        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Calendar</div><div class="section-sub">Semua bulan yang termasuk filter tanggal ditampilkan otomatis.</div></div>'+actions+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="more-pill">Transaksi: '+filteredTxs.length+'</span><span class="more-pill" style="color:var(--income)">Masuk: '+fmtRp(totalIn)+'</span><span class="more-pill" style="color:var(--expense)">Keluar: '+fmtRp(totalOut)+'</span></div>'+monthHtml+'<div id="calendarDetail"></div><div style="margin-top:14px"><div class="more-toolbar-title" style="margin-bottom:8px">Daftar transaksi terfilter</div><div class="more-list">'+rows+'</div></div>';
+
+        var monthGroups=[];
+        rangeDays.forEach(function(item){
+            var key=item.year+'-'+item.month;
+            var group=monthGroups.find(function(g){return g.key===key;});
+            if(!group){group={key:key,year:item.year,month:item.month,days:[]};monthGroups.push(group);}
+            group.days.push(item);
+        });
+
+        var monthHtml=monthGroups.map(function(group){
+            var cells=['Min','Sen','Sel','Rab','Kam','Jum','Sab'].map(function(d){return '<div class="calendar-head">'+d+'</div>';}).join('');
+            // Only add leading placeholders when they fall before the first
+            // selected date in this month; no actual out-of-range dates.
+            var firstDay=group.days[0];
+            for(var b=0;b<firstDay.dow;b++) cells+='<div class="calendar-day range-empty"></div>';
+            group.days.forEach(function(item){
+                var arr=filteredTxs.filter(function(t){return t.date===item.date;});
+                var net=arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0);
+                var isToday=item.date===today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+                cells+='<div class="calendar-day range-only '+(isToday?'today':'')+'" data-date="'+item.date+'">'+
+                    '<strong>'+item.day+'</strong>'+
+                    (arr.length?'<span class="day-dot"></span><div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>':'')+
+                    '</div>';
+            });
+            return '<div class="calendar-month-block"><div class="calendar-month-title">'+BULAN[group.month]+' '+group.year+'</div><div class="calendar-grid">'+cells+'</div></div>';
+        }).join('');
+
+        var totalIn=filteredTxs.filter(function(t){return t.type==='income';}).reduce(function(v,t){return v+t.amount;},0);
+        var totalOut=filteredTxs.filter(function(t){return t.type==='expense';}).reduce(function(v,t){return v+t.amount;},0);
+        var rows=filteredTxs.length?filteredTxs.map(function(t){
+            var c=catLookup[t.category]||{l:t.category};
+            return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+(t.type==='income'?'🟢 ':'🔴 ')+(t.note||c.l)+'</div><div class="more-item-sub">'+t.date+(t.time?' · '+t.time:'')+' · '+c.l+'</div></div><span class="more-pill" style="color:'+(t.type==='income'?'var(--income)':'var(--expense)')+'">'+(t.type==='income'?'+':'-')+fmtRp(t.amount)+'</span></div>';
+        }).join(''):'<div class="empty" style="padding:30px 10px"><div class="empty-ic"><i class="fa-solid fa-calendar-xmark"></i></div><p>Tidak ada transaksi pada rentang tanggal ini.</p><p class="sub">Kalender tetap hanya menampilkan tanggal yang dipilih.</p></div>';
+
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Calendar</div><div class="section-sub">Hanya tanggal yang berada di dalam filter yang ditampilkan.</div></div>'+actions+'</div>'+
+             '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="more-pill">'+defaultStart+' → '+defaultEnd+'</span><span class="more-pill">Transaksi: '+filteredTxs.length+'</span><span class="more-pill" style="color:var(--income)">Masuk: '+fmtRp(totalIn)+'</span><span class="more-pill" style="color:var(--expense)">Keluar: '+fmtRp(totalOut)+'</span></div>'+
+             '<div class="calendar-range-note"><i class="fa-solid fa-filter"></i> Rentang aktif: <strong>'+defaultStart+' s/d '+defaultEnd+'</strong></div>'+monthHtml+'<div id="calendarDetail"></div>'+
+             '<div style="margin-top:14px"><div class="more-toolbar-title" style="margin-bottom:8px">Daftar transaksi terfilter</div><div class="more-list">'+rows+'</div></div>';
         window._calendarFilteredTxs=filteredTxs;
     } else if(view==='recurring'){
         title='Recurring Transactions';actions='<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
@@ -2072,9 +2140,18 @@ function openMoreView(view){
         document.querySelectorAll('.account-del').forEach(function(b){b.onclick=function(){var a=getAccounts(),i=parseInt(this.dataset.index,10);if(a.length<=1){toast('Minimal satu akun harus tersedia','err');return;}showConfirm('Hapus akun?',a[i].name+' akan dihapus.',function(){a.splice(i,1);saveAccounts(a);openMoreView('accounts');toast('Akun dihapus','inf');});};});
     } else if(view==='calendar'){
         var startInput=document.getElementById('calStartDate'),endInput=document.getElementById('calEndDate');
-        var updateCalendarFilter=function(){var s=startInput.value,e=endInput.value;if(!s||!e)return;if(s>e){if(this===startInput)e=s;else s=e;startInput.value=s;endInput.value=e;}calStartDate=s;calEndDate=e;openMoreView('calendar');};
-        startInput.onchange=updateCalendarFilter;endInput.onchange=updateCalendarFilter;
-        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){el.onclick=function(){var date=this.dataset.date,arr=window._calendarFilteredTxs.filter(function(t){return t.date===date;}),box=document.getElementById('calendarDetail');box.innerHTML='<div class="card" style="padding:13px;background:var(--bg-raised);margin-top:12px"><strong>'+date+'</strong><div class="section-sub" style="margin-top:6px">'+(arr.length?arr.map(function(t){var c=catLookup[t.category]||{l:t.category};return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+(t.time?' '+t.time:'')+' — '+(t.note||c.l);}).join('<br>'):'Tidak ada transaksi pada tanggal ini.')+'</div></div>';};});
+        var updateCalendarFilter=function(){
+            var s=startInput.value,e=endInput.value;if(!s||!e)return;
+            if(s>e){if(this===startInput)e=s;else s=e;startInput.value=s;endInput.value=e;}
+            calStartDate=s;calEndDate=e;openMoreView('calendar');
+        };
+        if(startInput){startInput.addEventListener('change',updateCalendarFilter);startInput.addEventListener('input',updateCalendarFilter);}
+        if(endInput){endInput.addEventListener('change',updateCalendarFilter);endInput.addEventListener('input',updateCalendarFilter);}
+        document.querySelectorAll('.calendar-day.range-only[data-date]').forEach(function(el){el.onclick=function(){
+            var date=this.dataset.date,arr=window._calendarFilteredTxs.filter(function(t){return t.date===date;}),box=document.getElementById('calendarDetail');
+            if(!box)return;
+            box.innerHTML='<div class="card" style="padding:13px;background:var(--bg-raised);margin-top:12px"><strong>'+date+'</strong><div class="section-sub" style="margin-top:6px">'+(arr.length?arr.map(function(t){var c=catLookup[t.category]||{l:t.category};return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+(t.time?' '+t.time:'')+' — '+(t.note||c.l);}).join('<br>'):'Tidak ada transaksi pada tanggal ini.')+'</div></div>';
+        };});
     } else if(view==='recurring'){
         document.getElementById('moreAddRecurring').onclick=function(){var name=prompt('Nama transaksi rutin');if(!name)return;var amount=parseInt((prompt('Jumlah (Rp)','0')||'').replace(/\D/g,''),10);if(!amount)return;var day=parseInt(prompt('Tanggal setiap bulan','1'),10)||1;var type=prompt('Tipe: P = Pemasukan, K = Pengeluaran','K');type=String(type||'K').toLowerCase();type=(type==='p'||type==='pemasukan'||type==='income')?'income':'expense';var cats=getCategories(type);var cat=prompt('Kategori\n'+cats.map(function(c){return c.v+' = '+c.l;}).join('\n'),'tagihan');if(!cat||!cats.some(function(c){return c.v===cat;}))cat=type==='expense'?'tagihan':(cats[0]&&cats[0].v);var rr=getRecurring();rr.push({name:name.trim(),amount:amount,day:Math.min(Math.max(day,1),31),type:type,category:cat});saveRecurring(rr);openMoreView('recurring');toast('Transaksi rutin ditambahkan','ok');};
         document.querySelectorAll('.recurring-del').forEach(function(b){b.onclick=function(){var rr=getRecurring();rr.splice(parseInt(this.dataset.index,10),1);saveRecurring(rr);openMoreView('recurring');toast('Transaksi rutin dihapus','inf');};});
@@ -2154,6 +2231,8 @@ async function onAuthenticated(user, profile){
   document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'':'none';});
   if(isPublisher){document.getElementById('publisherSwitcher').style.display='flex';await populatePublisherSwitcher();}
   else document.getElementById('publisherSwitcher').style.display='none';
+  // Firebase is the single source of truth for custom categories.
+  startCategoryListener();
   store.init();
   renderDashboard();
 }
