@@ -209,7 +209,7 @@
         .calendar-head{font-size:9px;color:var(--fg-muted);text-align:center;padding:5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
         .calendar-day{min-height:72px;border:0;border-radius:0;padding:8px;background:var(--bg-raised);font-size:10px;cursor:pointer;color:var(--fg);transition:background .2s}
         .calendar-day:hover{background:var(--bg-card-hover)}
-        .calendar-day.muted{opacity:.25;cursor:default}
+        .calendar-day.muted{opacity:.25;cursor:default}.calendar-day.muted:not([data-date]){pointer-events:none}.calendar-day.muted[data-date]{opacity:.42}
         .calendar-day.muted:hover{background:var(--bg-raised)}
         .calendar-day.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
         .calendar-day .day-num{font-weight:700}
@@ -575,6 +575,7 @@
         <div class="section-head"><div><div class="section-kicker">Utilities</div><div class="section-title">More</div><div class="section-sub">Fitur pendukung untuk menjaga data tetap rapi.</div></div></div>
         <div class="more-grid">
             <div class="card more-card publisher-only" data-more-view="users"><i class="fa-solid fa-users more-icon"></i><span class="more-arrow">›</span><h4>Users</h4><p>Tambah pengguna, lihat User ID dan status perubahan password.</p><button class="btn-secondary more-open" data-view="users">Kelola User</button></div>
+            <div class="card more-card publisher-only" data-more-view="categories"><i class="fa-solid fa-tags more-icon"></i><span class="more-arrow">›</span><h4>Categories</h4><p>Publisher dapat menambah kategori Pemasukan atau Pengeluaran baru.</p><button class="btn-secondary more-open" data-view="categories">Kelola Kategori</button></div>
             <div class="card more-card" data-more-view="accounts"><i class="fa-solid fa-wallet more-icon"></i><span class="more-arrow">›</span><h4>Accounts</h4><p>Kelola dompet dan rekening, lalu lihat total saldo masing-masing akun.</p><button class="btn-secondary more-open" data-view="accounts">Buka</button></div>
             <div class="card more-card" data-more-view="calendar"><i class="fa-solid fa-calendar-days more-icon"></i><span class="more-arrow">›</span><h4>Calendar</h4><p>Visualisasikan aktivitas pemasukan dan pengeluaran berdasarkan tanggal.</p><button class="btn-secondary more-open" data-view="calendar">Buka</button></div>
             <div class="card more-card"><i class="fa-solid fa-file-export more-icon"></i><h4>Export Data</h4><p>Backup transaksi periode aktif dengan cepat dalam format CSV.</p><button class="btn-secondary" onclick="document.getElementById('btnExport').click()">Export CSV</button></div>
@@ -628,13 +629,79 @@ var CAT_COLORS = {
     pendidikan:'#748ffc',lain_keluar:'#868e96'
 };
 var catLookup = {};
-CATS.income.concat(CATS.expense).forEach(function(c){ catLookup[c.v] = c; });
+var customCategoriesCache = {income:[], expense:[]};
+var categoryUnsubscribe = null;
+
+function getCustomCategories() {
+    return {
+        income: Array.isArray(customCategoriesCache.income) ? customCategoriesCache.income.slice() : [],
+        expense: Array.isArray(customCategoriesCache.expense) ? customCategoriesCache.expense.slice() : []
+    };
+}
+
+function rebuildCategoryLookup() {
+    catLookup = {};
+    CATS.income.concat(CATS.expense).forEach(function(c){ catLookup[c.v] = c; });
+    customCategoriesCache.income.concat(customCategoriesCache.expense).forEach(function(c){ catLookup[c.v] = c; });
+    if (typeof PUBLISHER_EXPENSE_CATS !== 'undefined') {
+        PUBLISHER_EXPENSE_CATS.forEach(function(c){ catLookup[c.v] = c; });
+    }
+}
 
 var PUBLISHER_EXPENSE_CATS = [
     {v:'belanja_harian',l:'Belanja Harian',ic:'fa-basket-shopping'},
     {v:'makan_siang_kantor',l:'Makan Siang di Kantor',ic:'fa-utensils'},
     {v:'rokok',l:'Cigar/Cigarette',ic:'fa-smoking'}
 ];
+
+function categoryCollection(){
+    return db.collection('appSettings').doc('transactionCategories').collection('items');
+}
+
+function startCategoryListener(){
+    if(categoryUnsubscribe){try{categoryUnsubscribe();}catch(e){}categoryUnsubscribe=null;}
+    if(!currentUser){customCategoriesCache={income:[],expense:[]};rebuildCategoryLookup();return;}
+    try{
+        categoryUnsubscribe=categoryCollection().onSnapshot(function(snap){
+            var data={income:[],expense:[]};
+            snap.forEach(function(doc){
+                var c=doc.data()||{};
+                if(c.v && (c.type==='income'||c.type==='expense')){
+                    data[c.type].push({v:c.v,l:c.l||c.v,ic:c.ic||'fa-tag'});
+                }
+            });
+            data.income.sort(function(a,b){return a.l.localeCompare(b.l);});
+            data.expense.sort(function(a,b){return a.l.localeCompare(b.l);});
+            customCategoriesCache=data;
+            rebuildCategoryLookup();
+            if(typeof fType!=='undefined' && fType && fType.value) fillCats(fType.value);
+            if(document.getElementById('moreWorkspace') && document.getElementById('moreWorkspace').style.display!=='none'){
+                var active=document.getElementById('moreWorkspace').getAttribute('data-more-active-view');
+                if(active==='categories') openMoreView('categories');
+            }
+        },function(err){
+            console.warn('Category listener:',err.message||err);
+            toast('Kategori Firebase gagal dimuat: '+(err.message||'cek Firestore Rules'),'err');
+        });
+    }catch(e){console.warn(e);}
+}
+
+async function addFirebaseCategory(type,label,icon){
+    if(!isPublisher) throw new Error('Hanya Publisher yang dapat menambah kategori.');
+    var slug=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,50);
+    if(!slug) throw new Error('Nama kategori tidak valid.');
+    rebuildCategoryLookup();
+    if(catLookup[slug]) throw new Error('Kategori tersebut sudah ada.');
+    await categoryCollection().doc(slug).set({v:slug,l:label.trim(),type:type,ic:icon||'fa-tag',createdBy:currentUser.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    return slug;
+}
+
+async function deleteFirebaseCategory(type,key){
+    if(!isPublisher) throw new Error('Hanya Publisher yang dapat menghapus kategori.');
+    await categoryCollection().doc(key).delete();
+}
+
+rebuildCategoryLookup();
 
 /* ===================== STATE ===================== */
 var curMonth = new Date();
@@ -1552,7 +1619,7 @@ function renderDashboard() {
         var period = getCurrentPaydayPeriod();
         openingBalance = getPaydayOpeningBalance();
         totalBalance = openingBalance + st.income - st.expense;
-        periodLabel = '📅 ' + period.startDate + ' — ' + period.endDate;
+        periodLabel = 'Periode: ' + period.startDate + ' — ' + period.endDate;
     } else {
         openingBalance = getCurrentMonthOpeningBalance();
         totalBalance = openingBalance + st.income - st.expense;
@@ -1714,19 +1781,36 @@ function setType(type) {
     fillCats(type);
 }
 
-function getExpenseCategories() {
-    var cats = CATS.expense.slice();
-    if (isPublisher) {
-        PUBLISHER_EXPENSE_CATS.forEach(function(c){ cats.push(c); });
+function getCategories(type) {
+    var base = type === 'income' ? CATS.income.slice() : CATS.expense.slice();
+    if (type === 'expense' && isPublisher) {
+        PUBLISHER_EXPENSE_CATS.forEach(function(c){ base.push(c); });
     }
-    return cats;
+    var custom = getCustomCategories()[type] || [];
+    custom.forEach(function(c){ base.push(c); });
+    var seen = {};
+    return base.filter(function(c){
+        if (seen[c.v]) return false;
+        seen[c.v] = true;
+        return true;
+    });
+}
+
+function getExpenseCategories() {
+    return getCategories('expense');
 }
 
 function fillCats(type) {
+    rebuildCategoryLookup();
     var prev = fCat.value;
     fCat.innerHTML = '<option value="" disabled selected>Pilih kategori</option>';
-    var list = type === 'income' ? CATS.income.slice() : getExpenseCategories();
-    list.forEach(function(c){ var o=document.createElement('option'); o.value=c.v; o.textContent=c.l; fCat.appendChild(o); });
+    var list = getCategories(type);
+    list.forEach(function(c){ 
+        var o=document.createElement('option'); 
+        o.value=c.v; 
+        o.textContent=c.l; 
+        fCat.appendChild(o); 
+    });
     if (list.some(function(c){ return c.v===prev; })) fCat.value = prev;
 }
 
@@ -1873,199 +1957,105 @@ function saveRecurring(a){localStorage.setItem('duitku_recurring',JSON.stringify
 function openMoreView(view){
     if(!moreWorkspace)return;
     moreWorkspace.style.display='block';
+    moreWorkspace.setAttribute('data-more-active-view',view);
     var html='', title='', actions='';
+
     if(view==='users'){
         if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
-        title='User Management';actions='<button class="btn-secondary" id="moreAddUser"><i class="fa-solid fa-user-plus"></i> Tambah User</button>';
+        title='User Management';
+        actions='<button class="btn-secondary" id="moreAddUser"><i class="fa-solid fa-user-plus"></i> Tambah User</button>';
         html='<div class="more-toolbar"><div><div class="more-toolbar-title">Pengguna DuitKu</div><div class="section-sub">Data login dan profil pengguna.</div></div>'+actions+'</div><div class="more-list" id="publisherUserList"><div class="section-sub">Memuat pengguna...</div></div>';
+    } else if(view==='categories'){
+        if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
+        title='Category Management';
+        actions='<button class="btn-secondary" id="moreAddCategory"><i class="fa-solid fa-plus"></i> Tambah Kategori</button>';
+        rebuildCategoryLookup();
+        var renderCategoryRows=function(type){
+            var list=(getCustomCategories()[type]||[]).slice();
+            return list.length?list.map(function(c){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+(c.ic||'fa-tag')+'" style="color:var(--accent);width:18px"></i> '+c.l+'</div><div class="more-item-sub">'+(type==='income'?'Pemasukan':'Pengeluaran')+' · Firebase</div></div><button class="btn-icon del category-del" data-type="'+type+'" data-key="'+c.v+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div>';}).join(''):'<div class="section-sub">Belum ada kategori tambahan.</div>';
+        };
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Kategori Transaksi</div><div class="section-sub">Kategori Publisher disimpan di Firebase dan dibagikan ke semua user/device.</div></div>'+actions+'</div>'+ 
+             '<div class="settings-row"><div class="settings-label"><strong>Pemasukan</strong><span>Kategori tambahan transaksi masuk</span></div></div><div class="more-list" style="margin-bottom:16px">'+renderCategoryRows('income')+'</div>'+ 
+             '<div class="settings-row"><div class="settings-label"><strong>Pengeluaran</strong><span>Kategori tambahan transaksi keluar</span></div></div><div class="more-list">'+renderCategoryRows('expense')+'</div>';
     } else if(view==='accounts'){
-        title='Accounts / Dompet';actions='<button class="btn-secondary" id="moreAddAccount"><i class="fa-solid fa-plus"></i> Tambah Akun</button>';
-        var ac=getAccounts();var total=0;var monthTx=allTxs;
-        var accountHtml=ac.map(function(a,i){var bal=0;monthTx.forEach(function(t){var txAcc=t.account||'bank';if(txAcc===a.id)bal+=(t.type==='income'?t.amount:-t.amount);});total+=bal;return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+a.icon+'" style="color:var(--accent);width:18px"></i> '+a.name+'</div><div class="more-item-sub">Saldo berdasarkan transaksi yang terhubung ke akun ini</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+fmtRp(bal)+'</span><button class="btn-icon account-edit" data-index="'+i+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon del account-del" data-index="'+i+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div></div>';}).join('');
-        html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Total saldo akun: '+fmtRp(total)+'</div></div>'+actions+'</div><div class="more-list">'+accountHtml+'</div>';
+        title='Accounts / Dompet';
+        actions='<button class="btn-secondary" id="moreAddAccount"><i class="fa-solid fa-plus"></i> Tambah Akun</button>';
+        var ac=getAccounts(), total=0;
+        var accountHtml=ac.map(function(a,i){var bal=0;allTxs.forEach(function(t){if((t.account||'bank')===a.id)bal+=(t.type==='income'?t.amount:-t.amount);});total+=bal;return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+a.icon+'" style="color:var(--accent);width:18px"></i> '+a.name+'</div><div class="more-item-sub">Saldo dari transaksi akun ini</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+fmtRp(bal)+'</span><button class="btn-icon account-edit" data-index="'+i+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon del account-del" data-index="'+i+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div></div>';}).join('');
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Total saldo akun: '+fmtRp(total)+'</div></div>'+actions+'</div><div class="more-list">'+(accountHtml||'<div class="empty"><p>Belum ada akun.</p></div>')+'</div>';
     } else if(view==='calendar'){
         title='Calendar';
-        var now = new Date();
-        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        var defaultStart = firstDay.toISOString().split('T')[0];
-        var defaultEnd = now.toISOString().split('T')[0];
-        
-        if (calStartDate) defaultStart = calStartDate;
-        if (calEndDate) defaultEnd = calEndDate;
-        
-        actions = '<div class="calendar-filter-wrap">' +
-            '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calStartDate" value="'+defaultStart+'"></div>' +
-            '<span class="date-separator">—</span>' +
-            '<div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calEndDate" value="'+defaultEnd+'"></div>' +
-            '</div>';
-        
-        var startDate = new Date(defaultStart + 'T00:00:00');
-        var endDate = new Date(defaultEnd + 'T23:59:59');
-        
-        var filteredTxs = allTxs.filter(function(t) {
-            var d = new Date(t.date + 'T00:00:00');
-            return d >= startDate && d <= endDate;
-        });
-        
-        var y = startDate.getFullYear();
-        var m = startDate.getMonth();
-        var first = new Date(y, m, 1);
-        var days = new Date(y, m + 1, 0).getDate();
-        var start = first.getDay();
-        var cells = '';
-        ['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){cells+='<div class="calendar-head">'+d+'</div>';});
-        for(var i=0;i<start;i++)cells+='<div class="calendar-day muted"></div>';
-        for(var day=1;day<=days;day++){
-            var ds = y+'-'+pad(m+1)+'-'+pad(day);
-            var arr = filteredTxs.filter(function(t){return t.date === ds;});
-            var net = arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0);
-            var dot = arr.length ? '<span class="day-dot"></span>' : '';
-            var isToday = (day === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
-            cells+='<div class="calendar-day '+(isToday?'today':'')+'" data-date="'+ds+'">'+
-                '<strong>'+day+'</strong>'+dot+
-                (arr.length ? '<div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>' : '')+
-                '</div>';
+        var today=new Date();
+        var defaultStart=calStartDate||new Date(today.getFullYear(),today.getMonth(),1).getFullYear()+'-'+pad(new Date(today.getFullYear(),today.getMonth(),1).getMonth()+1)+'-01';
+        var defaultEnd=calEndDate||today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+        if(defaultStart>defaultEnd){var sw=defaultStart;defaultStart=defaultEnd;defaultEnd=sw;}
+        calStartDate=defaultStart;calEndDate=defaultEnd;
+        actions='<div class="calendar-filter-wrap"><div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calStartDate" value="'+defaultStart+'"></div><span class="date-separator">—</span><div class="date-input-group"><i class="fa-regular fa-calendar"></i><input type="date" id="calEndDate" value="'+defaultEnd+'"></div></div>';
+        var sd=new Date(defaultStart+'T00:00:00'), ed=new Date(defaultEnd+'T23:59:59');
+        var filteredTxs=allTxs.filter(function(t){var d=new Date(t.date+'T00:00:00');return d>=sd&&d<=ed;}).sort(function(a,b){return new Date(a.date+'T'+(a.time||'00:00'))-new Date(b.date+'T'+(b.time||'00:00'));});
+        var monthCursor=new Date(sd.getFullYear(),sd.getMonth(),1), lastMonth=new Date(ed.getFullYear(),ed.getMonth(),1), monthHtml='';
+        while(monthCursor<=lastMonth){
+            var y=monthCursor.getFullYear(),m=monthCursor.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),offset=first.getDay();
+            var cells=['Min','Sen','Sel','Rab','Kam','Jum','Sab'].map(function(d){return '<div class="calendar-head">'+d+'</div>';}).join('');
+            for(var blank=0;blank<offset;blank++)cells+='<div class="calendar-day muted"></div>';
+            for(var day=1;day<=days;day++){
+                var ds=y+'-'+pad(m+1)+'-'+pad(day), arr=filteredTxs.filter(function(t){return t.date===ds;}), net=arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0), inRange=ds>=defaultStart&&ds<=defaultEnd, isToday=ds===today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+                cells+='<div class="calendar-day '+(inRange?'':'muted')+' '+(isToday?'today':'')+'" data-date="'+ds+'"><strong>'+day+'</strong>'+(arr.length?'<span class="day-dot"></span><div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>':'')+'</div>';
+            }
+            monthHtml+='<div class="calendar-month-block"><div class="calendar-month-title">'+BULAN[m]+' '+y+'</div><div class="calendar-grid">'+cells+'</div></div>';
+            monthCursor.setMonth(monthCursor.getMonth()+1);
         }
-        
-        var detailHtml = '<div id="calendarDetail" style="margin-top:12px"></div>';
-        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Filter berdasarkan rentang tanggal</div></div>'+actions+'</div>' +
-               '<div class="calendar-grid">'+cells+'</div>'+detailHtml;
-               
-        window._calendarFilteredTxs = filteredTxs;
-        
-        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){
-            el.onclick=function(){
-                var date = this.getAttribute('data-date');
-                var arr = window._calendarFilteredTxs ? 
-                    window._calendarFilteredTxs.filter(function(t){return t.date === date;}) : 
-                    allTxs.filter(function(t){return t.date === date;});
-                var box = document.getElementById('calendarDetail');
-                box.innerHTML = '<div class="card" style="padding:13px;background:var(--bg-raised)">'+
-                    '<strong style="font-size:12px;color:var(--fg)">'+date+'</strong>'+
-                    '<div class="section-sub" style="margin-bottom:6px">'+
-                    (arr.length ? arr.map(function(t){
-                        var timeDisplay = t.time ? ' ' + t.time : '';
-                        return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+timeDisplay+
-                        ' — '+((t.note||catLookup[t.category]||{l:t.category}).l);
-                    }).join('<br>') : 'Tidak ada transaksi pada tanggal ini.')+
-                    '</div></div>';
-            };
-        });
-        
-        var startInput = document.getElementById('calStartDate');
-        var endInput = document.getElementById('calEndDate');
-        
-        function updateCalendarFilter() {
-            calStartDate = startInput.value;
-            calEndDate = endInput.value;
-            openMoreView('calendar');
-        }
-        
-        if (startInput) {
-            startInput.addEventListener('change', updateCalendarFilter);
-        }
-        if (endInput) {
-            endInput.addEventListener('change', updateCalendarFilter);
-        }
-        
+        var totalIn=filteredTxs.filter(function(t){return t.type==='income';}).reduce(function(v,t){return v+t.amount;},0),totalOut=filteredTxs.filter(function(t){return t.type==='expense';}).reduce(function(v,t){return v+t.amount;},0);
+        var rows=filteredTxs.length?filteredTxs.map(function(t){var c=catLookup[t.category]||{l:t.category};return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+(t.type==='income'?'🟢 ':'🔴 ')+(t.note||c.l)+'</div><div class="more-item-sub">'+t.date+(t.time?' · '+t.time:'')+' · '+c.l+'</div></div><span class="more-pill" style="color:'+(t.type==='income'?'var(--income)':'var(--expense)')+'">'+(t.type==='income'?'+':'-')+fmtRp(t.amount)+'</span></div>';}).join(''):'<div class="empty" style="padding:30px 10px"><div class="empty-ic"><i class="fa-solid fa-calendar-xmark"></i></div><p>Tidak ada transaksi pada rentang tanggal ini.</p></div>';
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Calendar</div><div class="section-sub">Semua bulan yang termasuk filter tanggal ditampilkan otomatis.</div></div>'+actions+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="more-pill">Transaksi: '+filteredTxs.length+'</span><span class="more-pill" style="color:var(--income)">Masuk: '+fmtRp(totalIn)+'</span><span class="more-pill" style="color:var(--expense)">Keluar: '+fmtRp(totalOut)+'</span></div>'+monthHtml+'<div id="calendarDetail"></div><div style="margin-top:14px"><div class="more-toolbar-title" style="margin-bottom:8px">Daftar transaksi terfilter</div><div class="more-list">'+rows+'</div></div>';
+        window._calendarFilteredTxs=filteredTxs;
     } else if(view==='recurring'){
         title='Recurring Transactions';actions='<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
-        var rr=getRecurring();html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Disimpan di perangkat lokal.</div></div>'+actions+'</div><div class="more-list">'+(rr.length?rr.map(function(r,i){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+'</div>';
-        document.querySelectorAll('.recurring-del').forEach(function(b){b.onclick=function(){var rr=getRecurring();rr.splice(parseInt(this.dataset.index,10),1);saveRecurring(rr);openMoreView('recurring');};});
-        document.getElementById('moreAddRecurring').onclick=function(){var name=prompt('Nama transaksi rutin');if(!name)return;var amount=parseInt((prompt('Jumlah (Rp)','0')||'').replace(/\D/g,''),10);if(!amount)return;var day=parseInt(prompt('Tanggal setiap bulan','1'),10)||1;var rr=getRecurring();rr.push({name:name,amount:amount,day:Math.min(Math.max(day,1),31),type:'expense',category:'tagihan'});saveRecurring(rr);openMoreView('recurring');toast('Transaksi rutin ditambahkan','ok');};
+        var rr=getRecurring();
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Transaksi Rutin</div><div class="section-sub">Daftar rutin tersimpan di perangkat ini.</div></div>'+actions+'</div><div class="more-list">'+(rr.length?rr.map(function(r,i){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+'</div>';
     } else if(view==='safety'){
         if(!isPublisher){toast('Menu ini khusus publisher','err');return;}
         title='Data Safety & Sync';actions='<button class="btn-secondary" id="moreBackup"><i class="fa-solid fa-download"></i> Backup JSON</button>';
-        html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Backup transaksi + data lokal user aktif.</div></div>'+actions+'</div><div class="more-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-cloud" style="color:var(--accent);width:18px"></i> Cloud</div><div class="more-item-sub">Firestore Real-time</div></div><span class="more-pill">AKTIF</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">Restore Backup JSON</div><div class="more-item-sub">Restore ke lokal untuk user aktif.</div></div><button class="btn-secondary" id="moreRestore">Restore</button></div></div>';
-        document.getElementById('moreBackup').onclick=function(){var payload={version:2,createdAt:new Date().toISOString(),transactions:allTxs,budgets:getBudgets(),accounts:getAccounts(),recurring:getRecurring()};var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DuitKu_Backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);toast('Backup JSON berhasil dibuat','ok');};
-        document.getElementById('moreRestore').onclick=function(){var input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=function(){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!Array.isArray(d.transactions))throw new Error('Format backup tidak valid');localStorage.setItem('duitku_txs',JSON.stringify(d.transactions));if(d.budgets)localStorage.setItem(budgetStorageKey(),JSON.stringify(d.budgets));if(d.accounts)localStorage.setItem(accountsStorageKey(),JSON.stringify(d.accounts));if(d.recurring)localStorage.setItem('duitku_recurring',JSON.stringify(d.recurring));allTxs=d.transactions;renderAll();toast('Backup berhasil dipulihkan','ok');}catch(e){toast('Backup tidak valid','err');}};r.readAsText(f);};input.click();};
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Data Safety & Sync</div><div class="section-sub">Backup dan restore data yang dapat dipulihkan kembali.</div></div>'+actions+'</div><div class="more-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-cloud" style="color:var(--accent);width:18px"></i> Firestore</div><div class="more-item-sub">Transaksi aktif: '+allTxs.length+' data</div></div><span class="more-pill">'+(storeMode==='firestore'?'ONLINE':'LOCAL')+'</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">Restore Backup JSON</div><div class="more-item-sub">Mengganti data transaksi lokal user aktif.</div></div><button class="btn-secondary" id="moreRestore">Restore</button></div></div>';
     } else if(view==='settings'){
         title='Settings';
-        var paydaySetting = localStorage.getItem('duitku_payday_setting') || '1';
-        var paydayDate = parseInt(localStorage.getItem('duitku_payday_date') || '28', 10);
-        
-        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Preferensi DuitKu</div><div class="section-sub">Pengaturan tersimpan di perangkat ini.</div></div></div>' +
-             '<div class="settings-row"><div class="settings-label"><strong>Format Mata Uang</strong><span>Format nominal aplikasi</span></div><select class="settings-select" id="settingCurrency"><option value="IDR">IDR — Rupiah</option></select></div>' +
-             '<div class="settings-row"><div class="settings-label"><strong>Animasi</strong><span>Animasi counter dan perpindahan panel</span></div><select class="settings-select" id="settingMotion"><option value="on">Aktif</option><option value="off">Minimal</option></select></div>' +
-             '<div class="settings-row" style="border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:8px">' +
-             '<div class="settings-label"><strong style="color:var(--accent)">📅 Periode Gajian</strong><span>Atur tanggal gajian/pemasukan utama untuk perhitungan siklus keuangan</span></div>' +
-             '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-             '<select class="settings-select" id="settingPayday" style="min-width:80px">' +
-             '<option value="1" '+(paydaySetting==='1'?'selected':'')+'>Aktif</option>' +
-             '<option value="0" '+(paydaySetting==='0'?'selected':'')+'>Nonaktif</option>' +
-             '</select>' +
-             '<span style="color:var(--fg-muted);font-size:11px">Tanggal</span>' +
-             '<select class="settings-select" id="settingPaydayDate" style="min-width:70px">' +
-             Array.from({length:31}, function(_,i) { return '<option value="'+(i+1)+'" '+((i+1)===paydayDate?'selected':'')+'>'+(i+1)+'</option>'; }).join('') +
-             '</select>' +
-             '</div>' +
-             '</div>' +
-             '<div style="padding:10px 14px;background:var(--bg-raised);border-radius:10px;margin:6px 0 12px;font-size:12px;color:var(--fg-dim);border-left:3px solid var(--warning)">' +
-             '<i class="fa-solid fa-bullseye" style="color:var(--warning);margin-right:6px"></i> ' +
-             '<strong>Budget & Target mengikuti siklus gajian.</strong> ' +
-             'Data tidak reset di awal bulan kalender, melainkan mengikuti periode gajian yang dipilih.' +
-             '</div>' +
-             '<div style="padding:8px 14px;background:var(--bg);border-radius:8px;margin:4px 0 10px;font-size:11px;color:var(--fg-muted)">' +
-             '<i class="fa-regular fa-calendar" style="color:var(--accent);margin-right:6px"></i> ' +
-             'Periode saat ini: <strong style="color:var(--fg)">' + getCurrentPaydayPeriod().startDate + ' — ' + getCurrentPaydayPeriod().endDate + '</strong>' +
-             '</div>' +
-             '<div class="settings-row"><div class="settings-label"><strong>Reset data lokal</strong><span>Hanya membersihkan cache browser</span></div><button class="btn-secondary" id="moreClear">Bersihkan Cache</button></div>';
-        moreWorkspace.innerHTML=html;
-        
-        var paydaySel = document.getElementById('settingPayday');
-        var paydayDateSel = document.getElementById('settingPaydayDate');
-        
-        if(paydaySel) {
-            paydaySel.onchange = function() {
-                localStorage.setItem('duitku_payday_setting', this.value);
-                toast('Pengaturan periode gajian diperbarui','ok');
-                renderAll();
-                renderBudget();
-            };
-        }
-        if(paydayDateSel) {
-            paydayDateSel.onchange = function() {
-                localStorage.setItem('duitku_payday_date', this.value);
-                toast('Tanggal gajian diubah ke tanggal ' + this.value,'ok');
-                renderAll();
-                renderBudget();
-            };
-        }
-        
-        var motionSel = document.getElementById('settingMotion');
-        if(motionSel) {
-            var motion = localStorage.getItem('duitku_motion')||'on';
-            motionSel.value=motion;
-            motionSel.onchange=function(){localStorage.setItem('duitku_motion',this.value);document.documentElement.classList.toggle('reduce-motion',this.value==='off');toast('Preferensi disimpan','ok');};
-        }
-        
-        var clearBtn = document.getElementById('moreClear');
-        if(clearBtn) {
-            clearBtn.onclick=function(){
-                ['duitku_txs',budgetStorageKey(),accountsStorageKey(),'duitku_recurring','duitku_motion','duitku_payday_setting','duitku_payday_date'].forEach(function(k){
-                    try{localStorage.removeItem(k);}catch(e){}
-                });
-                toast('Cache lokal dibersihkan.','ok');
-                renderAll();
-                renderBudget();
-            };
-        }
-        return;
-    }
-    html='<div class="more-backbar"><button class="btn-secondary" id="moreBack"><i class="fa-solid fa-arrow-left"></i> Kembali ke More</button></div>'+html;moreWorkspace.innerHTML=html;
-    document.getElementById('moreBack').onclick=function(){moreWorkspace.style.display='none';moreWorkspace.innerHTML='';};
-    
+        var paydaySetting=localStorage.getItem('duitku_payday_setting')||'1',paydayDate=parseInt(localStorage.getItem('duitku_payday_date')||'28',10),motion=localStorage.getItem('duitku_motion')||'on';
+        html='<div class="more-toolbar"><div><div class="more-toolbar-title">Preferensi DuitKu</div><div class="section-sub">Pengaturan tersimpan di perangkat ini.</div></div></div><div class="settings-row"><div class="settings-label"><strong>Format Mata Uang</strong><span>Format nominal aplikasi</span></div><select class="settings-select" id="settingCurrency"><option value="IDR">IDR — Rupiah</option></select></div><div class="settings-row"><div class="settings-label"><strong>Animasi</strong><span>Animasi counter dan perpindahan panel</span></div><select class="settings-select" id="settingMotion"><option value="on">Aktif</option><option value="off">Minimal</option></select></div><div class="settings-row"><div class="settings-label"><strong>Periode Gajian</strong><span>Gunakan siklus gajian untuk Budget & Target</span></div><div style="display:flex;gap:8px"><select class="settings-select" id="settingPayday"><option value="1" '+(paydaySetting==='1'?'selected':'')+'>Aktif</option><option value="0" '+(paydaySetting==='0'?'selected':'')+'>Nonaktif</option></select><select class="settings-select" id="settingPaydayDate">'+Array.from({length:31},function(_,i){return '<option value="'+(i+1)+'" '+((i+1)===paydayDate?'selected':'')+'>'+(i+1)+'</option>';}).join('')+'</select></div></div><div class="settings-row"><div class="settings-label"><strong>Reset data lokal</strong><span>Hanya membersihkan cache browser, bukan Firestore</span></div><button class="btn-secondary" id="moreClear">Bersihkan Cache</button></div>';
+    } else { toast('Menu More tidak dikenali: '+view,'err'); return; }
+
+    moreWorkspace.innerHTML='<div class="more-backbar"><button class="btn-secondary" id="moreBack"><i class="fa-solid fa-arrow-left"></i> Kembali ke More</button></div>'+html;
+    var back=document.getElementById('moreBack');if(back)back.onclick=function(){moreWorkspace.style.display='none';moreWorkspace.innerHTML='';moreWorkspace.removeAttribute('data-more-active-view');};
+
     if(view==='users'){
         document.getElementById('moreAddUser').onclick=showAddUserModal;
-        loadPublisherUsers().then(function(users){var box=document.getElementById('publisherUserList');if(!box)return;box.innerHTML=users.length?users.map(function(u){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-user" style="color:var(--accent);width:18px"></i> '+u.userId+'</div><div class="more-item-sub">'+u.email+' · Password terakhir diubah: '+(u.passwordChangedAt?formatDateTime(u.passwordChangedAt):'Belum pernah')+'</div></div><span class="more-pill">AKTIF</span></div>';}).join(''):'<div class="empty"><p>Belum ada user.</p></div>';});
-    }
-    if(view==='accounts'){
-        var addBtn = document.getElementById('moreAddAccount');
-        if(addBtn) {
-            addBtn.onclick=function(){var name=prompt('Nama akun, contoh: BCA');if(name&&name.trim()){var a=getAccounts();a.push({id:'a_'+Date.now(),name:name.trim(),icon:'fa-wallet'});saveAccounts(a);openMoreView('accounts');toast('Akun ditambahkan','ok');}};
-        }
+        loadPublisherUsers().then(function(users){var box=document.getElementById('publisherUserList');if(!box)return;box.innerHTML=users.length?users.map(function(u){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid fa-user" style="color:var(--accent);width:18px"></i> '+u.userId+'</div><div class="more-item-sub">'+u.email+' · Password terakhir diubah: '+(u.passwordChangedAt?formatDateTime(u.passwordChangedAt):'Belum pernah')+'</div></div><span class="more-pill">AKTIF</span></div>';}).join(''):'<div class="empty"><p>Belum ada user.</p></div>';}).catch(function(e){toast('Gagal memuat user: '+e.message,'err');});
+    } else if(view==='categories'){
+        document.getElementById('moreAddCategory').onclick=async function(){
+            var type=prompt('Tipe kategori: P = Pemasukan, K = Pengeluaran','K');if(type===null)return;type=String(type).trim().toLowerCase();type=(type==='p'||type==='pemasukan'||type==='income')?'income':(type==='k'||type==='pengeluaran'||type==='expense')?'expense':'';if(!type){toast('Tipe kategori tidak valid','err');return;}
+            var label=prompt('Nama kategori baru');if(!label||!label.trim())return;
+            try{await addFirebaseCategory(type,label.trim(),'fa-tag');toast('Kategori '+(type==='income'?'pemasukan':'pengeluaran')+' berhasil disimpan ke Firebase','ok');openMoreView('categories');}catch(e){toast('Gagal menambah kategori: '+e.message,'err');}
+        };
+        document.querySelectorAll('.category-del').forEach(function(btn){btn.onclick=function(){var type=this.dataset.type,key=this.dataset.key;showConfirm('Hapus kategori?', 'Kategori ini akan dihapus dari Firebase dan semua user.', function(){deleteFirebaseCategory(type,key).then(function(){toast('Kategori dihapus','ok');openMoreView('categories');}).catch(function(e){toast('Gagal menghapus kategori: '+e.message,'err');});});};});
+    } else if(view==='accounts'){
+        var addBtn=document.getElementById('moreAddAccount');if(addBtn)addBtn.onclick=function(){var name=prompt('Nama akun, contoh: BCA');if(name&&name.trim()){var a=getAccounts();a.push({id:'a_'+Date.now(),name:name.trim(),icon:'fa-wallet'});saveAccounts(a);openMoreView('accounts');toast('Akun ditambahkan','ok');}};
         document.querySelectorAll('.account-edit').forEach(function(b){b.onclick=function(){var a=getAccounts(),i=parseInt(this.dataset.index,10),name=prompt('Nama akun',a[i].name);if(name&&name.trim()){a[i].name=name.trim();saveAccounts(a);openMoreView('accounts');toast('Akun diperbarui','ok');}};});
         document.querySelectorAll('.account-del').forEach(function(b){b.onclick=function(){var a=getAccounts(),i=parseInt(this.dataset.index,10);if(a.length<=1){toast('Minimal satu akun harus tersedia','err');return;}showConfirm('Hapus akun?',a[i].name+' akan dihapus.',function(){a.splice(i,1);saveAccounts(a);openMoreView('accounts');toast('Akun dihapus','inf');});};});
+    } else if(view==='calendar'){
+        var startInput=document.getElementById('calStartDate'),endInput=document.getElementById('calEndDate');
+        var updateCalendarFilter=function(){var s=startInput.value,e=endInput.value;if(!s||!e)return;if(s>e){if(this===startInput)e=s;else s=e;startInput.value=s;endInput.value=e;}calStartDate=s;calEndDate=e;openMoreView('calendar');};
+        startInput.onchange=updateCalendarFilter;endInput.onchange=updateCalendarFilter;
+        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){el.onclick=function(){var date=this.dataset.date,arr=window._calendarFilteredTxs.filter(function(t){return t.date===date;}),box=document.getElementById('calendarDetail');box.innerHTML='<div class="card" style="padding:13px;background:var(--bg-raised);margin-top:12px"><strong>'+date+'</strong><div class="section-sub" style="margin-top:6px">'+(arr.length?arr.map(function(t){var c=catLookup[t.category]||{l:t.category};return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+(t.time?' '+t.time:'')+' — '+(t.note||c.l);}).join('<br>'):'Tidak ada transaksi pada tanggal ini.')+'</div></div>';};});
+    } else if(view==='recurring'){
+        document.getElementById('moreAddRecurring').onclick=function(){var name=prompt('Nama transaksi rutin');if(!name)return;var amount=parseInt((prompt('Jumlah (Rp)','0')||'').replace(/\D/g,''),10);if(!amount)return;var day=parseInt(prompt('Tanggal setiap bulan','1'),10)||1;var type=prompt('Tipe: P = Pemasukan, K = Pengeluaran','K');type=String(type||'K').toLowerCase();type=(type==='p'||type==='pemasukan'||type==='income')?'income':'expense';var cats=getCategories(type);var cat=prompt('Kategori\n'+cats.map(function(c){return c.v+' = '+c.l;}).join('\n'),'tagihan');if(!cat||!cats.some(function(c){return c.v===cat;}))cat=type==='expense'?'tagihan':(cats[0]&&cats[0].v);var rr=getRecurring();rr.push({name:name.trim(),amount:amount,day:Math.min(Math.max(day,1),31),type:type,category:cat});saveRecurring(rr);openMoreView('recurring');toast('Transaksi rutin ditambahkan','ok');};
+        document.querySelectorAll('.recurring-del').forEach(function(b){b.onclick=function(){var rr=getRecurring();rr.splice(parseInt(this.dataset.index,10),1);saveRecurring(rr);openMoreView('recurring');toast('Transaksi rutin dihapus','inf');};});
+    } else if(view==='safety'){
+        document.getElementById('moreBackup').onclick=function(){var payload={version:3,createdAt:new Date().toISOString(),transactions:allTxs,budgets:getBudgets(),accounts:getAccounts(),recurring:getRecurring()};var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='DuitKu_Backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);toast('Backup JSON berhasil dibuat','ok');};
+        document.getElementById('moreRestore').onclick=function(){var input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=function(){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);if(!Array.isArray(d.transactions))throw new Error('Format backup tidak valid');localStorage.setItem('duitku_txs_'+(selectedOwnerUid||'default'),JSON.stringify(d.transactions));if(d.budgets)localStorage.setItem(budgetStorageKey(),JSON.stringify(d.budgets));if(d.accounts)localStorage.setItem(accountsStorageKey(),JSON.stringify(d.accounts));if(d.recurring)localStorage.setItem('duitku_recurring',JSON.stringify(d.recurring));allTxs=d.transactions;renderAll();toast('Backup lokal berhasil dipulihkan','ok');}catch(e){toast('Backup tidak valid: '+e.message,'err');}};r.readAsText(f);};input.click();};
+    } else if(view==='settings'){
+        var motionSel=document.getElementById('settingMotion');motionSel.value=localStorage.getItem('duitku_motion')||'on';motionSel.onchange=function(){localStorage.setItem('duitku_motion',this.value);document.documentElement.classList.toggle('reduce-motion',this.value==='off');toast('Preferensi animasi disimpan','ok');};
+        document.getElementById('settingPayday').onchange=function(){localStorage.setItem('duitku_payday_setting',this.value);renderAll();renderBudget();openMoreView('settings');toast('Periode gajian diperbarui','ok');};
+        document.getElementById('settingPaydayDate').onchange=function(){localStorage.setItem('duitku_payday_date',this.value);renderAll();renderBudget();openMoreView('settings');toast('Tanggal gajian diubah ke '+this.value,'ok');};
+        document.getElementById('moreClear').onclick=function(){showConfirm('Bersihkan cache lokal?','Cache lokal akan dihapus. Data Firestore tidak dihapus.',function(){['duitku_txs_'+(selectedOwnerUid||'default'),'duitku_motion','duitku_payday_setting','duitku_payday_date'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});toast('Cache lokal dibersihkan','ok');if(storeMode==='local')allTxs=[];renderAll();renderBudget();openMoreView('settings');});};
     }
     moreWorkspace.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -2131,7 +2121,7 @@ async function onAuthenticated(user, profile){
   selectedOwnerUid=user.uid;
   setAppVisibility(true);
   document.getElementById('currentUserLabel').textContent=currentProfile.userId||'user';
-  document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'block':'none';});
+  document.querySelectorAll('.publisher-only').forEach(function(el){el.style.display=isPublisher?'':'none';});
   if(isPublisher){document.getElementById('publisherSwitcher').style.display='flex';await populatePublisherSwitcher();}
   else document.getElementById('publisherSwitcher').style.display='none';
   store.init();
@@ -2264,7 +2254,7 @@ if (motion === 'off') {
 
 setAppVisibility(false);
 
-window.addEventListener('beforeunload', function(){ if(unsubscribe) try{unsubscribe();}catch(e){} });
+window.addEventListener('beforeunload', function(){ if(unsubscribe) try{unsubscribe();}catch(e){} if(categoryUnsubscribe) try{categoryUnsubscribe();}catch(e){} });
 
 })();
 </script>
