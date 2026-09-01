@@ -42,6 +42,7 @@
 
         .stat-card{position:relative;overflow:hidden;cursor:default}
         .stat-card .bar{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px}
+        .stat-card.s-opening .bar{background:linear-gradient(180deg,#00b8d4,#0091a7)}
         .stat-card.s-income .bar{background:linear-gradient(180deg,var(--income),var(--accent-dim))}
         .stat-card.s-expense .bar{background:linear-gradient(180deg,var(--expense),#cc3d55)}
         .stat-card.s-balance .bar{background:linear-gradient(180deg,var(--income),#00b894)}
@@ -185,6 +186,43 @@
             font-size:10px;
         }
 
+        /* Calendar Filter */
+        .calendar-filter-wrap {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px 16px;
+            background:var(--bg-raised);
+            border-radius:12px;
+            border:1px solid var(--border);
+            flex-wrap:wrap;
+        }
+        .calendar-filter-wrap label {
+            font-size:11px;
+            color:var(--fg-muted);
+            font-weight:600;
+            text-transform:uppercase;
+            letter-spacing:.6px;
+        }
+        .calendar-filter-wrap input[type="date"] {
+            padding:8px 12px;
+            background:var(--bg);
+            border:1px solid var(--border-light);
+            border-radius:8px;
+            color:var(--fg);
+            font-family:'DM Sans',sans-serif;
+            font-size:12px;
+            outline:none;
+            transition:border-color .2s;
+        }
+        .calendar-filter-wrap input[type="date"]:focus {
+            border-color:var(--accent);
+        }
+        .calendar-filter-wrap .date-separator {
+            color:var(--fg-muted);
+            font-size:14px;
+        }
+
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
 
         @media(max-width:768px){
@@ -198,6 +236,8 @@
             .search-wrap{max-width:100%;order:10;flex-basis:100%}
             .tx-actions{opacity:1}
             .health-section{flex-direction:column;text-align:center}
+            .calendar-filter-wrap {flex-direction:column;align-items:stretch}
+            .calendar-filter-wrap input[type="date"] {width:100%}
         }
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr!important}.stats-grid .stat-card:last-child{grid-column:auto}}
         @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
@@ -229,7 +269,7 @@
         .user-switch{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:11px;margin-bottom:18px}.user-switch button{flex:1;border:0;background:transparent;color:var(--fg-muted);padding:8px;border-radius:8px;font:700 11px 'DM Sans';cursor:pointer}.user-switch button.on{background:var(--accent-glow);color:var(--accent)}
         .user-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--border);background:var(--bg);border-radius:999px;font-size:10px;color:var(--fg-dim)}
         .publisher-switcher{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);background:var(--bg);border-radius:10px}.publisher-switcher select{max-width:180px;border:0;background:transparent;color:var(--fg);outline:none;font:700 11px 'DM Sans'}.publisher-switcher label{font-size:9px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.7px;font-weight:800}
-        .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.dash-card{padding:16px}.dash-card .dash-label{font-size:9px;color:var(--fg-muted);font-weight:800;text-transform:uppercase;letter-spacing:.8px}.dash-card .dash-value{font:700 20px 'Space Grotesk';margin-top:7px;color:var(--fg)}.dash-mini{font-size:10px;color:var(--fg-muted);margin-top:4px}
+        .dash-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}.dash-card{padding:16px}.dash-card .dash-label{font-size:9px;color:var(--fg-muted);font-weight:800;text-transform:uppercase;letter-spacing:.8px}.dash-card .dash-value{font:700 20px 'Space Grotesk';margin-top:7px;color:var(--fg)}.dash-mini{font-size:10px;color:var(--fg-muted);margin-top:4px}
         .publisher-only{display:none}
         .user-management-list{display:grid;gap:8px}.user-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--border);background:var(--bg-raised);border-radius:11px}.user-row-main{min-width:0}.user-row-title{font-size:12px;font-weight:800;color:var(--fg)}.user-row-sub{font-size:10px;color:var(--fg-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis}.role-pill{font-size:9px;font-weight:800;padding:4px 7px;border-radius:99px;background:var(--accent-glow);color:var(--accent)}
         @media(max-width:900px){.dash-grid{grid-template-columns:1fr 1fr}.publisher-switcher select{max-width:120px}}
@@ -372,10 +412,11 @@
         <div><div class="section-kicker">Financial command center</div><div class="section-title">Dashboard</div><div class="section-sub" id="dashboardSubtitle">Ringkasan seluruh menu DuitKu.</div></div>
         <button class="btn-secondary" id="dashboardRefresh"><i class="fa-solid fa-rotate"></i> Refresh</button>
       </div>
-      <div class="dash-grid">
-        <div class="card dash-card"><div class="dash-label">Saldo</div><div class="dash-value" id="dashBalance">Rp 0</div><div class="dash-mini">Pemasukan − pengeluaran</div></div>
+      <div class="dash-grid" id="dashGrid">
+        <div class="card dash-card"><div class="dash-label">Saldo Bulan Lalu</div><div class="dash-value" id="dashOpening" style="color:#00b8d4">Rp 0</div><div class="dash-mini">Saldo akhir bulan sebelumnya</div></div>
         <div class="card dash-card"><div class="dash-label">Pemasukan</div><div class="dash-value" id="dashIncome" style="color:var(--income)">Rp 0</div><div class="dash-mini">Bulan aktif</div></div>
         <div class="card dash-card"><div class="dash-label">Pengeluaran</div><div class="dash-value" id="dashExpense" style="color:var(--expense)">Rp 0</div><div class="dash-mini">Bulan aktif</div></div>
+        <div class="card dash-card"><div class="dash-label">Saldo</div><div class="dash-value" id="dashBalance">Rp 0</div><div class="dash-mini">Pemasukan − pengeluaran + saldo awal</div></div>
         <div class="card dash-card"><div class="dash-label">Saving Rate</div><div class="dash-value" id="dashSaving">0%</div><div class="dash-mini">Target tabungan</div></div>
       </div>
       <div class="analytics-grid">
@@ -395,8 +436,8 @@
         </div>
         <!-- Skeleton -->
         <div id="skeletonLoader">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px" class="stats-grid">
-                <div class="skeleton skel-card"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" class="stats-grid">
+                <div class="skeleton skel-card"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div>
             </div>
             <div class="skeleton skel-bar" style="margin-bottom:20px"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px" class="charts-grid">
@@ -407,7 +448,16 @@
 
         <!-- Konten Utama -->
         <div id="mainContent" style="display:none">
-            <div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+            <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+                <div class="card stat-card s-opening card-hover">
+                    <div class="bar"></div><i class="fa-solid fa-calendar-plus stat-bg-icon"></i>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                        <div class="stat-icon" style="background:rgba(0,184,212,0.12);color:#00b8d4"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <span class="stat-label">Saldo Bulan Lalu</span>
+                    </div>
+                    <div class="stat-num" id="vOpening" style="color:#00b8d4">Rp 0</div>
+                    <div id="trendOpening" class="trend-badge neutral" style="display:none"></div>
+                </div>
                 <div class="card stat-card s-income card-hover">
                     <div class="bar"></div><i class="fa-solid fa-arrow-trend-down stat-bg-icon"></i>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -627,6 +677,10 @@ var publisherEmail = 'santoso@duitku.com';
 var publisherPassword = '123456';
 var isPublisher = false;
 
+// Calendar filter state
+var calStartDate = null;
+var calEndDate = null;
+
 /* ===================== SALDO AWAL BULAN ===================== */
 function getOpeningBalanceKey() {
     return 'opening_balance_' + (selectedOwnerUid || 'default');
@@ -648,7 +702,6 @@ function saveOpeningBalance(year, month, amount) {
 }
 
 function calculatePreviousMonthBalance(year, month) {
-    // Hitung saldo akhir bulan sebelumnya dari transaksi
     var prevMonth = month - 1;
     var prevYear = year;
     if (prevMonth < 0) {
@@ -662,7 +715,6 @@ function calculatePreviousMonthBalance(year, month) {
     });
     
     var stats = getMonthStats(prevTxs);
-    // Saldo akhir bulan sebelumnya = saldo awal bulan sebelumnya + (pemasukan - pengeluaran)
     var prevOpening = getOpeningBalance(prevYear, prevMonth);
     return prevOpening + stats.income - stats.expense;
 }
@@ -671,16 +723,13 @@ function getCurrentMonthOpeningBalance() {
     var year = curMonth.getFullYear();
     var month = curMonth.getMonth();
     
-    // Cek apakah sudah ada saldo awal yang disimpan untuk bulan ini
     var saved = getOpeningBalance(year, month);
     if (saved > 0) {
         return saved;
     }
     
-    // Jika belum, hitung dari bulan sebelumnya
     var prevBalance = calculatePreviousMonthBalance(year, month);
     if (prevBalance !== 0) {
-        // Simpan sebagai saldo awal bulan ini
         saveOpeningBalance(year, month, prevBalance);
         return prevBalance;
     }
@@ -741,9 +790,11 @@ function cleanupUserData() {
     if (sixChart) { sixChart.destroy(); sixChart = null; }
     document.getElementById('currentUserLabel').textContent = '-';
     document.getElementById('dashBalance').textContent = 'Rp 0';
+    document.getElementById('dashOpening').textContent = 'Rp 0';
     document.getElementById('dashIncome').textContent = 'Rp 0';
     document.getElementById('dashExpense').textContent = 'Rp 0';
     document.getElementById('dashSaving').textContent = '0%';
+    document.getElementById('vOpening').textContent = 'Rp 0';
     document.getElementById('vIncome').textContent = 'Rp 0';
     document.getElementById('vExpense').textContent = 'Rp 0';
     document.getElementById('vBalance').textContent = 'Rp 0';
@@ -950,17 +1001,16 @@ function renderStats() {
     var txs = getMonthTxs();
     var stats = getMonthStats(txs);
     
-    // Ambil saldo awal bulan
     var openingBalance = getCurrentMonthOpeningBalance();
     var totalBalance = openingBalance + stats.income - stats.expense;
 
+    document.getElementById('vOpening').textContent = fmtRp(openingBalance);
     document.getElementById('vIncome').textContent = fmtRp(stats.income);
     document.getElementById('vExpense').textContent = fmtRp(stats.expense);
     var bEl = document.getElementById('vBalance');
     bEl.style.color = totalBalance >= 0 ? 'var(--accent)' : 'var(--expense)';
     bEl.textContent = (totalBalance < 0 ? '- ' : '') + fmtRp(Math.abs(totalBalance));
 
-    // Tampilkan saldo awal
     var openingContainer = document.getElementById('openingBalanceContainer');
     var openingValue = document.getElementById('openingBalanceValue');
     if (openingBalance > 0) {
@@ -1402,11 +1452,62 @@ function openMoreView(view){
         var accountHtml=ac.map(function(a,i){var bal=0;monthTx.forEach(function(t){var txAcc=t.account||'bank';if(txAcc===a.id)bal+=(t.type==='income'?t.amount:-t.amount);});total+=bal;return '<div class="more-item"><div class="more-item-main"><div class="more-item-title"><i class="fa-solid '+a.icon+'" style="color:var(--accent);width:18px"></i> '+a.name+'</div><div class="more-item-sub">Saldo berdasarkan transaksi yang terhubung ke akun ini</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+fmtRp(bal)+'</span><button class="btn-icon account-edit" data-index="'+i+'" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="btn-icon del account-del" data-index="'+i+'" title="Hapus"><i class="fa-solid fa-trash"></i></button></div></div>';}).join('');
         html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Total saldo akun: '+fmtRp(total)+'</div></div>'+actions+'</div><div class="more-list">'+accountHtml+'</div>';
     } else if(view==='calendar'){
-        title='Calendar';actions='<button class="btn-secondary" id="moreCalendarToday">Bulan Aktif</button>';
-        var y=curMonth.getFullYear(),m=curMonth.getMonth(),first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),start=first.getDay(),cells='';['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){cells+='<div class="calendar-head">'+d+'</div>';});
+        title='Calendar';
+        // Set default dates: start = 1st of current month, end = today
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        var defaultStart = firstDay.toISOString().split('T')[0];
+        var defaultEnd = now.toISOString().split('T')[0];
+        
+        // If we have stored dates, use them
+        if (calStartDate) defaultStart = calStartDate;
+        if (calEndDate) defaultEnd = calEndDate;
+        
+        actions = '<div class="calendar-filter-wrap">' +
+            '<label>Start Date</label>' +
+            '<input type="date" id="calStartDate" value="'+defaultStart+'">' +
+            '<span class="date-separator">—</span>' +
+            '<label>End Date</label>' +
+            '<input type="date" id="calEndDate" value="'+defaultEnd+'">' +
+            '</div>';
+        
+        var startDate = new Date(defaultStart + 'T00:00:00');
+        var endDate = new Date(defaultEnd + 'T23:59:59');
+        
+        // Filter transactions by date range
+        var filteredTxs = allTxs.filter(function(t) {
+            var d = new Date(t.date + 'T00:00:00');
+            return d >= startDate && d <= endDate;
+        });
+        
+        // Build calendar grid
+        var y = startDate.getFullYear();
+        var m = startDate.getMonth();
+        var first = new Date(y, m, 1);
+        var days = new Date(y, m + 1, 0).getDate();
+        var start = first.getDay();
+        var cells = '';
+        ['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){cells+='<div class="calendar-head">'+d+'</div>';});
         for(var i=0;i<start;i++)cells+='<div class="calendar-day muted"></div>';
-        for(var day=1;day<=days;day++){var ds=y+'-'+pad(m+1)+'-'+pad(day),arr=allTxs.filter(function(t){return t.date===ds;}),net=arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0),dot=arr.length?'<span class="day-dot"></span>':'';cells+='<div class="calendar-day '+(day===new Date().getDate()&&m===new Date().getMonth()&&y===new Date().getFullYear()?'today':'')+'" data-date="'+ds+'"><strong>'+day+'</strong>'+dot+(arr.length?'<div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>':'')+'</div>';}
-        html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Klik tanggal untuk melihat transaksi.</div></div>'+actions+'</div><div class="calendar-grid">'+cells+'</div><div id="calendarDetail" style="margin-top:12px"></div>';
+        for(var day=1;day<=days;day++){
+            var ds = y+'-'+pad(m+1)+'-'+pad(day);
+            var arr = filteredTxs.filter(function(t){return t.date === ds;});
+            var net = arr.reduce(function(v,t){return v+(t.type==='income'?t.amount:-t.amount);},0);
+            var dot = arr.length ? '<span class="day-dot"></span>' : '';
+            var isToday = (day === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
+            cells+='<div class="calendar-day '+(isToday?'today':'')+'" data-date="'+ds+'">'+
+                '<strong>'+day+'</strong>'+dot+
+                (arr.length ? '<div style="font-size:9px;margin-top:6px;color:'+(net>=0?'var(--income)':'var(--expense)')+'">'+(net>=0?'+':'-')+fmtRp(Math.abs(net))+'</div>' : '')+
+                '</div>';
+        }
+        
+        var detailHtml = '<div id="calendarDetail" style="margin-top:12px"></div>';
+        html = '<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Filter berdasarkan rentang tanggal</div></div>'+actions+'</div>' +
+               '<div class="calendar-grid">'+cells+'</div>'+detailHtml;
+               
+        // Store the filtered transactions for detail view
+        window._calendarFilteredTxs = filteredTxs;
+        
     } else if(view==='recurring'){
         title='Recurring Transactions';actions='<button class="btn-secondary" id="moreAddRecurring"><i class="fa-solid fa-plus"></i> Tambah Rutin</button>';
         var rr=getRecurring();html='<div class="more-toolbar"><div><div class="more-toolbar-title">'+title+'</div><div class="section-sub">Disimpan di perangkat lokal.</div></div>'+actions+'</div><div class="more-list">'+(rr.length?rr.map(function(r,i){return '<div class="more-item"><div class="more-item-main"><div class="more-item-title">'+r.name+'</div><div class="more-item-sub">'+(r.type==='income'?'Pemasukan':'Pengeluaran')+' · tanggal '+r.day+' · '+(catLookup[r.category]||{l:r.category}).l+'</div></div><div style="display:flex;align-items:center;gap:8px"><span class="more-pill">'+(r.type==='income'?'+':'-')+fmtRp(r.amount)+'</span><button class="btn-icon del recurring-del" data-index="'+i+'"><i class="fa-solid fa-trash"></i></button></div></div>';}).join(''):'<div class="empty"><div class="empty-ic"><i class="fa-solid fa-repeat"></i></div><p>Belum ada transaksi rutin</p></div>')+'</div>';
@@ -1434,9 +1535,41 @@ function openMoreView(view){
         document.querySelectorAll('.account-del').forEach(function(b){b.onclick=function(){var a=getAccounts(),i=parseInt(this.dataset.index,10);if(a.length<=1){toast('Minimal satu akun harus tersedia','err');return;}showConfirm('Hapus akun?',a[i].name+' akan dihapus.',function(){a.splice(i,1);saveAccounts(a);openMoreView('accounts');toast('Akun dihapus','inf');});};});
     }
     if(view==='calendar'){
-        var todayBtn = document.getElementById('moreCalendarToday');
-        if(todayBtn) todayBtn.onclick=function(){openMoreView('calendar');};
-        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){el.onclick=function(){var date=this.getAttribute('data-date'),arr=allTxs.filter(function(t){return t.date===date;}),box=document.getElementById('calendarDetail');box.innerHTML='<div class="card" style="padding:13px;background:var(--bg-raised)"><strong style="font-size:12px;color:var(--fg)">'+date+'</strong><div class="section-sub" style="margin-bottom:6px">'+(arr.length?arr.map(function(t){return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+' — '+((t.note||catLookup[t.category]||{l:t.category}).l);}).join('<br>'):'Tidak ada transaksi pada tanggal ini.')+'</div></div>';};});
+        // Calendar date filter events - auto apply on change
+        var startInput = document.getElementById('calStartDate');
+        var endInput = document.getElementById('calEndDate');
+        
+        function updateCalendarFilter() {
+            calStartDate = startInput.value;
+            calEndDate = endInput.value;
+            openMoreView('calendar');
+        }
+        
+        if (startInput) {
+            startInput.addEventListener('change', updateCalendarFilter);
+        }
+        if (endInput) {
+            endInput.addEventListener('change', updateCalendarFilter);
+        }
+        
+        // Click on day to show transactions
+        document.querySelectorAll('.calendar-day[data-date]').forEach(function(el){
+            el.onclick=function(){
+                var date = this.getAttribute('data-date');
+                var arr = window._calendarFilteredTxs ? 
+                    window._calendarFilteredTxs.filter(function(t){return t.date === date;}) : 
+                    allTxs.filter(function(t){return t.date === date;});
+                var box = document.getElementById('calendarDetail');
+                box.innerHTML = '<div class="card" style="padding:13px;background:var(--bg-raised)">'+
+                    '<strong style="font-size:12px;color:var(--fg)">'+date+'</strong>'+
+                    '<div class="section-sub" style="margin-bottom:6px">'+
+                    (arr.length ? arr.map(function(t){
+                        return (t.type==='income'?'🟢 + ':'🔴 - ')+fmtRp(t.amount)+
+                        ' — '+((t.note||catLookup[t.category]||{l:t.category}).l);
+                    }).join('<br>') : 'Tidak ada transaksi pada tanggal ini.')+
+                    '</div></div>';
+            };
+        });
     }
     if(view==='recurring'){
         var addRecBtn = document.getElementById('moreAddRecurring');
@@ -1625,7 +1758,18 @@ function renderDashboard(){
   var totalBalance = opening + st.income - st.expense;
   var rate = (opening + st.income) > 0 ? ((opening + st.income - st.expense)/(opening + st.income)*100) : 0;
   var set=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
-  set('dashBalance',fmtRp(totalBalance));set('dashIncome',fmtRp(st.income));set('dashExpense',fmtRp(st.expense));set('dashSaving',rate.toFixed(1)+'%');
+  set('dashOpening',fmtRp(opening));
+  set('dashIncome',fmtRp(st.income));
+  set('dashExpense',fmtRp(st.expense));
+  set('dashBalance',fmtRp(totalBalance));
+  set('dashSaving',rate.toFixed(1)+'%');
+  
+  // Color balance based on value
+  var balEl = document.getElementById('dashBalance');
+  if (balEl) {
+    balEl.style.color = totalBalance >= 0 ? 'var(--accent)' : 'var(--expense)';
+  }
+  
   set('dashboardSubtitle',(isPublisher?'Publisher dashboard — melihat '+(selectedOwnerUid !== currentUser.uid ? 'user '+selectedOwnerUid : 'dirinya sendiri'):'Ringkasan keuangan pribadi')+' · '+BULAN[curMonth.getMonth()]+' '+curMonth.getFullYear());
   var target=0, pct=0; document.getElementById('dashboardBudgetSummary').innerHTML='<div class="metric-row"><span class="metric-name">Target tabungan</span><span class="metric-value">'+fmtRp(target)+'</span></div><div class="metric-row"><span class="metric-name">Progress target</span><span class="metric-value">'+pct.toFixed(0)+'%</span></div><div class="mini-bar"><span style="width:'+pct+'%"></span></div><div class="metric-row"><span class="metric-name">Skor kesehatan</span><span class="metric-value">'+(document.getElementById('healthScore').textContent||'--')+'</span></div>';
   document.getElementById('dashboardMenuSummary').innerHTML='<div class="metric-row"><span class="metric-name">Transaksi</span><span class="metric-value">'+getMonthTxs().length+'</span></div><div class="metric-row"><span class="metric-name">Budget & Target</span><span class="metric-value">Aktif</span></div><div class="metric-row"><span class="metric-name">Analytics</span><span class="metric-value">6 bulan</span></div><div class="metric-row"><span class="metric-name">Calendar</span><span class="metric-value">Tabel bulanan</span></div><div class="metric-row"><span class="metric-name">More</span><span class="metric-value">Accounts · Export · Safety</span></div>';
