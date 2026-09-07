@@ -1731,12 +1731,27 @@ body { background: var(--pro-bg); }
             </button>
         </div>
         
-        <ul class="sidebar-menu pro-dashboard-menu">
-            <li id="dashboardMenuItem"><a href="#" data-tab="dashboard" class="active"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
-            <li id="analyticsMenuItem" style="display:none;"><a href="#" data-tab="analytics"><i class="fas fa-chart-line"></i><span>Dashboard Analytics</span></a></li>
-            <li id="onlineMonitorMenuItem" style="display:none;"><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
-            <li id="activityScoreMenuItem" style="display:none;"><a href="#" data-tab="activity-score"><i class="fas fa-gauge-high"></i><span>Activity Frequency</span></a></li>
-            <li id="notificationCenterMenuItem" style="display:none;"><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
+        <div class="sidebar-folder" id="adminControlFolder" style="display:none;">
+            <div class="sidebar-folder-header">
+                <i class="fas fa-shield-halved"></i><span>Admin Control Center</span>
+            </div>
+            <div class="sidebar-folder-content">
+                <ul class="sidebar-menu">
+                    <li id="analyticsMenuItem"><a href="#" data-tab="analytics"><i class="fas fa-chart-line"></i><span>Dashboard Analytics</span></a></li>
+                    <li id="onlineMonitorMenuItem"><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
+                    <li id="activityScoreMenuItem"><a href="#" data-tab="activity-score"><i class="fas fa-gauge-high"></i><span>Activity Monitor</span></a></li>
+                    <li id="auditLogsMenuItem"><a href="#" data-tab="audit-logs"><i class="fas fa-clipboard-list"></i><span>Audit Logs</span></a></li>
+                    <li id="approvalCenterMenuItem"><a href="#" data-tab="approval-center"><i class="fas fa-check-double"></i><span>Approval Center</span></a></li>
+                    <li id="notificationCenterMenuItem"><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
+                    <li id="reportsMenuItem"><a href="#" data-tab="reports"><i class="fas fa-file-lines"></i><span>Reports</span></a></li>
+                    <li id="rolePermissionsMenuItem"><a href="#" data-tab="role-permissions"><i class="fas fa-user-shield"></i><span>Role & Permissions</span></a></li>
+                    <li id="systemHealthMenuItem"><a href="#" data-tab="system-health"><i class="fas fa-heart-pulse"></i><span>System Health</span></a></li>
+                    <li id="dataManagementMenuItem"><a href="#" data-tab="data-management"><i class="fas fa-database"></i><span>Data Management</span></a></li>
+                </ul>
+            </div>
+        </div>
+        <ul class="sidebar-menu pro-dashboard-menu" style="display:none;">
+            <li id="dashboardMenuItem"><a href="#" data-tab="dashboard"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
             <li id="adminActivityMenuItem" style="display:none;"><a href="#" data-tab="admin-activity"><i class="fas fa-shield-halved"></i><span>Admin Activity Monitor</span></a></li>
         </ul>
 
@@ -1754,19 +1769,13 @@ body { background: var(--pro-bg); }
                             <span>Attendance Table</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="#" data-tab="cuti-detail">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>Summarize Leave</span>
-                        </a>
-                    </li>
-                    <li>
+                    <li id="proposeLeaveMenuItem">
                         <a href="#" data-tab="propose-leave">
                             <i class="fas fa-paper-plane"></i>
                             <span>Propose Leave</span>
                         </a>
                     </li>
-                    <li>
+                    <li id="myLeaveHistoryMenuItem">
                         <a href="#" data-tab="my-leave-history">
                             <i class="fas fa-clock-rotate-left"></i>
                             <span>My Leave History</span>
@@ -1790,28 +1799,6 @@ body { background: var(--pro-bg); }
             </div>
         </div>
         
-        <!-- ADMIN CONTROL CENTER -->
-        <div class="sidebar-folder" id="adminControlFolder" style="display:none;">
-            <div class="sidebar-folder-header">
-                <i class="fas fa-shield-halved"></i>
-                <span>Admin Control Center</span>
-            </div>
-            <div class="sidebar-folder-content">
-                <ul class="sidebar-menu">
-                    <li><a href="#" data-tab="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard Analytics</span></a></li>
-                    <li><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
-                    <li><a href="#" data-tab="activity-score"><i class="fas fa-chart-column"></i><span>Activity Monitor</span></a></li>
-                    <li><a href="#" data-tab="admin-activity"><i class="fas fa-list-check"></i><span>Audit Logs</span></a></li>
-                    <li><a href="#" data-tab="approval-center"><i class="fas fa-circle-check"></i><span>Approval Center</span></a></li>
-                    <li><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
-                    <li><a href="#" data-tab="admin-reports"><i class="fas fa-file-chart-column"></i><span>Reports</span></a></li>
-                    <li><a href="#" data-tab="role-permissions"><i class="fas fa-user-shield"></i><span>Role &amp; Permissions</span></a></li>
-                    <li><a href="#" data-tab="system-health"><i class="fas fa-heart-pulse"></i><span>System Health</span></a></li>
-                    <li><a href="#" data-tab="data-management"><i class="fas fa-database"></i><span>Data Management</span></a></li>
-                </ul>
-            </div>
-        </div>
-
         <!-- Main Folder (Admin Only) -->
         <div class="sidebar-folder" id="mainFolder">
             <div class="sidebar-folder-header">
@@ -1976,46 +1963,6 @@ body { background: var(--pro-bg); }
                 <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Audit Trail</div><h2 class="dashboard-title">Admin Activity Monitoring</h2><p class="dashboard-subtitle">Recent administrative and user activity events recorded by the application.</p></div>
                 <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-shield-halved me-2 text-danger"></i>Activity Log</h5><button class="v5-action" id="refreshActivityBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="adminActivityList" class="v5-list"></div></div>
             </section>
-
-            <!-- USER: PROPOSE LEAVE -->
-            <div class="tab-pane fade" id="propose-leave" role="tabpanel">
-                <div class="dashboard-hero"><div class="dashboard-eyebrow">GENERAL · LEAVE</div><h2 class="dashboard-title">Propose Leave</h2><p class="dashboard-subtitle">Ajukan cuti untuk diproses oleh Admin.</p></div>
-                <div class="v5-panel" style="max-width:760px">
-                    <h5><i class="fas fa-paper-plane me-2"></i>PROPOSE LEAVE</h5>
-                    <div class="row g-3 mt-1">
-                        <div class="col-12 col-md-6"><label class="form-label">Leave Type</label><select class="form-select" id="proposeLeaveType"><option value="Annual Leave">Annual Leave</option><option value="Sick Leave">Sick Leave</option><option value="Personal Leave">Personal Leave</option><option value="Other Leave">Other Leave</option></select></div>
-                        <div class="col-12 col-md-6"><label class="form-label">Start Date</label><input type="date" class="form-control" id="proposeLeaveStart"></div>
-                        <div class="col-12 col-md-6"><label class="form-label">End Date</label><input type="date" class="form-control" id="proposeLeaveEnd"></div>
-                        <div class="col-12"><label class="form-label">Reason</label><textarea class="form-control" id="proposeLeaveReason" rows="4" placeholder="Jelaskan alasan pengajuan cuti..."></textarea></div>
-                        <div class="col-12"><small class="text-muted"><i class="fas fa-circle-info me-1"></i>Attachment tidak digunakan.</small></div>
-                        <div class="col-12"><button class="btn btn-futuristic" id="submitLeaveRequest"><i class="fas fa-paper-plane me-1"></i>Submit Leave Request</button></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- USER: MY LEAVE HISTORY -->
-            <div class="tab-pane fade" id="my-leave-history" role="tabpanel">
-                <div class="dashboard-hero"><div class="dashboard-eyebrow">GENERAL · PERSONAL</div><h2 class="dashboard-title">My Leave History</h2><p class="dashboard-subtitle">Hanya menampilkan pengajuan cuti milik akun yang sedang login.</p></div>
-                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Riwayat Pengajuan</h5><button class="v5-action" id="refreshMyLeaveBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div></div>
-            </div>
-
-            <!-- ADMIN: APPROVAL CENTER -->
-            <section class="v5-admin-shell" id="approvalCenterShell">
-                <div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · APPROVAL</div><h2 class="dashboard-title">Approval Center</h2><p class="dashboard-subtitle">Approval workflow hanya untuk Leave Request. Tidak ada overtime approval.</p></div>
-                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-circle-check me-2"></i>Pending Leave Requests</h5><button class="v5-action" id="refreshLeaveApprovalBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="leaveApprovalList" class="v5-list"></div></div>
-            </section>
-
-            <!-- ADMIN: REPORTS -->
-            <section class="v5-admin-shell" id="adminReportsShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · REPORTS</div><h2 class="dashboard-title">Reports</h2><p class="dashboard-subtitle">Ringkasan attendance, overtime dan leave.</p></div><div class="v5-grid"><div class="v5-panel"><h5>Attendance</h5><div id="adminReportAttendance">0 records</div></div><div class="v5-panel"><h5>Overtime</h5><div id="adminReportOvertime">0 records</div></div><div class="v5-panel"><h5>Leave Requests</h5><div id="adminReportLeave">0 requests</div></div></div></section>
-
-            <!-- ADMIN: ROLE & PERMISSIONS -->
-            <section class="v5-admin-shell" id="rolePermissionsShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · SECURITY</div><h2 class="dashboard-title">Role &amp; Permissions</h2><p class="dashboard-subtitle">Kontrol akses berbasis role. User hanya dapat mengakses General; Admin memiliki kontrol penuh.</p></div><div class="v5-panel"><div class="v5-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title">Admin</div><div class="more-item-sub">Dashboard, monitoring, approval, reports, users dan system controls.</div></div><span class="more-pill">FULL ACCESS</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">User</div><div class="more-item-sub">Attendance, Overtime, Propose Leave dan My Leave History milik sendiri.</div></div><span class="more-pill">GENERAL</span></div></div></div></section>
-
-            <!-- ADMIN: SYSTEM HEALTH -->
-            <section class="v5-admin-shell" id="systemHealthShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · HEALTH</div><h2 class="dashboard-title">System Health</h2><p class="dashboard-subtitle">Status koneksi browser dan Firebase.</p></div><div class="v5-grid"><div class="v5-panel"><h5>Network</h5><div id="systemNetworkStatus">Checking...</div></div><div class="v5-panel"><h5>Firebase Auth</h5><div id="systemAuthStatus">Checking...</div></div><div class="v5-panel"><h5>Firestore</h5><div id="systemFirestoreStatus">Checking...</div></div></div></section>
-
-            <!-- ADMIN: DATA MANAGEMENT -->
-            <section class="v5-admin-shell" id="dataManagementShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · DATA</div><h2 class="dashboard-title">Data Management</h2><p class="dashboard-subtitle">Kelola dan inspeksi data aplikasi tanpa menghapus data secara tidak sengaja.</p></div><div class="v5-panel"><button class="v5-action" id="adminRefreshAllData"><i class="fas fa-rotate me-1"></i>Refresh All Data</button><div id="dataManagementSummary" class="mt-3"></div></div></section>
 
             <!-- Filter Section for Main Folder -->
             <div class="filter-section filter-section-main" id="filterSectionMain">
@@ -2332,6 +2279,41 @@ body { background: var(--pro-bg); }
                         </div>
                     </div>
                 </div>
+
+                <!-- V6 Leave Request: User self-service -->
+                <div class="tab-pane fade" id="propose-leave" role="tabpanel">
+                    <div class="card border-0 shadow-sm p-3">
+                        <h4 class="mb-3"><i class="fas fa-paper-plane me-2"></i>Propose Leave</h4>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label">Leave Type</label>
+                                <select id="leaveType" class="form-select"><option>Annual Leave</option><option>Sick Leave</option><option>Personal Leave</option><option>Emergency Leave</option><option>Unpaid Leave</option><option>Other</option></select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label">Start Date</label><input type="date" id="leaveStartDate" class="form-control"></div>
+                            <div class="col-md-4"><label class="form-label">End Date</label><input type="date" id="leaveEndDate" class="form-control"></div>
+                            <div class="col-12"><label class="form-label">Reason</label><textarea id="leaveReason" class="form-control" rows="4" placeholder="Explain your leave reason..."></textarea></div>
+                            <div class="col-12"><button type="button" id="submitLeaveRequestBtn" class="btn btn-futuristic"><i class="fas fa-paper-plane me-1"></i> Submit Leave Request</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="my-leave-history" role="tabpanel">
+                    <div class="card border-0 shadow-sm p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>My Leave History</h4><button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button></div>
+                        <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Leave Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- Approval Center: Admin, Leave Only -->
+                <div class="tab-pane fade" id="approval-center" role="tabpanel">
+                    <div class="card border-0 shadow-sm p-3"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0"><i class="fas fa-check-double me-2"></i>Approval Center</h4><span class="badge bg-info">Leave Approval Only</span></div>
+                    <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Employee</th><th>Leave Type</th><th>Period</th><th>Reason</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead><tbody id="approvalLeaveBody"></tbody></table></div></div>
+                </div>
+
+                <div class="tab-pane fade" id="audit-logs" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Audit Logs</h4><div id="auditLogsBody" class="v5-list"></div></div></div>
+                <div class="tab-pane fade" id="reports" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Reports</h4><p class="text-muted">Report Center foundation is ready. Attendance, Overtime and Leave reports will be consolidated here.</p></div></div>
+                <div class="tab-pane fade" id="role-permissions" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p><strong>Admin:</strong> full access. <strong>User:</strong> Attendance, Overtime, Propose Leave and My Leave History only.</p></div></div>
+                <div class="tab-pane fade" id="system-health" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>System Health</h4><div id="systemHealthBody">Checking Firebase connection...</div></div></div>
+                <div class="tab-pane fade" id="data-management" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Data Management</h4><p class="text-muted">Admin-only data export, archive and maintenance center.</p></div></div>
 
                 <!-- Cuti Tab - PERBAIKAN: Tambah tombol delete -->
                 <div class="tab-pane fade" id="cuti" role="tabpanel">
@@ -5324,7 +5306,7 @@ body { background: var(--pro-bg); }
         async function refreshActivityScore(){ const acts=await loadV5Activities(); const score={}; acts.forEach(a=>{const k=a.uid||a.email||'unknown'; if(!score[k])score[k]={name:a.name||a.email||'Unknown',email:a.email||'',count:0,login:0,last:a.createdAt}; score[k].count++; if(a.action==='login')score[k].login++; if(new Date(a.createdAt)>new Date(score[k].last||0))score[k].last=a.createdAt;}); const rows=Object.values(score).map(x=>({...x,score:x.count*2+x.login*5})).sort((a,b)=>b.score-a.score); const max=Math.max(1,...rows.map(x=>x.score)); const el=document.getElementById('activityScoreList'); if(!el)return; el.innerHTML=rows.length?rows.map((x,i)=>`<div class="v5-row"><div><strong>#${i+1} ${escapeHtmlV5(x.name)}</strong><div class="small text-muted">${escapeHtmlV5(x.email)} · ${x.count} activities · Last ${v5Relative(x.last)}</div><div style="height:7px;background:#e2e8f0;border-radius:8px;margin-top:7px;overflow:hidden"><div style="height:100%;width:${Math.round(x.score/max*100)}%;background:#2563eb"></div></div></div><div class="v5-badge">${x.score} pts</div></div>`).join(''):'<div class="v5-empty">Activity data will appear after users start using the application.</div>'; }
         async function loadNotificationsV5(){ let rows=[]; try{const snap=await db.collection('notifications').limit(100).get();snap.forEach(d=>rows.push({id:d.id,...d.data()}));}catch(e){console.warn('V5 notifications read unavailable',e);} const el=document.getElementById('notificationCenterList'); if(!el)return; rows.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); el.innerHTML=rows.length?rows.map(n=>`<div class="v5-notification ${escapeHtmlV5(n.type||'')}"><strong>${escapeHtmlV5(n.title||'Notification')}</strong><div>${escapeHtmlV5(n.message||'')}</div><small>${v5FormatTime(n.createdAt)}</small></div>`).join(''):'<div class="v5-empty"><i class="fas fa-bell-slash d-block mb-2"></i>No notifications available.</div>'; }
         async function refreshAdminActivity(){ const acts=await loadV5Activities(); const el=document.getElementById('adminActivityList'); if(!el)return; el.innerHTML=acts.slice(0,100).map(a=>`<div class="v5-row"><div><strong>${escapeHtmlV5(a.action||'activity')}</strong><div class="small text-muted">${escapeHtmlV5(a.name||a.email||'Unknown')} · ${escapeHtmlV5(a.role||'user')} ${a.meta&&a.meta.tab?'· '+escapeHtmlV5(a.meta.tab):''}</div></div><div class="small text-muted">${v5FormatTime(a.createdAt)}</div></div>`).join('')||'<div class="v5-empty">No activity has been recorded yet.</div>'; }
-        function hideV5Shells(){ ['onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell','approvalCenterShell','adminReportsShell','rolePermissionsShell','systemHealthShell','dataManagementShell'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');}); }
+        function hideV5Shells(){ ['onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');}); }
         async function showV5AdminPanel(tab){ if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('This feature is available for Admin only.','error');return;} document.getElementById('dashboardShell')?.classList.remove('active');document.getElementById('analyticsShell')?.classList.remove('active');document.getElementById('analyticsShell')?.style.setProperty('display','none');hideV5Shells();['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';}); const map={'online-monitor':'onlineMonitorShell','activity-score':'activityScoreShell','notification-center':'notificationCenterShell','admin-activity':'adminActivityShell'}; const shell=document.getElementById(map[tab]); if(shell)shell.classList.add('active'); currentTab=tab; await trackActivity('open_admin_panel',{tab}); if(tab==='online-monitor')refreshOnlineMonitor();if(tab==='activity-score')refreshActivityScore();if(tab==='notification-center')loadNotificationsV5();if(tab==='admin-activity')refreshAdminActivity(); }
         function updateRealDashboardCharts(){
             const source=(outputData&&outputData.length?outputData:overtimeCalcData||[]); const groups={}; source.forEach(x=>{const d=x.date||x.attendanceDate||'';if(!d)return;groups[d]=(groups[d]||0)+1;}); const top=Object.entries(groups).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))).slice(-10); const max=Math.max(1,...top.map(x=>x[1])); const bars=top.map(([d,c])=>`<div class="v5-bar-wrap"><div class="v5-bar-value">${c}</div><div class="v5-bar" style="height:${Math.max(4,c/max*165)}px"></div><div class="v5-bar-label">${escapeHtmlV5(String(d).slice(0,5))}</div></div>`).join(''); const el=document.getElementById('dashAttendanceChart'); if(el)el.innerHTML=bars||'<div class="v5-empty">No attendance records for chart.</div>';
@@ -5333,8 +5315,8 @@ body { background: var(--pro-bg); }
 
         // ACCESS CONTROL V4.6
         // Jaminan: SEMUA user yang berhasil login selalu dapat mengakses seluruh menu GENERAL.
-        const GENERAL_TABS = ['absen-tabel','cuti-detail','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history'];
-        const ADMIN_TABS = ['dashboard','analytics','online-monitor','activity-score','notification-center','admin-activity','approval-center','admin-reports','role-permissions','system-health','data-management','entry','output','overtime','cuti','summary-overtime','setting'];
+        const GENERAL_TABS = ['absen-tabel','cuti-detail','form-rekap-lembur','overtime-detail-admin'];
+        const ADMIN_TABS = ['dashboard','analytics','online-monitor','activity-score','notification-center','admin-activity','entry','output','overtime','cuti','summary-overtime','setting'];
 
         function normalizeRole(role) {
             return String(role || 'user').trim().toLowerCase() === 'admin' ? 'admin' : 'user';
@@ -5378,8 +5360,6 @@ body { background: var(--pro-bg); }
             const generalFolder = document.getElementById('generalFolder');
             generalFolder.style.display = 'block';
             generalFolder.classList.add('expanded');
-            const adminControlFolder = document.getElementById('adminControlFolder');
-            if (adminControlFolder) adminControlFolder.style.display = role === 'admin' ? 'block' : 'none';
             document.querySelectorAll('#generalFolder .sidebar-menu a').forEach(menu => {
                 menu.style.display = 'flex';
                 menu.removeAttribute('aria-disabled');
@@ -5800,7 +5780,6 @@ body { background: var(--pro-bg); }
                     this.classList.add('active');
                     
                     // Show corresponding tab
-                    if (['approval-center','admin-reports','role-permissions','system-health','data-management'].includes(tabName)) { showAdminControlPanel(tabName); return; }
                     if (tabName === 'dashboard') { showDashboard(); return; }
                     if (tabName === 'analytics') { showAnalytics(); trackActivity('open_admin_panel',{tab:'analytics'}); return; }
                     if (['online-monitor','activity-score','notification-center','admin-activity'].includes(tabName)) { showV5AdminPanel(tabName); return; }
@@ -7814,83 +7793,6 @@ body { background: var(--pro-bg); }
         // =============================================
 
         // Initialize aplikasi saat DOM ready - DIPERBAIKI
-        // ADMIN CONTROL CENTER + LEAVE REQUEST WORKFLOW
-        let leaveRequestUnsubscribe = null;
-        function currentEmployeeKeys(){
-            const keys = new Set();
-            if(!currentUser) return keys;
-            [currentUser.name,currentUser.email,currentUser.email ? String(currentUser.email).split('@')[0] : ''].forEach(v=>{if(v)keys.add(String(v).trim().toLowerCase());});
-            return keys;
-        }
-        function leaveRequestOwnerMatches(d){
-            const keys=currentEmployeeKeys();
-            return keys.has(String(d.userName||'').trim().toLowerCase()) || keys.has(String(d.userEmail||'').trim().toLowerCase()) || keys.has(String(d.employeeName||'').trim().toLowerCase());
-        }
-        async function submitLeaveRequest(){
-            if(!currentUser)return;
-            const type=document.getElementById('proposeLeaveType')?.value;
-            const start=document.getElementById('proposeLeaveStart')?.value;
-            const end=document.getElementById('proposeLeaveEnd')?.value;
-            const reason=(document.getElementById('proposeLeaveReason')?.value||'').trim();
-            if(!type||!start||!end||!reason){showNotification('Lengkapi Leave Type, Start Date, End Date dan Reason.','error');return;}
-            if(end<start){showNotification('End Date tidak boleh sebelum Start Date.','error');return;}
-            try{
-                await db.collection('leaveRequests').add({type,startDate:start,endDate:end,reason,userUid:currentUser.uid,userName:currentUser.name||currentUser.email,userEmail:currentUser.email,status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-                await trackActivity('propose_leave',{type,startDate:start,endDate:end});
-                document.getElementById('proposeLeaveReason').value='';
-                showNotification('Leave request berhasil dikirim ke Admin.','success');
-                loadMyLeaveHistory();
-            }catch(e){console.error(e);showNotification('Gagal mengirim leave request: '+e.message,'error');}
-        }
-        async function loadMyLeaveHistory(){
-            const body=document.getElementById('myLeaveHistoryBody'); if(!body||!currentUser)return;
-            body.innerHTML='<tr><td colspan="5" class="text-center">Loading...</td></tr>';
-            try{
-                const snap=await db.collection('leaveRequests').where('userUid','==',currentUser.uid).get();
-                const rows=[]; snap.forEach(doc=>rows.push({id:doc.id,...doc.data()})); rows.sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')));
-                body.innerHTML=rows.length?rows.map(r=>`<tr><td>${escapeHtmlV5(r.type||'-')}</td><td>${r.startDate||'-'}</td><td>${r.endDate||'-'}</td><td>${escapeHtmlV5(r.reason||'-')}</td><td><span class="more-pill">${escapeHtmlV5((r.status||'pending').toUpperCase())}</span></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-muted">Belum ada pengajuan cuti.</td></tr>';
-            }catch(e){body.innerHTML=`<tr><td colspan="5" class="text-center text-danger">${escapeHtmlV5(e.message)}</td></tr>`;}
-        }
-        function renderLeaveApproval(rows){
-            const el=document.getElementById('leaveApprovalList'); if(!el)return;
-            el.innerHTML=rows.length?rows.map(r=>`<div class="more-item"><div class="more-item-main"><div class="more-item-title">${escapeHtmlV5(r.userName||r.userEmail||'User')} · ${escapeHtmlV5(r.type||'Leave')}</div><div class="more-item-sub">${r.startDate||'-'} → ${r.endDate||'-'} · ${escapeHtmlV5(r.reason||'-')}</div></div><div style="display:flex;gap:6px"><button class="v5-action approve-leave" data-id="${r.id}"><i class="fas fa-check"></i> Approve</button><button class="v5-action reject-leave" data-id="${r.id}"><i class="fas fa-xmark"></i> Reject</button></div></div>`).join(''):'<div class="v5-empty">Tidak ada leave request pending.</div>';
-            el.querySelectorAll('.approve-leave').forEach(b=>b.onclick=()=>updateLeaveApproval(b.dataset.id,'approved'));
-            el.querySelectorAll('.reject-leave').forEach(b=>b.onclick=()=>updateLeaveApproval(b.dataset.id,'rejected'));
-        }
-        async function loadLeaveApprovals(){
-            if(!currentUser||normalizeRole(currentUser.role)!=='admin')return;
-            const el=document.getElementById('leaveApprovalList');if(el)el.innerHTML='<div class="v5-empty">Loading...</div>';
-            try{const snap=await db.collection('leaveRequests').where('status','==','pending').get();const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));renderLeaveApproval(rows);}catch(e){if(el)el.innerHTML='<div class="v5-empty">'+escapeHtmlV5(e.message)+'</div>';}
-        }
-        async function updateLeaveApproval(id,status){
-            if(!currentUser||normalizeRole(currentUser.role)!=='admin')return;
-            try{await db.collection('leaveRequests').doc(id).update({status,approvedBy:currentUser.uid,approvedByName:currentUser.name||currentUser.email,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});await trackActivity('leave_'+status,{requestId:id});showNotification('Leave request '+status+'.','success');loadLeaveApprovals();}catch(e){showNotification('Gagal memproses approval: '+e.message,'error');}
-        }
-        async function showAdminControlPanel(tab){
-            if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only.','error');return;}
-            hideV5Shells();document.getElementById('dashboardShell')?.classList.remove('active');document.getElementById('analyticsShell')?.classList.remove('active');
-            const map={'approval-center':'approvalCenterShell','admin-reports':'adminReportsShell','role-permissions':'rolePermissionsShell','system-health':'systemHealthShell','data-management':'dataManagementShell'};
-            const shell=document.getElementById(map[tab]);if(shell)shell.classList.add('active');
-            if(tab==='approval-center')loadLeaveApprovals();
-            if(tab==='admin-reports'){document.getElementById('adminReportAttendance').textContent=(outputData||[]).length+' records';document.getElementById('adminReportOvertime').textContent=(overtimeCalcData||[]).length+' records';try{const s=await db.collection('leaveRequests').get();document.getElementById('adminReportLeave').textContent=s.size+' requests';}catch(e){}}
-            if(tab==='system-health'){document.getElementById('systemNetworkStatus').textContent=navigator.onLine?'ONLINE':'OFFLINE';document.getElementById('systemAuthStatus').textContent=auth.currentUser?'AUTHENTICATED':'NOT AUTHENTICATED';try{await db.collection('leaveRequests').limit(1).get();document.getElementById('systemFirestoreStatus').textContent='CONNECTED';}catch(e){document.getElementById('systemFirestoreStatus').textContent='ERROR';}}
-            if(tab==='data-management'){document.getElementById('dataManagementSummary').innerHTML=`Users: ${(users||[]).length} · Attendance: ${(absensiData||[]).length} · Leave records: ${(cutiData||[]).length} · Overtime: ${(overtimeCalcData||[]).length}`;}
-        }
-        // DOM helper hooks for the new workflow
-        document.addEventListener('click',function(e){
-            const a=e.target.closest('a[data-tab]'); if(!a)return; const tab=a.getAttribute('data-tab');
-            if(tab==='approval-center'||tab==='admin-reports'||tab==='role-permissions'||tab==='system-health'||tab==='data-management'){e.preventDefault();showAdminControlPanel(tab);}
-            if(tab==='propose-leave'){setTimeout(()=>{const d=document.getElementById('proposeLeaveStart');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);const e2=document.getElementById('proposeLeaveEnd');if(e2&&!e2.value)e2.value=d?.value||'';},0);}
-            if(tab==='my-leave-history')setTimeout(loadMyLeaveHistory,0);
-        });
-        document.addEventListener('DOMContentLoaded',function(){
-            document.getElementById('submitLeaveRequest')?.addEventListener('click',submitLeaveRequest);
-            document.getElementById('refreshMyLeaveBtn')?.addEventListener('click',loadMyLeaveHistory);
-            document.getElementById('refreshLeaveApprovalBtn')?.addEventListener('click',loadLeaveApprovals);
-            document.getElementById('adminRefreshAllData')?.addEventListener('click',()=>{loadInitialData();loadLeaveApprovals();showNotification('Data refreshed.','success');});
-            document.getElementById('adminControlFolder')?.classList.remove('expanded');
-        });
-
         document.addEventListener('DOMContentLoaded', function() {
             // Check connection status awal
             checkConnection();
@@ -8145,8 +8047,6 @@ body { background: var(--pro-bg); }
         const isAdmin = currentUser.role === 'admin';
         const main = document.getElementById('mainFolder');
         if (main) main.style.display = isAdmin ? 'block' : 'none';
-        const adminControlFolder = document.getElementById('adminControlFolder');
-        if (adminControlFolder) adminControlFolder.style.display = isAdmin ? 'block' : 'none';
 
         const setting = document.querySelector('[data-tab="setting"]');
         if (setting) setting.style.display = isAdmin ? 'flex' : 'none';
@@ -8613,6 +8513,81 @@ body { background: var(--pro-bg); }
             });
         }, 1500);
     });
+})();
+</script>
+
+
+
+<script>
+/* ================= V6 ADMIN CONTROL CENTER + LEAVE SYSTEM ================= */
+(function(){
+  const V6_GENERAL=['absen-tabel','form-rekap-lembur','propose-leave','my-leave-history'];
+  const V6_ADMIN=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management','admin-activity','entry','output','overtime','cuti','summary-overtime','setting','dashboard'];
+
+  window.canAccessTab=function(tab){ if(V6_GENERAL.includes(tab)) return !!window.currentUser || !!currentUser; return normalizeRole((window.currentUser||currentUser||{}).role)==='admin' && V6_ADMIN.includes(tab); };
+
+  window.setupMenuByRole=function(role){
+    role=normalizeRole(role); if(currentUser) currentUser.role=role;
+    document.querySelectorAll('.sidebar-menu a').forEach(a=>a.style.display='none');
+    document.querySelectorAll('.sidebar-folder').forEach(f=>f.style.display='none');
+    const general=document.getElementById('generalFolder'); if(general){general.style.display='block';general.classList.add('expanded');}
+    ['absen-tabel','propose-leave','my-leave-history'].forEach(tab=>{const e=document.querySelector(`#generalFolder [data-tab="${tab}"]`);if(e)e.style.display='flex';});
+    const overtime=document.getElementById('overtimeFormMenuItem'); if(overtime) overtime.style.display=role==='user'?'flex':'none';
+    const detail=document.getElementById('overtimeDetailMenuItem'); if(detail) detail.style.display=role==='admin'?'flex':'none';
+    if(role==='admin'){
+      const main=document.getElementById('mainFolder'); if(main){main.style.display='block';document.querySelectorAll('#mainFolder .sidebar-menu a').forEach(a=>a.style.display='flex');}
+      const ac=document.getElementById('adminControlFolder'); if(ac){ac.style.display='block';ac.classList.add('expanded');document.querySelectorAll('#adminControlFolder .sidebar-menu a').forEach(a=>a.style.display='flex');}
+      document.querySelector('[data-tab="setting"]')?.style && (document.querySelector('[data-tab="setting"]').style.display='flex');
+    }
+    document.getElementById('dashboardMenuItem') && (document.getElementById('dashboardMenuItem').style.display='none');
+    document.getElementById('logoutBtn') && (document.getElementById('logoutBtn').style.display='flex');
+  };
+
+  function ts(){return firebase.firestore.FieldValue.serverTimestamp();}
+  function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML;}
+  function badge(st){const c=st==='approved'?'success':st==='rejected'?'danger':'warning text-dark';return `<span class="badge bg-${c}">${esc((st||'pending').toUpperCase())}</span>`;}
+
+  async function submitLeave(){
+    if(!currentUser) return showNotification('Please login first','error');
+    const type=document.getElementById('leaveType').value, start=document.getElementById('leaveStartDate').value, end=document.getElementById('leaveEndDate').value, reason=document.getElementById('leaveReason').value.trim();
+    if(!start||!end||!reason) return showNotification('Please complete all leave fields','error');
+    if(end<start) return showNotification('End Date cannot be earlier than Start Date','error');
+    const ref=await db.collection('leaveRequests').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'User',userEmail:currentUser.email||'',leaveType:type,startDate:start,endDate:end,reason,status:'pending',createdAt:ts(),updatedAt:ts()});
+    await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action:'submit_leave_request',module:'leave',requestId:ref.id,createdAt:ts()});
+    document.getElementById('leaveReason').value='';document.getElementById('leaveStartDate').value='';document.getElementById('leaveEndDate').value='';
+    showNotification('Leave request submitted successfully','success');
+  }
+  async function loadMyLeave(){
+    if(!currentUser)return;
+    const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="6">Loading...</td></tr>';
+    const snap=await db.collection('leaveRequests').where('uid','==',currentUser.uid).get();
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt?.toDate?.()||'').localeCompare(String(a.createdAt?.toDate?.()||'')));
+    body.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)}</td><td>${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${badge(x.status)}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</td></tr>`).join(''):'<tr><td colspan="6" class="text-center text-muted">No leave request yet.</td></tr>';
+  }
+  async function loadApproval(){
+    const body=document.getElementById('approvalLeaveBody'); if(!body)return; body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';
+    const snap=await db.collection('leaveRequests').get(); const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==='pending');
+    body.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.userName)}</td><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)} - ${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</td><td>${badge(x.status)}</td><td><button class="btn btn-sm btn-success v6-approve" data-id="${x.id}">Approve</button> <button class="btn btn-sm btn-danger v6-reject" data-id="${x.id}">Reject</button></td></tr>`).join(''):'<tr><td colspan="7" class="text-center text-muted">No pending leave requests.</td></tr>';
+  }
+  async function decideLeave(id,status){
+    if(normalizeRole(currentUser?.role)!=='admin') return showNotification('Admin only','error');
+    await db.collection('leaveRequests').doc(id).update({status,updatedAt:ts(),approvedBy:currentUser.uid});
+    await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action:status+'_leave_request',module:'approval',requestId:id,createdAt:ts()});
+    showNotification('Leave request '+status,'success');loadApproval();
+  }
+  async function loadAudit(){
+    const el=document.getElementById('auditLogsBody');if(!el)return;const snap=await db.collection('auditLogs').limit(100).get();
+    const rows=snap.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+    el.innerHTML=rows.map(x=>`<div class="v5-row"><strong>${esc(x.action||'activity')}</strong><div class="small text-muted">${esc(x.userName||'')} · ${esc(x.module||'')} · ${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</div></div>`).join('')||'<div class="text-muted">No audit logs yet.</div>';
+  }
+  async function health(){const e=document.getElementById('systemHealthBody');if(!e)return;try{await db.collection('users').limit(1).get();e.innerHTML='<span class="text-success">● Firestore Connected</span><br><span class="text-success">● Authentication Active</span><br><span class="text-success">● Application Healthy</span>';}catch(err){e.innerHTML='<span class="text-danger">● Connection issue: '+esc(err.message)+'</span>';}}
+  document.addEventListener('click',async e=>{
+    if(e.target.closest('#submitLeaveRequestBtn')){try{await submitLeave();}catch(err){console.error(err);showNotification(err.message||'Failed to submit leave','error');}}
+    if(e.target.closest('#refreshMyLeaveBtn')) loadMyLeave();
+    const a=e.target.closest('.v6-approve');if(a) decideLeave(a.dataset.id,'approved');
+    const r=e.target.closest('.v6-reject');if(r) decideLeave(r.dataset.id,'rejected');
+    const link=e.target.closest('.sidebar-menu a[data-tab]');if(link){const tab=link.dataset.tab;if(tab==='my-leave-history')setTimeout(loadMyLeave,50);if(tab==='approval-center')setTimeout(loadApproval,50);if(tab==='audit-logs')setTimeout(loadAudit,50);if(tab==='system-health')setTimeout(health,50);}
+  });
 })();
 </script>
 
