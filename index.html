@@ -1766,7 +1766,7 @@ body { background: var(--pro-bg); }
                     <li>
                         <a href="#" data-tab="absen-tabel">
                             <i class="fas fa-table"></i>
-                            <span>Attendance Table</span>
+                            <span>Attendance</span>
                         </a>
                     </li>
                     <li id="proposeLeaveMenuItem">
@@ -1785,14 +1785,14 @@ body { background: var(--pro-bg); }
                     <li id="overtimeFormMenuItem" style="display: none;">
                         <a href="#" data-tab="form-rekap-lembur">
                             <i class="fas fa-calculator"></i>
-                            <span>Overtime Form</span>
+                            <span>Overtime</span>
                         </a>
                     </li>
                     <!-- Menu Overtime Detail untuk admin -->
                     <li id="overtimeDetailMenuItem" style="display: none;">
                         <a href="#" data-tab="overtime-detail-admin">
                             <i class="fas fa-list-alt"></i>
-                            <span>Overtime Detail</span>
+                            <span>Overtime</span>
                         </a>
                     </li>
                 </ul>
@@ -1841,12 +1841,18 @@ body { background: var(--pro-bg); }
             </div>
         </div>
         
-        <!-- Settings Menu (Admin Only) -->
-        <ul class="sidebar-menu">
-            <li>
+        <!-- Account Actions -->
+        <ul class="sidebar-menu account-actions-menu">
+            <li id="settingsMenuItem">
                 <a href="#" data-tab="setting">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="changePasswordSidebarBtn">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
                 </a>
             </li>
             <li>
@@ -1858,13 +1864,8 @@ body { background: var(--pro-bg); }
         </ul>
     </div>
 
-    <!-- User Password Section -->
-    <div class="user-password-section" id="userPasswordSection">
-        <button class="user-password-btn" id="changePasswordSidebarBtn">
-            <i class="fas fa-key"></i>
-            <span>Change Password</span>
-        </button>
-    </div>
+    <!-- Legacy password section kept hidden for compatibility -->
+    <div class="user-password-section" id="userPasswordSection" style="display:none!important"></div>
 
     <!-- Header -->
     <header class="futuristic-header">
@@ -8588,6 +8589,93 @@ body { background: var(--pro-bg); }
     const r=e.target.closest('.v6-reject');if(r) decideLeave(r.dataset.id,'rejected');
     const link=e.target.closest('.sidebar-menu a[data-tab]');if(link){const tab=link.dataset.tab;if(tab==='my-leave-history')setTimeout(loadMyLeave,50);if(tab==='approval-center')setTimeout(loadApproval,50);if(tab==='audit-logs')setTimeout(loadAudit,50);if(tab==='system-health')setTimeout(health,50);}
   });
+})();
+</script>
+
+
+<style id="v7-admin-style">
+/* ================= V7 ADMIN CONTROL CENTER ================= */
+.account-actions-menu{margin-top:auto;border-top:1px solid rgba(255,255,255,.12);padding-top:10px}
+.v7-shell{display:none}.v7-shell.active{display:block}
+.v7-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
+.v7-card{background:#fff;border:1px solid #e7edf5;border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.v7-card .label{font-size:12px;color:#64748b;font-weight:700;letter-spacing:.04em}.v7-card .value{font-size:28px;font-weight:800;margin-top:8px;color:#1e293b}.v7-card .sub{font-size:12px;color:#94a3b8;margin-top:4px}
+.v7-table-wrap{overflow:auto}.v7-table{width:100%;border-collapse:collapse}.v7-table th,.v7-table td{padding:11px;border-bottom:1px solid #edf2f7;text-align:left;font-size:13px}.v7-table th{color:#64748b;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
+.v7-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.v7-toolbar input,.v7-toolbar select{max-width:220px}
+.v7-btn{border:0;border-radius:9px;padding:8px 12px;font-weight:700;background:#2563eb;color:#fff;cursor:pointer}.v7-btn.secondary{background:#e2e8f0;color:#334155}.v7-btn.danger{background:#dc2626}.v7-muted{color:#64748b;font-size:13px}.v7-empty{padding:28px;text-align:center;color:#94a3b8}
+.v7-status{display:inline-block;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}.v7-online{background:#dcfce7;color:#166534}.v7-away{background:#fef3c7;color:#92400e}.v7-offline{background:#e2e8f0;color:#475569}
+.v7-notification{border-left:4px solid #2563eb;padding:12px 14px;background:#f8fafc;border-radius:8px;margin-bottom:9px}.v7-notification.unread{background:#eff6ff}
+</style>
+<script>
+/* ================= V7 LIVE ADMIN CONTROL CENTER ================= */
+(function(){
+  const V7_ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
+  const $=id=>document.getElementById(id);
+  const esc=v=>{const d=document.createElement('div');d.textContent=v??'';return d.innerHTML};
+  const now=()=>new Date();
+  const iso=v=>{try{const d=v?.toDate?v.toDate():new Date(v);return isNaN(d)?'':d.toLocaleString()}catch(e){return ''}};
+  const age=v=>{try{const d=v?.toDate?v.toDate():new Date(v);const m=Math.max(0,Math.floor((Date.now()-d.getTime())/60000));return m<1?'Just now':m<60?m+' min ago':m<1440?Math.floor(m/60)+' h ago':Math.floor(m/1440)+' d ago'}catch(e){return 'Never'}};
+  const fsNow=()=>firebase.firestore.FieldValue.serverTimestamp();
+  const getDocs=async(name)=>{try{const s=await db.collection(name).get();return s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){console.warn('V7 '+name,e);return []}};
+  async function v7Audit(action,module,meta={}){try{if(!currentUser)return;await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action,module,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
+  async function v7Notify(recipientUid,title,message,type='system',meta={}){try{await db.collection('notifications').add({recipientUid:recipientUid||'admin',title,message,type,read:false,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
+  function hideAllAdmin(){['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>$(id)?.classList.remove('active'));$('analyticsShell')&&( $('analyticsShell').style.display='none');document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('show','active'));}
+  function activatePane(id){hideAllAdmin();const e=$(id);if(e)e.classList.add('show','active');}
+
+  async function analytics(){
+    hideAllAdmin();const shell=$('analyticsShell');if(shell){shell.style.display='block';shell.classList.add('active')}
+    const [users,presence,activities,leaves,overtime]=await Promise.all([getDocs('users'),getDocs('userPresence'),getDocs('activityLogs'),getDocs('leaveRequests'),getDocs('overtimeRecords')]);
+    const online=presence.filter(p=>String(p.status).toLowerCase()==='online' && Date.now()-new Date(p.updatedAt||p.lastAccess||0).getTime()<180000).length;
+    const today=new Date().toDateString(); const activeToday=new Set(activities.filter(a=>new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt).toDateString()===today).map(a=>a.uid)).size;
+    const pending=leaves.filter(x=>x.status==='pending').length;
+    const set=(id,v)=>{if($(id))$(id).textContent=v};
+    set('analyticsAttendanceRate',users.length?Math.min(100,Math.round(activeToday/Math.max(users.length,1)*100))+'%':'0%');
+    set('analyticsOvertimeHours',typeof minutesToHHMM==='function'?minutesToHHMM(overtime.reduce((n,x)=>n+(typeof timeToMinutes==='function'?timeToMinutes(x.overTime||x.overtime||''):0),0)):'00:00');
+    set('analyticsActiveCrew',activeToday); set('analyticsLeaveImpact',pending);
+    let extra=$('v7AnalyticsLive'); if(!extra){extra=document.createElement('div');extra.id='v7AnalyticsLive';shell.appendChild(extra)}
+    const top=Object.entries(activities.reduce((m,a)=>{const k=a.name||a.email||a.uid||'Unknown';m[k]=(m[k]||0)+1;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    extra.innerHTML=`<div class="v7-grid"><div class="v7-card"><div class="label">REGISTERED USERS</div><div class="value">${users.length}</div><div class="sub">All user accounts</div></div><div class="v7-card"><div class="label">ONLINE NOW</div><div class="value">${online}</div><div class="sub">Heartbeat under 3 minutes</div></div><div class="v7-card"><div class="label">ACTIVE TODAY</div><div class="value">${activeToday}</div><div class="sub">Unique activity users</div></div><div class="v7-card"><div class="label">PENDING LEAVE</div><div class="value">${pending}</div><div class="sub">Needs approval</div></div></div><div class="v7-card"><div class="d-flex justify-content-between"><h5>Top User Activity</h5><button class="v7-btn secondary" data-v7-refresh="analytics">Refresh</button></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>#</th><th>User</th><th>Activities</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x[0])}</td><td>${x[1]}</td></tr>`).join('')||'<tr><td colspan="3" class="v7-empty">No activity yet</td></tr>'}</tbody></table></div></div>`;
+  }
+
+  async function onlineMonitor(){hideAllAdmin();$('onlineMonitorShell')?.classList.add('active');const [users,presence]=await Promise.all([getDocs('users'),getDocs('userPresence')]);const map=new Map(users.map(u=>[u.id||u.uid,{uid:u.id||u.uid,name:u.name||u.email||'Unknown',email:u.email||'',status:'offline'}]));presence.forEach(p=>map.set(p.uid||p.id,{...(map.get(p.uid||p.id)||{}),...p}));const rows=[...map.values()].map(x=>{const t=x.updatedAt||x.lastAccess;const mins=t?Math.floor((Date.now()-new Date(t?.toDate?t.toDate():t).getTime())/60000):999999;let st=String(x.status||'offline').toLowerCase();if(st==='online'&&mins>3)st=mins<15?'away':'offline';return {...x,computed:st,last:t}}).sort((a,b)=>a.computed.localeCompare(b.computed));const list=$('onlineMonitorList');if(list)list.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="online">Refresh</button><span class="v7-muted">Auto status uses latest heartbeat.</span></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>User</th><th>Email</th><th>Status</th><th>Last Access</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td><span class="v7-status v7-${x.computed==='online'?'online':x.computed==='away'?'away':'offline'}">${esc(x.computed.toUpperCase())}</span></td><td>${esc(age(x.last))}</td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No presence data yet.</td></tr>'}</tbody></table></div>`;const online=rows.filter(x=>x.computed==='online').length; if($('onlineNowCount'))$('onlineNowCount').textContent=online;if($('monitorUserCount'))$('monitorUserCount').textContent=rows.length;if($('activeTodayCount'))$('activeTodayCount').textContent=rows.filter(x=>x.last&&new Date(x.last?.toDate?x.last.toDate():x.last).toDateString()===new Date().toDateString()).length;if($('monitorRefreshTime'))$('monitorRefreshTime').textContent=new Date().toLocaleTimeString();}
+
+  async function activityMonitor(){hideAllAdmin();$('activityScoreShell')?.classList.add('active');const acts=await getDocs('activityLogs');const m={};acts.forEach(a=>{const k=a.uid||a.email||'unknown';const r=m[k]||(m[k]={name:a.name||a.email||'Unknown',email:a.email||'',count:0,login:0,last:a.createdAt});r.count++;if(a.action==='login')r.login++;if(new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt)>new Date(r.last?.toDate?r.last.toDate():r.last))r.last=a.createdAt});const rows=Object.values(m).map(x=>({...x,score:x.count*2+x.login*5+(Date.now()-new Date(x.last?.toDate?x.last.toDate():x.last).getTime()<86400000?20:0)})).sort((a,b)=>b.score-a.score);const el=$('activityScoreList');if(el)el.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="activity">Refresh</button><span class="v7-muted">Score = usage + login + recent activity.</span></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>#</th><th>User</th><th>Activities</th><th>Score</th><th>Category</th><th>Last Activity</th></tr></thead><tbody>${rows.map((x,i)=>{const cat=x.score>=80?'Very Active':x.score>=40?'Active':x.score>=15?'Moderate':'Low';return `<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${x.count}</td><td><strong>${x.score}</strong></td><td>${cat}</td><td>${esc(age(x.last))}</td></tr>`}).join('')||'<tr><td colspan="6" class="v7-empty">Activity data will appear after users use the application.</td></tr>'}</tbody></table></div>`}
+
+  async function auditLogs(){activatePane('audit-logs');const logs=(await getDocs('auditLogs')).sort((a,b)=>new Date(b.createdAt?.toDate?b.createdAt.toDate():b.createdAt)-new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt));const body=$('auditLogsBody');if(body)body.innerHTML=`<div class="v7-toolbar"><input id="v7AuditSearch" class="form-control form-control-sm" placeholder="Search user / action / module"><button class="v7-btn secondary" data-v7-refresh="audit">Refresh</button></div><div id="v7AuditTable">${auditTable(logs)}</div>`;const inp=$('v7AuditSearch');inp?.addEventListener('input',()=>{const q=inp.value.toLowerCase();$('v7AuditTable').innerHTML=auditTable(logs.filter(x=>JSON.stringify(x).toLowerCase().includes(q)))})}
+  function auditTable(rows){return `<div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Module</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(iso(x.createdAt))}</td><td>${esc(x.userName||x.uid||'')}</td><td>${esc(x.action||'')}</td><td>${esc(x.module||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No audit logs.</td></tr>'}</tbody></table></div>`}
+
+  async function approval(){activatePane('approval-center');const body=$('approvalLeaveBody');if(body)body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';const leaves=(await getDocs('leaveRequests')).filter(x=>x.status==='pending');if(body)body.innerHTML=leaves.map(x=>`<tr><td>${esc(x.userName)}</td><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)} - ${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${esc(iso(x.createdAt))}</td><td><span class="badge bg-warning text-dark">PENDING</span></td><td><button class="btn btn-sm btn-success" data-v7-leave="approved" data-id="${x.id}">Approve</button> <button class="btn btn-sm btn-danger" data-v7-leave="rejected" data-id="${x.id}">Reject</button></td></tr>`).join('')||'<tr><td colspan="7" class="text-center text-muted">No pending leave requests.</td></tr>'}
+  async function decideLeave(id,status){const req=(await db.collection('leaveRequests').doc(id).get());const data=req.exists?req.data():{};await db.collection('leaveRequests').doc(id).update({status,updatedAt:fsNow(),approvedBy:currentUser.uid,approvedByName:currentUser.name||currentUser.email||''});await v7Notify(data.uid,'Leave Request '+(status==='approved'?'Approved':'Rejected'),`Your ${data.leaveType||'leave'} request for ${data.startDate||''} has been ${status}.`,status==='approved'?'success':'warning',{requestId:id});await v7Audit(status+'_leave_request','approval',{requestId:id,employeeUid:data.uid});showNotification('Leave request '+status,'success');await approval()}
+
+  async function notifications(){hideAllAdmin();$('notificationCenterShell')?.classList.add('active');const rows=(await getDocs('notifications')).sort((a,b)=>new Date(b.createdAt?.toDate?b.createdAt.toDate():b.createdAt)-new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt));const el=$('notificationCenterList');if(el)el.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="notifications">Refresh</button><button class="v7-btn" id="v7MarkAllRead">Mark All Read</button></div>${rows.map(n=>`<div class="v7-notification ${n.read?'':'unread'}"><div class="d-flex justify-content-between"><strong>${esc(n.title||'Notification')}</strong><small>${esc(age(n.createdAt))}</small></div><div>${esc(n.message||'')}</div><small>${esc(n.type||'system')} ${n.read?'· read':'· unread'}</small></div>`).join('')||'<div class="v7-empty">No notifications available.</div>'}`;$('v7MarkAllRead')?.addEventListener('click',async()=>{const unread=rows.filter(x=>!x.read);await Promise.all(unread.map(x=>db.collection('notifications').doc(x.id).update({read:true,readAt:fsNow()})));notifications()})}
+
+  async function reports(){activatePane('reports');const [users,leaves,audit]=await Promise.all([getDocs('users'),getDocs('leaveRequests'),getDocs('auditLogs')]);const body=$('reports');if(!body)return;body.innerHTML=`<div class="card border-0 shadow-sm p-3"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4>Reports Center</h4><p class="text-muted mb-0">Live export from current Firestore data.</p></div><div><button class="v7-btn" data-v7-export="leave">Export Leave CSV</button> <button class="v7-btn secondary" data-v7-export="audit">Export Audit CSV</button></div></div><div class="v7-grid"><div class="v7-card"><div class="label">USERS</div><div class="value">${users.length}</div></div><div class="v7-card"><div class="label">LEAVE REQUESTS</div><div class="value">${leaves.length}</div></div><div class="v7-card"><div class="label">AUDIT EVENTS</div><div class="value">${audit.length}</div></div></div></div>`}
+  function exportCsv(rows,name){if(!rows.length){showNotification('No data to export','error');return}const keys=[...new Set(rows.flatMap(Object.keys))];const csv=[keys.join(','),...rows.map(r=>keys.map(k=>`"${String(r[k]?.toDate?r[k].toDate().toISOString():r[k]??'').replaceAll('"','""')}"`).join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+  async function roles(){activatePane('role-permissions');const users=await getDocs('users');const pane=$('role-permissions');if(!pane)return;pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p class="text-muted">Role changes are recorded in Audit Logs.</p><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Save</th></tr></thead><tbody>${users.map(u=>`<tr><td>${esc(u.name||'')}</td><td>${esc(u.email||'')}</td><td><select class="form-select form-select-sm" id="v7role_${u.id}"><option value="user" ${String(u.role).toLowerCase()==='user'?'selected':''}>User</option><option value="admin" ${String(u.role).toLowerCase()==='admin'?'selected':''}>Admin</option></select></td><td><button class="v7-btn secondary" data-v7-role="${u.id}" data-old="${esc(u.role||'user')}">Save</button></td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No users.</td></tr>'}</tbody></table></div></div>`}
+  async function saveRole(uid,old){const role=$('v7role_'+uid)?.value;if(!role)return;await db.collection('users').doc(uid).update({role,roleUpdatedAt:fsNow(),roleUpdatedBy:currentUser.uid});await v7Audit('change_user_role','role-permissions',{targetUid:uid,from:old,to:role});showNotification('Role updated','success')}
+
+  async function systemHealth(){activatePane('system-health');const started=performance.now();let ok=true,msg='';let users=[];try{users=await getDocs('users');await db.collection('users').limit(1).get()}catch(e){ok=false;msg=e.message}const ms=Math.round(performance.now()-started);const body=$('systemHealthBody');if(body)body.innerHTML=`<div class="v7-grid"><div class="v7-card"><div class="label">FIRESTORE</div><div class="value">${ok?'Healthy':'Issue'}</div><div class="sub">${esc(msg||'Read test successful')}</div></div><div class="v7-card"><div class="label">AUTH SESSION</div><div class="value">${auth.currentUser?'Active':'None'}</div><div class="sub">${esc(auth.currentUser?.email||'No session')}</div></div><div class="v7-card"><div class="label">LATENCY TEST</div><div class="value">${ms} ms</div><div class="sub">Client read measurement</div></div><div class="v7-card"><div class="label">REGISTERED USERS</div><div class="value">${users.length}</div><div class="sub">Firestore users collection</div></div></div><button class="v7-btn secondary" data-v7-refresh="health">Run Health Check Again</button>`}
+
+  async function dataManagement(){activatePane('data-management');const cols=['users','leaveRequests','auditLogs','activityLogs','notifications','userPresence'];const data=await Promise.all(cols.map(getDocs));const pane=$('data-management');if(!pane)return;pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Data Management</h4><p class="text-muted">Safe export and database statistics. No destructive mass delete in V7.</p><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>Collection</th><th>Records</th><th>Export</th></tr></thead><tbody>${cols.map((c,i)=>`<tr><td>${c}</td><td>${data[i].length}</td><td><button class="v7-btn secondary" data-v7-export-col="${c}">Export JSON</button></td></tr>`).join('')}</tbody></table></div></div>`;window.__v7Collections=Object.fromEntries(cols.map((c,i)=>[c,data[i]]))}
+  function exportJson(name,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=name+'.json';a.click();URL.revokeObjectURL(a.href)}
+
+  async function submitLeaveV7(){if(!currentUser)return;const type=$('leaveType')?.value,start=$('leaveStartDate')?.value,end=$('leaveEndDate')?.value,reason=$('leaveReason')?.value.trim();if(!start||!end||!reason)return showNotification('Please complete all leave fields','error');if(end<start)return showNotification('End Date cannot be earlier than Start Date','error');const ref=await db.collection('leaveRequests').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'User',userEmail:currentUser.email||'',leaveType:type,startDate:start,endDate:end,reason,status:'pending',createdAt:fsNow(),updatedAt:fsNow()});await v7Audit('submit_leave_request','leave',{requestId:ref.id});await v7Notify('admin','New Leave Request',`${currentUser.name||currentUser.email||'User'} submitted ${type} (${start} to ${end}).`,'leave',{requestId:ref.id});$('leaveReason').value='';$('leaveStartDate').value='';$('leaveEndDate').value='';showNotification('Leave request submitted successfully','success')}
+
+  async function route(tab){if(!V7_ADMIN_TABS.includes(tab))return; if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only','error');return}document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));try{if(tab==='analytics')await analytics();if(tab==='online-monitor')await onlineMonitor();if(tab==='activity-score')await activityMonitor();if(tab==='audit-logs')await auditLogs();if(tab==='approval-center')await approval();if(tab==='notification-center')await notifications();if(tab==='reports')await reports();if(tab==='role-permissions')await roles();if(tab==='system-health')await systemHealth();if(tab==='data-management')await dataManagement();await v7Audit('open_admin_panel','admin-control',{tab})}catch(e){console.error('V7 route',tab,e);showNotification('Failed to load '+tab+': '+e.message,'error')}}
+
+  document.addEventListener('click',async e=>{
+    const admin=e.target.closest('.sidebar-menu a[data-tab]');if(admin&&V7_ADMIN_TABS.includes(admin.dataset.tab)){e.preventDefault();e.stopImmediatePropagation();await route(admin.dataset.tab);return}
+    const submit=e.target.closest('#submitLeaveRequestBtn');if(submit){e.preventDefault();e.stopImmediatePropagation();try{await submitLeaveV7()}catch(err){console.error(err);showNotification(err.message||'Failed to submit leave','error')}return}
+    const leave=e.target.closest('[data-v7-leave]');if(leave){e.preventDefault();await decideLeave(leave.dataset.id,leave.dataset.v7Leave);return}
+    const rr=e.target.closest('[data-v7-refresh]');if(rr){const x=rr.dataset.v7Refresh;if(x==='analytics')analytics();if(x==='online')onlineMonitor();if(x==='activity')activityMonitor();if(x==='audit')auditLogs();if(x==='notifications')notifications();if(x==='health')systemHealth();return}
+    const exp=e.target.closest('[data-v7-export]');if(exp){const type=exp.dataset.v7Export;if(type==='leave')exportCsv(await getDocs('leaveRequests'),'leave-report.csv');if(type==='audit')exportCsv(await getDocs('auditLogs'),'audit-report.csv');return}
+    const col=e.target.closest('[data-v7-export-col]');if(col)exportJson(col.dataset.v7ExportCol,window.__v7Collections?.[col.dataset.v7ExportCol]||[]);
+    const role=e.target.closest('[data-v7-role]');if(role){await saveRole(role.dataset.v7Role,role.dataset.old)}
+  },true);
+
+  // Ensure account actions remain visible for both roles; Settings is admin-only.
+  const oldSetup=window.setupMenuByRole;window.setupMenuByRole=function(role){oldSetup&&oldSetup(role);const isAdmin=normalizeRole(role)==='admin';$('settingsMenuItem')&&( $('settingsMenuItem').style.display=isAdmin?'':'none');$('changePasswordSidebarBtn')&&( $('changePasswordSidebarBtn').style.display='flex');$('logoutBtn')&&( $('logoutBtn').style.display='flex')};
 })();
 </script>
 
