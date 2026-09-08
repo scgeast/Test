@@ -1826,12 +1826,6 @@ body { background: var(--pro-bg); }
                         </a>
                     </li>
                     <li>
-                        <a href="#" data-tab="cuti">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>Leave Management</span>
-                        </a>
-                    </li>
-                    <li>
                         <a href="#" data-tab="summary-overtime">
                             <i class="fas fa-chart-bar"></i>
                             <span>Summary Overtime</span>
@@ -2299,8 +2293,18 @@ body { background: var(--pro-bg); }
 
                 <div class="tab-pane fade" id="my-leave-history" role="tabpanel">
                     <div class="card border-0 shadow-sm p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>My Leave History</h4><button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button></div>
-                        <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Leave Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <div>
+                                <h4 class="mb-1"><i class="fas fa-clock-rotate-left me-2"></i><span id="leaveHistoryTitle">My Leave History</span></h4>
+                                <small class="text-muted" id="leaveHistorySubtitle">View your leave records by year.</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="leaveHistoryYear" class="small text-muted mb-0">Year</label>
+                                <select id="leaveHistoryYear" class="form-select form-select-sm" style="width:auto;min-width:120px"></select>
+                                <button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
                     </div>
                 </div>
 
@@ -2316,8 +2320,8 @@ body { background: var(--pro-bg); }
                 <div class="tab-pane fade" id="system-health" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>System Health</h4><div id="systemHealthBody">Checking Firebase connection...</div></div></div>
                 <div class="tab-pane fade" id="data-management" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Data Management</h4><p class="text-muted">Admin-only data export, archive and maintenance center.</p></div></div>
 
-                <!-- Cuti Tab - PERBAIKAN: Tambah tombol delete -->
-                <div class="tab-pane fade" id="cuti" role="tabpanel">
+                <!-- Legacy Leave Management UI retired in V7.1. Historical records remain in Firestore and are consolidated into My Leave History. -->
+                <div class="tab-pane fade d-none" id="cuti" role="tabpanel" aria-hidden="true">
                     <button type="button" class="collapsible">Leave Management <i class="fas fa-chevron-down"></i></button>
                     <div class="collapsible-content">
                         <p class="small">Here you can manage employee leave data.</p>
@@ -8558,12 +8562,42 @@ body { background: var(--pro-bg); }
     document.getElementById('leaveReason').value='';document.getElementById('leaveStartDate').value='';document.getElementById('leaveEndDate').value='';
     showNotification('Leave request submitted successfully','success');
   }
+  function leaveYearFromRecord(x){
+    const d=String(x.startDate||x.createdAt?.toDate?.()?.toISOString?.()||'');
+    const m=d.match(/^(\d{4})/) || d.match(/(\d{4})$/);
+    return m?Number(m[1]):new Date().getFullYear();
+  }
+  function leaveDuration(x){
+    if(Number.isFinite(Number(x.duration))) return Number(x.duration);
+    if(x.startDate&&x.endDate){const a=new Date(x.startDate+'T00:00:00'),b=new Date(x.endDate+'T00:00:00');const n=Math.floor((b-a)/86400000)+1;return Number.isFinite(n)&&n>0?n:1;}
+    return '-';
+  }
   async function loadMyLeave(){
     if(!currentUser)return;
-    const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="6">Loading...</td></tr>';
-    const snap=await db.collection('leaveRequests').where('uid','==',currentUser.uid).get();
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt?.toDate?.()||'').localeCompare(String(a.createdAt?.toDate?.()||'')));
-    body.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)}</td><td>${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${badge(x.status)}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</td></tr>`).join(''):'<tr><td colspan="6" class="text-center text-muted">No leave request yet.</td></tr>';
+    const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="9">Loading...</td></tr>';
+    const yearSelect=document.getElementById('leaveHistoryYear');
+    const isAdmin=normalizeRole(currentUser?.role)==='admin';
+    const title=document.getElementById('leaveHistoryTitle'), subtitle=document.getElementById('leaveHistorySubtitle');
+    if(title) title.textContent=isAdmin?'Leave History':'My Leave History';
+    if(subtitle) subtitle.textContent=isAdmin?'View all users\' leave history by year.':'View your leave records by year.';
+    const [requestSnap,legacySnap]=await Promise.all([db.collection('leaveRequests').get(),db.collection('cuti').get().catch(()=>({docs:[]}))]);
+    const requestRows=requestSnap.docs.map(d=>({id:d.id,source:'request',...d.data()}));
+    const legacyRows=legacySnap.docs.map(d=>({id:d.id,source:'legacy',...d.data(),leaveType:d.data().leaveType||'Legacy Leave',status:d.data().status||'recorded'}));
+    const all=[...requestRows,...legacyRows].map(x=>({
+      ...x,
+      employeeName:x.userName||x.employeeName||x.userEmail||'-',
+      year:leaveYearFromRecord(x)
+    }));
+    const userName=String(currentUser.name||'').trim().toLowerCase();
+    const userEmail=String(currentUser.email||'').trim().toLowerCase();
+    const visible=isAdmin?all:all.filter(x=>x.uid===currentUser.uid || (!x.uid && (String(x.employeeName||'').trim().toLowerCase()===userName || String(x.userEmail||'').trim().toLowerCase()===userEmail)));
+    const years=[...new Set(visible.map(x=>x.year).filter(Number.isFinite))].sort((a,b)=>b-a);
+    const currentYear=new Date().getFullYear(); if(!years.includes(currentYear)) years.unshift(currentYear);
+    const previous=yearSelect?.value;
+    if(yearSelect){yearSelect.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');yearSelect.value=years.includes(Number(previous))?previous:String(years[0]||currentYear);}
+    const selectedYear=Number(yearSelect?.value||currentYear);
+    const rows=visible.filter(x=>x.year===selectedYear).sort((a,b)=>{const da=String(a.startDate||''),dbb=String(b.startDate||'');return dbb.localeCompare(da)});
+    body.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.employeeName)}</td><td>${esc(x.leaveType||'Leave')}</td><td>${esc(x.startDate||'-')}</td><td>${esc(x.endDate||x.startDate||'-')}</td><td>${esc(String(leaveDuration(x)))}</td><td>${esc(x.reason||x.remarks||'-')}</td><td>${badge(x.status||'recorded')}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():x.updatedAt?.toDate?x.updatedAt.toDate().toLocaleString():x.source==='legacy'?'Legacy record':'-'}</td></tr>`).join(''):`<tr><td colspan="9" class="text-center text-muted">No leave history for ${selectedYear}.</td></tr>`;
   }
   async function loadApproval(){
     const body=document.getElementById('approvalLeaveBody'); if(!body)return; body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';
@@ -8582,6 +8616,7 @@ body { background: var(--pro-bg); }
     el.innerHTML=rows.map(x=>`<div class="v5-row"><strong>${esc(x.action||'activity')}</strong><div class="small text-muted">${esc(x.userName||'')} · ${esc(x.module||'')} · ${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</div></div>`).join('')||'<div class="text-muted">No audit logs yet.</div>';
   }
   async function health(){const e=document.getElementById('systemHealthBody');if(!e)return;try{await db.collection('users').limit(1).get();e.innerHTML='<span class="text-success">● Firestore Connected</span><br><span class="text-success">● Authentication Active</span><br><span class="text-success">● Application Healthy</span>';}catch(err){e.innerHTML='<span class="text-danger">● Connection issue: '+esc(err.message)+'</span>';}}
+  document.addEventListener('change',e=>{if(e.target && e.target.id==='leaveHistoryYear') loadMyLeave();});
   document.addEventListener('click',async e=>{
     if(e.target.closest('#submitLeaveRequestBtn')){try{await submitLeave();}catch(err){console.error(err);showNotification(err.message||'Failed to submit leave','error');}}
     if(e.target.closest('#refreshMyLeaveBtn')) loadMyLeave();
