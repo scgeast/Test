@@ -1769,6 +1769,18 @@ body { background: var(--pro-bg); }
                             <span>Attendance</span>
                         </a>
                     </li>
+                    <li id="overtimeFormMenuItem" style="display: none;">
+                        <a href="#" data-tab="form-rekap-lembur">
+                            <i class="fas fa-calculator"></i>
+                            <span>Entry Overtime</span>
+                        </a>
+                    </li>
+                    <li id="overtimeDetailMenuItem" style="display: none;">
+                        <a href="#" data-tab="overtime-detail-admin">
+                            <i class="fas fa-list-alt"></i>
+                            <span>Overtime Detail</span>
+                        </a>
+                    </li>
                     <li id="proposeLeaveMenuItem">
                         <a href="#" data-tab="propose-leave">
                             <i class="fas fa-paper-plane"></i>
@@ -1779,20 +1791,6 @@ body { background: var(--pro-bg); }
                         <a href="#" data-tab="my-leave-history">
                             <i class="fas fa-clock-rotate-left"></i>
                             <span>My Leave History</span>
-                        </a>
-                    </li>
-                    <!-- Menu Overtime Form hanya untuk user biasa -->
-                    <li id="overtimeFormMenuItem" style="display: none;">
-                        <a href="#" data-tab="form-rekap-lembur">
-                            <i class="fas fa-calculator"></i>
-                            <span>Overtime</span>
-                        </a>
-                    </li>
-                    <!-- Menu Overtime Detail untuk admin -->
-                    <li id="overtimeDetailMenuItem" style="display: none;">
-                        <a href="#" data-tab="overtime-detail-admin">
-                            <i class="fas fa-list-alt"></i>
-                            <span>Overtime</span>
                         </a>
                     </li>
                 </ul>
@@ -2462,56 +2460,13 @@ body { background: var(--pro-bg); }
                             </button>
                         </div>
                     </div>
-
-                    <!-- PERBAIKAN: Overtime Detail untuk admin dan user -->
-                    <div class="overtime-form-container" id="adminOvertimeDetail">
-                        <div class="overtime-controls">
-                            <div class="overtime-filter" id="overtimeFilterSection">
-                                <label for="overtimeEmployeeFilter" class="form-label me-2">Employee Name:</label>
-                                <select class="form-select form-select-sm" id="overtimeEmployeeFilter">
-                                    <option value="all">All Employees</option>
-                                    <!-- Options will be filled by JavaScript -->
-                                </select>
-                            </div>
-                            <div class="total-overtime-container">
-                                <span class="me-2">Total Overtime:</span>
-                                <span class="total-overtime-value" id="totalOvertimeValue">00:00</span>
-                            </div>
-                        </div>
-                        
-                        <div class="table-responsive mt-3">
-                            <h5>Overtime Detail</h5>
-                            <table class="overtime-table table-striped table-sm" id="overtimeDetailTable">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Employee Name</th>
-                                        <th>Date</th>
-                                        <th>Start Time</th>
-                                        <th>End Time</th>
-                                        <th>Duration</th> <!-- Kolom baru Duration -->
-                                        <th>Total Project</th>
-                                        <th>Total Plant</th>
-                                        <th>Plant Name</th>
-                                        <th>Volume (m3)</th>
-                                        <th>Task Description</th>
-                                        <!-- PERBAIKAN: Kolom Action untuk admin di overtime detail -->
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="overtimeDetailTableBody">
-                                    <!-- Data akan diisi setelah menyimpan -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- NEW: Overtime Detail Admin Tab -->
+                <!-- NEW: Overtime Detail Tab -->
                 <div class="tab-pane fade" id="overtime-detail-admin" role="tabpanel">
-                    <button type="button" class="collapsible">Overtime Detail Management <i class="fas fa-chevron-down"></i></button>
+                    <button type="button" class="collapsible">Overtime Detail <i class="fas fa-chevron-down"></i></button>
                     <div class="collapsible-content">
-                        <p class="small">Manage all employee overtime records. Changes here will sync with user overtime data and overtime calculation.</p>
+                        <p class="small">View overtime records. Admin can view all users; users can only view their own overtime records.</p>
                     </div>
 
                     <div class="overtime-controls">
@@ -8773,3 +8728,135 @@ body { background: var(--pro-bg); }
 })();
 </script>
 <!-- ================= END V7.2 PATCH ================= -->
+
+
+<!-- ================= V7.3 ENTRY OVERTIME + DETAIL SEPARATION PATCH ================= -->
+<script id="v73EntryOvertimeFix">
+(function(){
+  function isAdminV73(){
+    const u = window.currentUser || {};
+    return String(u.role || '').toLowerCase() === 'admin';
+  }
+
+  // Final GENERAL order:
+  // Attendance -> Entry Overtime -> Overtime Detail -> Propose Leave -> My Leave History
+  function fixGeneralOrderV73(){
+    const folder = document.getElementById('generalFolder');
+    if(!folder) return;
+    const ul = folder.querySelector('.sidebar-menu');
+    if(!ul) return;
+    ['absen-tabel','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history'].forEach(tab=>{
+      const a = ul.querySelector(`a[data-tab="${tab}"]`);
+      const li = a && a.closest('li');
+      if(li) ul.appendChild(li);
+    });
+
+    const formLi = document.getElementById('overtimeFormMenuItem');
+    const detailLi = document.getElementById('overtimeDetailMenuItem');
+    if(formLi){ formLi.style.display='flex'; const a=formLi.querySelector('a'); if(a) a.innerHTML='<i class="fas fa-plus-circle"></i><span>Entry Overtime</span>'; }
+    if(detailLi){ detailLi.style.display='flex'; const a=detailLi.querySelector('a'); if(a) a.innerHTML='<i class="fas fa-list-alt"></i><span>Overtime Detail</span>'; }
+  }
+
+  // Entry Overtime must contain FORM ONLY. Any legacy embedded detail panel is hidden as a safety net.
+  function enforceEntryOnlyV73(){
+    const embedded = document.getElementById('adminOvertimeDetail');
+    if(embedded) embedded.style.display='none';
+  }
+
+  async function loadUserSharedDetailV73(){
+    if(!window.currentUser) return;
+    const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+    if(filterWrap) filterWrap.style.display='none';
+
+    const btn = document.querySelector('#overtime-detail-admin .collapsible');
+    if(btn) btn.innerHTML='My Overtime Detail <i class="fas fa-chevron-down"></i>';
+    const desc = document.querySelector('#overtime-detail-admin .collapsible-content p');
+    if(desc) desc.textContent='You can only view your own overtime records.';
+
+    const snap = await db.collection('overtimeRecords')
+      .where('employeeEmail','==',currentUser.email)
+      .get();
+
+    const records=[];
+    snap.forEach(doc=>records.push({id:doc.id,...doc.data()}));
+    records.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+
+    const tbody=document.getElementById('adminOvertimeDetailTableBody');
+    if(!tbody) return;
+    tbody.innerHTML='';
+
+    if(!records.length){
+      tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
+      const total=document.getElementById('adminTotalOvertimeValue'); if(total) total.textContent='00:00';
+      return;
+    }
+
+    let no=1,totalMinutes=0;
+    records.forEach(record=>{
+      const duration=String(record.overtimeDuration||'00:00');
+      const dm=duration.match(/^(\d+):(\d+)$/);
+      if(dm) totalMinutes+=(+dm[1])*60+(+dm[2]);
+
+      const rows=(record.tableData&&record.tableData.length)?record.tableData:[{}];
+      rows.forEach((row,index)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${no++}</td>
+          <td>${record.employeeName||''}</td>
+          <td>${index===0?(record.date||''):''}</td>
+          <td>${index===0?(record.startTime||''):''}</td>
+          <td>${index===0?(record.endTime||''):''}</td>
+          <td>${index===0?duration:''}</td>
+          <td>${row.totalProject||''}</td>
+          <td>${row.totalPlant||''}</td>
+          <td>${row.plantNames||''}</td>
+          <td>${row.volume||''}</td>
+          <td>${index===0?(record.taskDescription||''):''}</td>
+          <td>-</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+
+    const total=document.getElementById('adminTotalOvertimeValue');
+    if(total){
+      total.textContent=String(Math.floor(totalMinutes/60)).padStart(2,'0')+':'+String(totalMinutes%60).padStart(2,'0');
+    }
+  }
+
+  function prepareAdminSharedDetailV73(){
+    const filterWrap=document.querySelector('#overtime-detail-admin .overtime-filter');
+    if(filterWrap) filterWrap.style.display='';
+    const btn=document.querySelector('#overtime-detail-admin .collapsible');
+    if(btn) btn.innerHTML='Overtime Detail <i class="fas fa-chevron-down"></i>';
+    const desc=document.querySelector('#overtime-detail-admin .collapsible-content p');
+    if(desc) desc.textContent='Manage and review overtime records for all users.';
+  }
+
+  // After normal navigation has initialized the tab, correct role-specific detail behavior.
+  document.addEventListener('click', function(e){
+    const link=e.target.closest('a[data-tab="overtime-detail-admin"]');
+    if(!link) return;
+    setTimeout(async ()=>{
+      try{
+        if(isAdminV73()){
+          prepareAdminSharedDetailV73();
+          // Normal tab navigation already runs the existing admin initializer.
+        }else{
+          await loadUserSharedDetailV73();
+        }
+      }catch(err){
+        console.error('V7.3 overtime detail error',err);
+        if(typeof showNotification==='function') showNotification('Failed to load overtime detail: '+(err.message||err),'error');
+      }
+    },50);
+  }, true);
+
+  document.addEventListener('DOMContentLoaded', function(){
+    enforceEntryOnlyV73();
+    fixGeneralOrderV73();
+    setTimeout(()=>{enforceEntryOnlyV73();fixGeneralOrderV73();},1200);
+  });
+  document.addEventListener('click', function(){ setTimeout(()=>{enforceEntryOnlyV73();fixGeneralOrderV73();},0); });
+})();
+</script>
+<!-- ================= END V7.3 PATCH ================= -->
