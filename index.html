@@ -2302,7 +2302,14 @@ body { background: var(--pro-bg); }
                                 <button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button>
                             </div>
                         </div>
-                        <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
+                        <div id="leaveSummarySection" class="summary-section mt-3">
+                            <div class="summary-title"><i class="fas fa-chart-pie me-2"></i><span id="leaveSummaryTitle">My Leave Summary</span></div>
+                            <div class="table-responsive"><table class="table table-sm table-bordered align-middle summary-table mb-0">
+                                <thead><tr><th>No</th><th>Employee</th><th>Year</th><th>Leave Taken (Approved)</th><th>Pending</th><th>Leave Entitlement</th><th>Remaining Leave</th></tr></thead>
+                                <tbody id="leaveSummaryBody"></tbody></table></div>
+                            <small class="text-muted d-block mt-2" id="leaveSummaryNote"></small>
+                        </div>
+                        <div class="table-responsive mt-3"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
                     </div>
                 </div>
 
@@ -6559,11 +6566,16 @@ body { background: var(--pro-bg); }
         // PERBAIKAN: Fungsi untuk update tabel detail overtime dengan kolom Duration - DIPERBAIKI
         function updateOvertimeDetailTable() {
             const tbody = document.getElementById('overtimeDetailTableBody');
+            if (!tbody) {
+                console.debug('updateOvertimeDetailTable skipped: target not available in current view');
+                return;
+            }
             tbody.innerHTML = '';
-            
-            // Filter data berdasarkan date range
-            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
-            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
+
+            const startDateInput = document.getElementById('startDateOvertimeOutput');
+            const endDateInput = document.getElementById('endDateOvertimeOutput');
+            const startDate = startDateInput ? startDateInput.valueAsDate : null;
+            const endDate = endDateInput ? endDateInput.valueAsDate : null;
             
             // PERBAIKAN: Filter yang lebih ketat berdasarkan user
             let filteredData = rekapLemburData;
@@ -6781,9 +6793,9 @@ body { background: var(--pro-bg); }
                 // PERBAIKAN: Update overtime calculation dengan data yang baru
                 await updateOvertimeCalculationFromRecord(rekapLemburData[recordIndex]);
                 
-                // Update tampilan
-                updateOvertimeDetailTable();
-                updateAdminOvertimeDetailTable();
+                // Update tampilan aman: target tabel tergantung role/tab aktif
+                if (document.getElementById('overtimeDetailTableBody')) updateOvertimeDetailTable();
+                if (document.getElementById('adminOvertimeDetailTableBody')) updateAdminOvertimeDetailTable();
                 updateTotalOvertime();
                 
                 // Close modal
@@ -8529,6 +8541,29 @@ body { background: var(--pro-bg); }
     if(x.startDate&&x.endDate){const a=new Date(x.startDate+'T00:00:00'),b=new Date(x.endDate+'T00:00:00');const n=Math.floor((b-a)/86400000)+1;return Number.isFinite(n)&&n>0?n:1;}
     return '-';
   }
+  function getLeaveEntitlement(user){
+    const n=Number(user?.leaveEntitlement ?? user?.annualLeaveEntitlement ?? 12);
+    return Number.isFinite(n)&&n>=0?n:12;
+  }
+  function normalizeLeaveStatus(status){ return String(status||'recorded').trim().toLowerCase(); }
+  function leaveIdentity(x){ return String(x.uid||x.userEmail||x.employeeName||'').trim().toLowerCase(); }
+  function renderLeaveSummary(records,isAdmin,selectedYear){
+    const body=document.getElementById('leaveSummaryBody'), title=document.getElementById('leaveSummaryTitle'), note=document.getElementById('leaveSummaryNote');
+    if(!body)return;
+    if(title) title.textContent=isAdmin?'Leave Summary - All Users':'My Leave Summary';
+    if(note) note.textContent=isAdmin?'Remaining leave = yearly entitlement minus approved leave for each user.':'Only your leave summary and remaining leave balance are shown.';
+    const groups=new Map();
+    records.filter(x=>x.year===selectedYear).forEach(x=>{
+      const key=leaveIdentity(x)||String(x.employeeName||'-').toLowerCase();
+      if(!groups.has(key)) groups.set(key,{name:x.employeeName||'-',entitlement:getLeaveEntitlement(x),approved:0,pending:0});
+      const g=groups.get(key), d=Number(leaveDuration(x))||0, st=normalizeLeaveStatus(x.status);
+      if(st==='approved'||st==='recorded') g.approved+=d;
+      else if(st==='pending') g.pending+=d;
+    });
+    if(!isAdmin && groups.size===0) groups.set(String(currentUser.uid||currentUser.email||'me'),{name:currentUser.name||currentUser.email||'User',entitlement:getLeaveEntitlement(currentUser),approved:0,pending:0});
+    const rows=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));
+    body.innerHTML=rows.length?rows.map((g,i)=>{const remaining=Math.max(0,g.entitlement-g.approved);return `<tr><td>${i+1}</td><td>${esc(g.name)}</td><td>${selectedYear}</td><td>${g.approved}</td><td>${g.pending}</td><td>${g.entitlement}</td><td><strong>${remaining}</strong></td></tr>`;}).join(''):`<tr><td colspan="7" class="text-center text-muted">No leave summary for ${selectedYear}.</td></tr>`;
+  }
   async function loadMyLeave(){
     if(!currentUser)return;
     const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="9">Loading...</td></tr>';
@@ -8555,6 +8590,7 @@ body { background: var(--pro-bg); }
     const selectedYear=Number(yearSelect?.value||currentYear);
     const rows=visible.filter(x=>x.year===selectedYear).sort((a,b)=>{const da=String(a.startDate||''),dbb=String(b.startDate||'');return dbb.localeCompare(da)});
     body.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.employeeName)}</td><td>${esc(x.leaveType||'Leave')}</td><td>${esc(x.startDate||'-')}</td><td>${esc(x.endDate||x.startDate||'-')}</td><td>${esc(String(leaveDuration(x)))}</td><td>${esc(x.reason||x.remarks||'-')}</td><td>${badge(x.status||'recorded')}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():x.updatedAt?.toDate?x.updatedAt.toDate().toLocaleString():x.source==='legacy'?'Legacy record':'-'}</td></tr>`).join(''):`<tr><td colspan="9" class="text-center text-muted">No leave history for ${selectedYear}.</td></tr>`;
+    renderLeaveSummary(visible,isAdmin,selectedYear);
   }
   async function loadApproval(){
     const body=document.getElementById('approvalLeaveBody'); if(!body)return; body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';
