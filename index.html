@@ -6250,8 +6250,14 @@ body { background: var(--pro-bg); }
                     });
                 });
                 
-                updateOvertimeDetailTable();
-                updateAdminOvertimeDetailTable();
+                // V7.5 FIX: legacy overtimeDetailTableBody may not exist after Entry Overtime
+                // and Overtime Detail were separated. Each renderer now checks its own target.
+                if (document.getElementById('overtimeDetailTableBody')) {
+                    updateOvertimeDetailTable();
+                }
+                if (document.getElementById('adminOvertimeDetailTableBody')) {
+                    updateAdminOvertimeDetailTable();
+                }
                 updateTotalOvertime();
                 
             } catch (error) {
@@ -6563,7 +6569,8 @@ body { background: var(--pro-bg); }
             let filteredData = rekapLemburData;
             
             if (currentUser.role === 'admin') {
-                const employeeFilter = document.getElementById('overtimeEmployeeFilter').value;
+                const employeeFilterElement = document.getElementById('overtimeEmployeeFilter');
+                const employeeFilter = employeeFilterElement ? employeeFilterElement.value : 'all';
                 if (employeeFilter !== 'all') {
                     filteredData = rekapLemburData.filter(record => record.employeeName === employeeFilter);
                 }
