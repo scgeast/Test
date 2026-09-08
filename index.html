@@ -8716,3 +8716,60 @@ body { background: var(--pro-bg); }
 
 </body>
 </html>
+<!-- ================= V7.2 GENERAL OVERTIME RESTORE PATCH ================= -->
+<script id="v72GeneralOvertimeRestore">
+(function(){
+  const GENERAL_TABS_V72 = ['absen-tabel','propose-leave','my-leave-history','form-rekap-lembur','overtime-detail-admin'];
+
+  function roleOf(){
+    return (typeof normalizeRole==='function')
+      ? normalizeRole((window.currentUser||window.currentUser||{}).role)
+      : String((window.currentUser||{}).role||'user').toLowerCase()==='admin'?'admin':'user';
+  }
+
+  // GENERAL access: Attendance + Entry Overtime + Overtime Detail + Leave menus.
+  const previousCanAccessV72 = window.canAccessTab;
+  window.canAccessTab = function(tab){
+    if (GENERAL_TABS_V72.includes(tab)) return !!(window.currentUser || (typeof currentUser!=='undefined' && currentUser));
+    return typeof previousCanAccessV72==='function' ? previousCanAccessV72(tab) : false;
+  };
+
+  function restoreGeneralOvertimeMenus(){
+    const formLi = document.getElementById('overtimeFormMenuItem');
+    const detailLi = document.getElementById('overtimeDetailMenuItem');
+    const formLink = formLi && formLi.querySelector('a[data-tab="form-rekap-lembur"]');
+    const detailLink = detailLi && detailLi.querySelector('a[data-tab="overtime-detail-admin"]');
+
+    // Both menus belong to GENERAL and are available to Admin + User.
+    if (formLi) formLi.style.display='flex';
+    if (detailLi) detailLi.style.display='flex';
+    if (formLink){ formLink.style.display='flex'; formLink.style.pointerEvents='auto'; formLink.innerHTML='<i class="fas fa-plus-circle"></i><span>Entry Overtime</span>'; }
+    if (detailLink){ detailLink.style.display='flex'; detailLink.style.pointerEvents='auto'; detailLink.innerHTML='<i class="fas fa-list-alt"></i><span>Overtime Detail</span>'; }
+  }
+
+  const previousSetupV72 = window.setupMenuByRole;
+  window.setupMenuByRole = function(role){
+    if (typeof previousSetupV72==='function') previousSetupV72(role);
+    const general=document.getElementById('generalFolder');
+    if(general){
+      general.style.display='block';
+      general.classList.add('expanded');
+      ['absen-tabel','propose-leave','my-leave-history','form-rekap-lembur','overtime-detail-admin'].forEach(tab=>{
+        const a=general.querySelector(`[data-tab="${tab}"]`);
+        if(a){a.style.display='flex';a.style.pointerEvents='auto';a.removeAttribute('aria-disabled');}
+      });
+    }
+    restoreGeneralOvertimeMenus();
+  };
+
+  // Existing loadUserOvertimeData/updateOvertimeDetailTable already enforce:
+  // admin -> all overtime records; user -> employeeEmail === currentUser.email.
+  // Re-run UI correction after login/role setup and sidebar interactions.
+  document.addEventListener('DOMContentLoaded', function(){
+    restoreGeneralOvertimeMenus();
+    setTimeout(restoreGeneralOvertimeMenus, 1200);
+  });
+  document.addEventListener('click', function(){ setTimeout(restoreGeneralOvertimeMenus, 0); });
+})();
+</script>
+<!-- ================= END V7.2 PATCH ================= -->
