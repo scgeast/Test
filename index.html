@@ -2302,14 +2302,7 @@ body { background: var(--pro-bg); }
                                 <button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button>
                             </div>
                         </div>
-                        <div id="leaveSummarySection" class="summary-section mt-3">
-                            <div class="summary-title"><i class="fas fa-chart-pie me-2"></i><span id="leaveSummaryTitle">My Leave Summary</span></div>
-                            <div class="table-responsive"><table class="table table-sm table-bordered align-middle summary-table mb-0">
-                                <thead><tr><th>No</th><th>Employee</th><th>Year</th><th>Leave Taken (Approved)</th><th>Pending</th><th>Leave Entitlement</th><th>Remaining Leave</th></tr></thead>
-                                <tbody id="leaveSummaryBody"></tbody></table></div>
-                            <small class="text-muted d-block mt-2" id="leaveSummaryNote"></small>
-                        </div>
-                        <div class="table-responsive mt-3"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
+                        <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
                     </div>
                 </div>
 
@@ -6257,14 +6250,8 @@ body { background: var(--pro-bg); }
                     });
                 });
                 
-                // V7.5 FIX: legacy overtimeDetailTableBody may not exist after Entry Overtime
-                // and Overtime Detail were separated. Each renderer now checks its own target.
-                if (document.getElementById('overtimeDetailTableBody')) {
-                    updateOvertimeDetailTable();
-                }
-                if (document.getElementById('adminOvertimeDetailTableBody')) {
-                    updateAdminOvertimeDetailTable();
-                }
+                updateOvertimeDetailTable();
+                updateAdminOvertimeDetailTable();
                 updateTotalOvertime();
                 
             } catch (error) {
@@ -6274,44 +6261,49 @@ body { background: var(--pro-bg); }
 
         // PERBAIKAN: Fungsi untuk inisialisasi Overtime Form
         function initOvertimeForm() {
-            // V7.4 FIX: Entry Overtime is INPUT FORM for BOTH Admin and User.
-            // Overtime Detail is handled separately by the overtime-detail-admin tab.
-            const form = document.getElementById('userOvertimeForm');
-            const dateInput = document.getElementById('rekapDate');
-            const tbody = document.getElementById('rekapLemburTableBody');
-            const saveBtn = document.getElementById('saveRekapLembur');
-
-            if (!form || !dateInput || !tbody || !saveBtn) {
-                console.error('Entry Overtime form elements are missing');
-                return;
-            }
-
-            // Always show the actual input form regardless of role.
-            form.style.display = 'block';
-            form.style.visibility = 'visible';
-            form.style.opacity = '1';
-
-            // Entry Overtime must never show the detail panel.
-            const embeddedDetail = document.getElementById('adminOvertimeDetail');
-            if (embeddedDetail) embeddedDetail.style.display = 'none';
-
-            // Default date to today when the form is first opened.
-            if (!dateInput.value) dateInput.valueAsDate = new Date();
-
-            // Create one input row when there is no row yet.
-            if (tbody.rows.length === 0) {
+            // PERBAIKAN: Tampilkan form yang berbeda berdasarkan role
+            if (currentUser.role === 'admin') {
+                // Untuk admin, tampilkan hanya overtime detail
+                document.getElementById('userOvertimeForm').style.display = 'none';
+                document.getElementById('adminOvertimeDetail').style.display = 'block';
+                
+                // Tampilkan filter employee untuk admin
+                document.getElementById('overtimeFilterSection').style.display = 'flex';
+                
+                // Load semua data overtime untuk admin
+                loadAllOvertimeData();
+                
+                // Setup employee filter
+                setupOvertimeEmployeeFilter();
+            } else {
+                // Untuk user biasa, tampilkan form input
+                document.getElementById('userOvertimeForm').style.display = 'block';
+                document.getElementById('adminOvertimeDetail').style.display = 'block';
+                
+                // SEMBUNYIKAN filter employee untuk user biasa
+                document.getElementById('overtimeFilterSection').style.display = 'none';
+                
+                // Set tanggal default ke hari ini
+                document.getElementById('rekapDate').valueAsDate = new Date();
+                
+                // Hapus semua baris yang ada
+                const tbody = document.getElementById('rekapLemburTableBody');
+                tbody.innerHTML = '';
                 currentRekapRows = [];
+                
+                // Tambah hanya 1 baris default
                 addRekapRow();
+                
+                // Load data overtime user
+                loadUserOvertimeData();
+                
+                // Setup event listeners
+                document.getElementById('saveRekapLembur').addEventListener('click', saveRekapLembur);
             }
-
-            // Prevent duplicate save handlers after opening the menu repeatedly.
-            if (!saveBtn.dataset.overtimeBound) {
-                saveBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    saveRekapLembur();
-                });
-                saveBtn.dataset.overtimeBound = 'true';
-            }
+            
+            // Event listener untuk filter date change
+            document.getElementById('startDateOvertimeOutput').addEventListener('change', updateOvertimeDisplay);
+            document.getElementById('endDateOvertimeOutput').addEventListener('change', updateOvertimeDisplay);
         }
 
         // PERBAIKAN: Fungsi untuk inisialisasi Overtime Detail Admin
@@ -6566,23 +6558,17 @@ body { background: var(--pro-bg); }
         // PERBAIKAN: Fungsi untuk update tabel detail overtime dengan kolom Duration - DIPERBAIKI
         function updateOvertimeDetailTable() {
             const tbody = document.getElementById('overtimeDetailTableBody');
-            if (!tbody) {
-                console.debug('updateOvertimeDetailTable skipped: target not available in current view');
-                return;
-            }
             tbody.innerHTML = '';
-
-            const startDateInput = document.getElementById('startDateOvertimeOutput');
-            const endDateInput = document.getElementById('endDateOvertimeOutput');
-            const startDate = startDateInput ? startDateInput.valueAsDate : null;
-            const endDate = endDateInput ? endDateInput.valueAsDate : null;
+            
+            // Filter data berdasarkan date range
+            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
+            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
             
             // PERBAIKAN: Filter yang lebih ketat berdasarkan user
             let filteredData = rekapLemburData;
             
             if (currentUser.role === 'admin') {
-                const employeeFilterElement = document.getElementById('overtimeEmployeeFilter');
-                const employeeFilter = employeeFilterElement ? employeeFilterElement.value : 'all';
+                const employeeFilter = document.getElementById('overtimeEmployeeFilter').value;
                 if (employeeFilter !== 'all') {
                     filteredData = rekapLemburData.filter(record => record.employeeName === employeeFilter);
                 }
@@ -6793,9 +6779,9 @@ body { background: var(--pro-bg); }
                 // PERBAIKAN: Update overtime calculation dengan data yang baru
                 await updateOvertimeCalculationFromRecord(rekapLemburData[recordIndex]);
                 
-                // Update tampilan aman: target tabel tergantung role/tab aktif
-                if (document.getElementById('overtimeDetailTableBody')) updateOvertimeDetailTable();
-                if (document.getElementById('adminOvertimeDetailTableBody')) updateAdminOvertimeDetailTable();
+                // Update tampilan
+                updateOvertimeDetailTable();
+                updateAdminOvertimeDetailTable();
                 updateTotalOvertime();
                 
                 // Close modal
@@ -8541,29 +8527,6 @@ body { background: var(--pro-bg); }
     if(x.startDate&&x.endDate){const a=new Date(x.startDate+'T00:00:00'),b=new Date(x.endDate+'T00:00:00');const n=Math.floor((b-a)/86400000)+1;return Number.isFinite(n)&&n>0?n:1;}
     return '-';
   }
-  function getLeaveEntitlement(user){
-    const n=Number(user?.leaveEntitlement ?? user?.annualLeaveEntitlement ?? 12);
-    return Number.isFinite(n)&&n>=0?n:12;
-  }
-  function normalizeLeaveStatus(status){ return String(status||'recorded').trim().toLowerCase(); }
-  function leaveIdentity(x){ return String(x.uid||x.userEmail||x.employeeName||'').trim().toLowerCase(); }
-  function renderLeaveSummary(records,isAdmin,selectedYear){
-    const body=document.getElementById('leaveSummaryBody'), title=document.getElementById('leaveSummaryTitle'), note=document.getElementById('leaveSummaryNote');
-    if(!body)return;
-    if(title) title.textContent=isAdmin?'Leave Summary - All Users':'My Leave Summary';
-    if(note) note.textContent=isAdmin?'Remaining leave = yearly entitlement minus approved leave for each user.':'Only your leave summary and remaining leave balance are shown.';
-    const groups=new Map();
-    records.filter(x=>x.year===selectedYear).forEach(x=>{
-      const key=leaveIdentity(x)||String(x.employeeName||'-').toLowerCase();
-      if(!groups.has(key)) groups.set(key,{name:x.employeeName||'-',entitlement:getLeaveEntitlement(x),approved:0,pending:0});
-      const g=groups.get(key), d=Number(leaveDuration(x))||0, st=normalizeLeaveStatus(x.status);
-      if(st==='approved'||st==='recorded') g.approved+=d;
-      else if(st==='pending') g.pending+=d;
-    });
-    if(!isAdmin && groups.size===0) groups.set(String(currentUser.uid||currentUser.email||'me'),{name:currentUser.name||currentUser.email||'User',entitlement:getLeaveEntitlement(currentUser),approved:0,pending:0});
-    const rows=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));
-    body.innerHTML=rows.length?rows.map((g,i)=>{const remaining=Math.max(0,g.entitlement-g.approved);return `<tr><td>${i+1}</td><td>${esc(g.name)}</td><td>${selectedYear}</td><td>${g.approved}</td><td>${g.pending}</td><td>${g.entitlement}</td><td><strong>${remaining}</strong></td></tr>`;}).join(''):`<tr><td colspan="7" class="text-center text-muted">No leave summary for ${selectedYear}.</td></tr>`;
-  }
   async function loadMyLeave(){
     if(!currentUser)return;
     const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="9">Loading...</td></tr>';
@@ -8590,7 +8553,6 @@ body { background: var(--pro-bg); }
     const selectedYear=Number(yearSelect?.value||currentYear);
     const rows=visible.filter(x=>x.year===selectedYear).sort((a,b)=>{const da=String(a.startDate||''),dbb=String(b.startDate||'');return dbb.localeCompare(da)});
     body.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.employeeName)}</td><td>${esc(x.leaveType||'Leave')}</td><td>${esc(x.startDate||'-')}</td><td>${esc(x.endDate||x.startDate||'-')}</td><td>${esc(String(leaveDuration(x)))}</td><td>${esc(x.reason||x.remarks||'-')}</td><td>${badge(x.status||'recorded')}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():x.updatedAt?.toDate?x.updatedAt.toDate().toLocaleString():x.source==='legacy'?'Legacy record':'-'}</td></tr>`).join(''):`<tr><td colspan="9" class="text-center text-muted">No leave history for ${selectedYear}.</td></tr>`;
-    renderLeaveSummary(visible,isAdmin,selectedYear);
   }
   async function loadApproval(){
     const body=document.getElementById('approvalLeaveBody'); if(!body)return; body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';
@@ -8647,7 +8609,16 @@ body { background: var(--pro-bg); }
   const getDocs=async(name)=>{try{const s=await db.collection(name).get();return s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){console.warn('V7 '+name,e);return []}};
   async function v7Audit(action,module,meta={}){try{if(!currentUser)return;await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action,module,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
   async function v7Notify(recipientUid,title,message,type='system',meta={}){try{await db.collection('notifications').add({recipientUid:recipientUid||'admin',title,message,type,read:false,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
-  function hideAllAdmin(){['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>$(id)?.classList.remove('active'));$('analyticsShell')&&( $('analyticsShell').style.display='none');document.querySelectorAll('.tab-pane').forEach(x=>x.classList.remove('show','active'));}
+  function hideAllAdmin(){
+    // V7.4: Admin Control Center must never inherit legacy Overtime Detail / Attendance filter UI.
+    ['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{
+      const el=$(id); if(el){el.classList.remove('active'); if(id==='analyticsShell') el.style.display='none';}
+    });
+    document.querySelectorAll('.tab-pane').forEach(x=>{x.classList.remove('show','active');x.style.display='none';});
+    ['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id=>{const el=$(id);if(el)el.style.display='none';});
+    // Extra safety for shared date controls and the GENERAL Overtime Detail pane.
+    const overtimeDetail=$('overtime-detail-admin'); if(overtimeDetail) overtimeDetail.classList.remove('show','active');
+  }
   function activatePane(id){hideAllAdmin();const e=$(id);if(e)e.classList.add('show','active');}
 
   async function analytics(){
@@ -8899,36 +8870,187 @@ body { background: var(--pro-bg); }
 </script>
 <!-- ================= END V7.3 PATCH ================= -->
 
-<!-- ================= V7.4 ENTRY OVERTIME FORM VISIBILITY FIX ================= -->
-<script id="v74EntryOvertimeFormVisibilityFix">
+
+<!-- ================= V7.4 ADMIN CONTROL CENTER UI ISOLATION PATCH ================= -->
+<script id="v74AdminControlIsolation">
 (function(){
-  function forceEntryFormV74(){
-    const pane=document.getElementById('form-rekap-lembur');
-    const form=document.getElementById('userOvertimeForm');
-    if(!pane || !form) return;
-    form.style.display='block';
-    form.style.visibility='visible';
-    form.style.opacity='1';
-    form.removeAttribute('hidden');
-    const date=document.getElementById('rekapDate');
-    const tbody=document.getElementById('rekapLemburTableBody');
-    if(date && !date.value) date.valueAsDate=new Date();
-    if(tbody && tbody.rows.length===0 && typeof window.addRekapRow==='function') {
-      try { window.currentRekapRows=[]; window.addRekapRow(); } catch(e){ console.warn('V7.4 row init',e); }
+  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
+  const FILTER_IDS=['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'];
+
+  function hideLegacyForAdmin(){
+    FILTER_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    document.querySelectorAll('.tab-pane').forEach(p=>{
+      // Keep only the Admin Control Center target visible; legacy panes are isolated.
+      p.classList.remove('show','active');
+      p.style.display='none';
+    });
+    const detail=document.getElementById('overtime-detail-admin');
+    if(detail){detail.classList.remove('show','active');detail.style.display='none';}
+  }
+
+  function restoreNormalUI(tab){
+    document.querySelectorAll('.tab-pane').forEach(p=>p.style.display='');
+    FILTER_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    if(tab==='entry'){
+      const el=document.getElementById('filterSectionMain');if(el)el.style.display='block';
+    } else if(tab==='output'||tab==='overtime'){
+      const el=document.getElementById('filterSectionOvertimeOutput');if(el)el.style.display='block';
+    } else if(tab==='absen-tabel'){
+      const el=document.getElementById('filterSectionAbsenTabel');if(el)el.style.display='block';
     }
   }
-  const oldInit=window.initOvertimeForm;
-  window.initOvertimeForm=function(){
-    try { if(typeof oldInit==='function') oldInit(); }
-    finally { forceEntryFormV74(); }
-  };
+
+  // Existing V7 route runs in capture mode and stops propagation. Mutation/interval safety
+  // guarantees that legacy Overtime Detail and Date Range blocks cannot bleed into admin pages.
   document.addEventListener('click',function(e){
-    const link=e.target.closest('a[data-tab="form-rekap-lembur"]');
-    if(link) setTimeout(function(){
-      try{ window.initOvertimeForm(); }catch(err){ console.error('V7.4 Entry Overtime init failed',err); forceEntryFormV74(); }
-    },80);
+    const a=e.target.closest('a[data-tab]');
+    if(!a) return;
+    const tab=a.dataset.tab;
+    if(ADMIN_TABS.includes(tab)){
+      setTimeout(hideLegacyForAdmin,0);
+      setTimeout(hideLegacyForAdmin,80);
+    } else {
+      setTimeout(()=>restoreNormalUI(tab),0);
+    }
   },true);
-  document.addEventListener('DOMContentLoaded',function(){ setTimeout(forceEntryFormV74,500); });
+
+  // Admin Overtime Detail remains in GENERAL and admins can delete records.
+  // This wrapper protects the delete action from disappearing after rerenders.
+  function ensureAdminDeleteButtons(){
+    const u=window.currentUser||{};
+    if(String(u.role||'').toLowerCase()!=='admin') return;
+    const pane=document.getElementById('overtime-detail-admin');
+    if(!pane || !pane.classList.contains('active')) return;
+    pane.querySelectorAll('tbody tr').forEach(tr=>{
+      const hasDelete=tr.querySelector('.btn-delete-overtime,[data-v74-delete-overtime]');
+      if(hasDelete) return;
+      const id=tr.dataset.overtimeId;
+      if(!id) return;
+      const td=tr.lastElementChild;
+      if(!td) return;
+      const btn=document.createElement('button');
+      btn.type='button';btn.className='btn-delete-overtime';btn.dataset.v74DeleteOvertime=id;
+      btn.innerHTML='<i class="fas fa-trash"></i>';
+      td.appendChild(btn);
+    });
+  }
+
+  document.addEventListener('click',async function(e){
+    const btn=e.target.closest('[data-v74-delete-overtime]');
+    if(!btn) return;
+    e.preventDefault();
+    const u=window.currentUser||{};
+    if(String(u.role||'').toLowerCase()!=='admin'){
+      if(typeof showNotification==='function')showNotification('Only Admin can delete overtime records','error');
+      return;
+    }
+    if(typeof window.deleteOvertimeDetail==='function'){
+      await window.deleteOvertimeDetail(btn.dataset.v74DeleteOvertime);
+    }
+  });
+
+  // Restore legacy panes only when navigating outside Admin Control Center.
+  document.addEventListener('DOMContentLoaded',()=>{
+    hideLegacyForAdmin();
+    setTimeout(()=>{
+      const active=document.querySelector('.sidebar-menu a.active[data-tab]');
+      if(active && !ADMIN_TABS.includes(active.dataset.tab)) restoreNormalUI(active.dataset.tab);
+    },1200);
+  });
+
+  const observer=new MutationObserver(()=>{
+    const active=document.querySelector('.sidebar-menu a.active[data-tab]');
+    if(active && ADMIN_TABS.includes(active.dataset.tab)) hideLegacyForAdmin();
+    ensureAdminDeleteButtons();
+  });
+  observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
+
+  window.addEventListener('v74EnsureAdminDeleteButtons',ensureAdminDeleteButtons);
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
+\n<!-- ================= V7.5 SECURITY + FLEXIBLE PERMISSIONS PATCH ================= -->
+<script id="v75SecurityPermissions">
+(function(){
+  const PERMISSION_MENUS=[
+    ['absen-tabel','Attendance'],['form-rekap-lembur','Entry Overtime'],['overtime-detail-admin','Overtime Detail'],['propose-leave','Propose Leave'],['my-leave-history','My Leave History'],
+    ['entry','Attendance Entry'],['output','Attendance Output'],['overtime','Overtime Calculation'],['summary-overtime','Summary Overtime'],
+    ['analytics','Dashboard Analytics'],['online-monitor','User Online Monitor'],['activity-score','Activity Monitor'],['audit-logs','Audit Logs'],['approval-center','Approval Center'],['notification-center','Notification Center'],['reports','Reports'],['role-permissions','Role & Permissions'],['system-health','System Health'],['data-management','Data Management']
+  ];
+  const ownOnlyTabs=new Set(['absen-tabel','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history']);
+  window.__v75ApplyPermissions=async function(){
+    if(!window.currentUser || !window.db) return;
+    const role=String(currentUser.role||'user').toLowerCase();
+    if(role==='admin') return;
+    let permissions={};
+    try{const snap=await db.collection('users').doc(currentUser.uid).get(); permissions=(snap.exists&&snap.data().permissions)||{}; currentUser.permissions=permissions;}catch(e){console.warn('Permission read failed',e)}
+    document.querySelectorAll('.sidebar-menu a[data-tab]').forEach(a=>{
+      const tab=a.dataset.tab;
+      if(!PERMISSION_MENUS.some(x=>x[0]===tab)) return;
+      const allowed=permissions[tab]===true || ownOnlyTabs.has(tab);
+      a.style.display=allowed?'flex':'none';
+    });
+  };
+  // Hard override: ordinary users can NEVER receive other users' overtime through UI data loading.
+  window.loadUserOvertimeData=async function(){
+    if(!window.currentUser||!window.db)return;
+    try{
+      let snap;
+      if(String(currentUser.role||'').toLowerCase()==='admin') snap=await db.collection('overtimeRecords').get();
+      else snap=await db.collection('overtimeRecords').where('employeeEmail','==',currentUser.email).get();
+      window.rekapLemburData=[];
+      snap.forEach(d=>window.rekapLemburData.push({id:d.id,...d.data()}));
+      window.rekapLemburData.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+      if(typeof window.updateOvertimeDetailTable==='function') window.updateOvertimeDetailTable();
+    }catch(e){console.error('V7.5 overtime load error',e); if(typeof showNotification==='function')showNotification('Failed to load overtime data: '+e.message,'error');}
+  };
+  // Defense-in-depth: remove any foreign rows rendered for a normal user.
+  function enforceOwnOvertimeRows(){
+    if(!window.currentUser || String(currentUser.role||'').toLowerCase()==='admin')return;
+    const own=String(currentUser.email||'').trim().toLowerCase();
+    const tbody=document.getElementById('adminOvertimeDetailTableBody');
+    if(!tbody)return;
+    [...tbody.querySelectorAll('tr')].forEach(tr=>{
+      const rowEmail=String(tr.dataset.employeeEmail||'').trim().toLowerCase();
+      if(rowEmail && rowEmail!==own) tr.remove();
+    });
+  }
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('a[data-tab="overtime-detail-admin"]');
+    if(a){setTimeout(async()=>{await window.loadUserOvertimeData();enforceOwnOvertimeRows();},80);}
+  },true);
+  const overtimeObserver=new MutationObserver(enforceOwnOvertimeRows);
+  document.addEventListener('DOMContentLoaded',()=>{
+    const tb=document.getElementById('adminOvertimeDetailTableBody'); if(tb)overtimeObserver.observe(tb,{childList:true,subtree:true});
+    setTimeout(window.__v75ApplyPermissions,900);
+  });
+
+  window.v75RenderRoles=async function(){
+    if(!window.db)return;
+    const pane=document.getElementById('role-permissions'); if(!pane)return;
+    const snap=await db.collection('users').get();
+    const users=[]; snap.forEach(d=>users.push({id:d.id,...d.data()}));
+    users.sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||'')));
+    pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p class="text-muted">Select a user, check the menus they may access, then Save.</p><div class="row g-3"><div class="col-md-5"><label class="form-label fw-bold">User</label><select id="v75PermissionUser" class="form-select"><option value="">-- Select User --</option>${users.map(u=>`<option value="${u.id}">${String(u.name||u.email||'').replace(/</g,'&lt;')} (${String(u.email||'').replace(/</g,'&lt;')})</option>`).join('')}</select><div id="v75SelectedRole" class="small text-muted mt-2"></div></div><div class="col-md-7"><div id="v75PermissionList" class="border rounded p-3 bg-light"><span class="text-muted">Select a user to manage menu access.</span></div></div></div><div class="mt-3"><button id="v75SavePermissions" class="btn btn-primary" disabled><i class="fas fa-save me-1"></i>Save Permissions</button></div></div>`;
+    const sel=document.getElementById('v75PermissionUser'), list=document.getElementById('v75PermissionList'), save=document.getElementById('v75SavePermissions');
+    sel.addEventListener('change',()=>{
+      const u=users.find(x=>x.id===sel.value); if(!u){list.innerHTML='<span class="text-muted">Select a user to manage menu access.</span>';save.disabled=true;return;}
+      const perms=u.permissions||{}; document.getElementById('v75SelectedRole').textContent='Current role: '+String(u.role||'user');
+      list.innerHTML='<div class="fw-bold mb-2">Menu Access</div>'+PERMISSION_MENUS.map(([id,label])=>`<div class="form-check mb-2"><input class="form-check-input v75-perm" type="checkbox" id="v75p_${id}" data-menu="${id}" ${perms[id]===true?'checked':''}><label class="form-check-label" for="v75p_${id}">${label}</label></div>`).join('');
+      save.disabled=false;
+    });
+    save.addEventListener('click',async()=>{
+      const uid=sel.value;if(!uid)return; const u=users.find(x=>x.id===uid); const permissions={}; list.querySelectorAll('.v75-perm').forEach(c=>permissions[c.dataset.menu]=c.checked);
+      save.disabled=true; save.textContent='Saving...';
+      try{await db.collection('users').doc(uid).set({permissions,permissionsUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),permissionsUpdatedBy:currentUser.uid},{merge:true}); if(typeof v7Audit==='function')await v7Audit('update_permissions','role-permissions',{targetUid:uid,permissions}); if(typeof showNotification==='function')showNotification('Menu permissions saved successfully','success');}
+      catch(e){console.error(e);if(typeof showNotification==='function')showNotification('Failed to save permissions: '+e.message,'error');}
+      finally{save.disabled=false;save.innerHTML='<i class="fas fa-save me-1"></i>Save Permissions';}
+    });
+  };
+  // Replace V7 role screen with requested dropdown + checklist screen whenever opened.
+  document.addEventListener('click',e=>{const a=e.target.closest('a[data-tab="role-permissions"]');if(a)setTimeout(window.v75RenderRoles,120);},true);
+  // If older router calls roles(), intercept by wrapping it.
+  const oldRoles=window.roles; window.roles=async function(){if(typeof oldRoles==='function')await oldRoles();await window.v75RenderRoles();};
+})();
+</script>
+<!-- ================= END V7.5 PATCH ================= -->
