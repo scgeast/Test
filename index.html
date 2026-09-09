@@ -8969,3 +8969,176 @@ body { background: var(--pro-bg); }
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
+
+
+<!-- ================= V7.5 STRICT USER OVERTIME PRIVACY PATCH ================= -->
+<script id="v75StrictUserOvertimePrivacy">
+(function(){
+  'use strict';
+
+  function isAdminV75(){
+    const u=window.currentUser||{};
+    return String(u.role||'').trim().toLowerCase()==='admin';
+  }
+
+  function getUserEmailV75(){
+    const u=window.currentUser||{};
+    const authUser=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;
+    return String(u.email||(authUser&&authUser.email)||'').trim().toLowerCase();
+  }
+
+  function sameOwnerV75(record){
+    const email=getUserEmailV75();
+    if(!email) return false; // fail closed: tanpa identitas jangan tampilkan data
+    return String(record&&record.employeeEmail||'').trim().toLowerCase()===email;
+  }
+
+  function escapeHtmlV75(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function parseMinutesV75(value){
+    const m=String(value||'').match(/^(\d+):(\d+)$/);
+    return m?(Number(m[1])*60+Number(m[2])):0;
+  }
+
+  function formatMinutesV75(total){
+    total=Math.max(0,Number(total)||0);
+    return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+  }
+
+  function getPaneV75(){ return document.getElementById('overtime-detail-admin'); }
+
+  function lockUserDetailUIV75(){
+    if(isAdminV75()) return;
+    const pane=getPaneV75();
+    if(!pane) return;
+
+    pane.querySelectorAll('.overtime-filter,#overtimeFilterSection,#adminOvertimeEmployeeFilter,#overtimeEmployeeFilter').forEach(el=>{
+      const wrap=el.closest('.overtime-filter')||el;
+      wrap.style.display='none';
+    });
+
+    const btn=pane.querySelector('.collapsible');
+    if(btn) btn.innerHTML='My Overtime Detail <i class="fas fa-chevron-down"></i>';
+    const desc=pane.querySelector('.collapsible-content p');
+    if(desc) desc.textContent='You can only view your own overtime records.';
+
+    pane.querySelectorAll('.btn-edit-overtime,.btn-delete-overtime,.overtime-action-buttons button').forEach(b=>b.remove());
+  }
+
+  async function loadOnlyMyOvertimeV75(){
+    if(isAdminV75()) return;
+    const email=getUserEmailV75();
+    const tbody=document.getElementById('adminOvertimeDetailTableBody');
+    if(!tbody) return;
+
+    lockUserDetailUIV75();
+    tbody.innerHTML='<tr><td colspan="12" class="text-center">Loading my overtime data...</td></tr>';
+
+    if(!email){
+      tbody.innerHTML='<tr><td colspan="12" class="text-center text-danger">Unable to verify your account. No overtime data is displayed.</td></tr>';
+      return;
+    }
+
+    try{
+      const snap=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
+      const records=[];
+      snap.forEach(doc=>{
+        const data={id:doc.id,...doc.data()};
+        // Defense in depth: hasil query tetap diverifikasi lagi sebelum dirender.
+        if(sameOwnerV75(data)) records.push(data);
+      });
+
+      records.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+      tbody.innerHTML='';
+
+      if(!records.length){
+        tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
+        const total=document.getElementById('adminTotalOvertimeValue');
+        if(total) total.textContent='00:00';
+        return;
+      }
+
+      let no=1,totalMinutes=0;
+      records.forEach(record=>{
+        const duration=String(record.overtimeDuration||'00:00');
+        totalMinutes+=parseMinutesV75(duration);
+        const rows=Array.isArray(record.tableData)&&record.tableData.length?record.tableData:[{}];
+        rows.forEach((row,index)=>{
+          const tr=document.createElement('tr');
+          tr.dataset.overtimeId=record.id;
+          tr.innerHTML=`
+            <td>${no++}</td>
+            <td>${escapeHtmlV75(record.employeeName)}</td>
+            <td>${index===0?escapeHtmlV75(record.date):''}</td>
+            <td>${index===0?escapeHtmlV75(record.startTime):''}</td>
+            <td>${index===0?escapeHtmlV75(record.endTime):''}</td>
+            <td>${index===0?escapeHtmlV75(duration):''}</td>
+            <td>${escapeHtmlV75(row.totalProject)}</td>
+            <td>${escapeHtmlV75(row.totalPlant)}</td>
+            <td>${escapeHtmlV75(row.plantNames)}</td>
+            <td>${escapeHtmlV75(row.volume)}</td>
+            <td>${index===0?escapeHtmlV75(record.taskDescription):''}</td>
+            <td>-</td>`;
+          tbody.appendChild(tr);
+        });
+      });
+
+      const total=document.getElementById('adminTotalOvertimeValue');
+      if(total) total.textContent=formatMinutesV75(totalMinutes);
+      lockUserDetailUIV75();
+    }catch(err){
+      console.error('V7.5 strict overtime privacy error:',err);
+      tbody.innerHTML='<tr><td colspan="12" class="text-center text-danger">Failed to load overtime data</td></tr>';
+      if(typeof showNotification==='function') showNotification('Gagal memuat overtime detail: '+(err.message||err),'error');
+    }
+  }
+
+  // Hard block client-side edit/delete attempts by normal users.
+  ['editOvertimeDetail','deleteOvertimeDetail'].forEach(name=>{
+    const original=window[name];
+    if(typeof original!=='function') return;
+    window[name]=async function(id){
+      if(!isAdminV75()){
+        if(typeof showNotification==='function') showNotification('Access denied: you can only view your own overtime detail','error');
+        return false;
+      }
+      return original.apply(this,arguments);
+    };
+  });
+
+  // Capture navigation BEFORE other click handlers can load all records.
+  document.addEventListener('click',function(e){
+    const link=e.target.closest('a[data-tab="overtime-detail-admin"]');
+    if(!link || isAdminV75()) return;
+    lockUserDetailUIV75();
+    setTimeout(loadOnlyMyOvertimeV75,0);
+    setTimeout(loadOnlyMyOvertimeV75,80);
+    setTimeout(loadOnlyMyOvertimeV75,300);
+  },true);
+
+  // If another legacy renderer injects rows, immediately replace with own data only.
+  let refreshTimer=null;
+  const observer=new MutationObserver(function(){
+    if(isAdminV75()) return;
+    const pane=getPaneV75();
+    if(!pane || !pane.classList.contains('active')) return;
+    lockUserDetailUIV75();
+    clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(loadOnlyMyOvertimeV75,40);
+  });
+
+  document.addEventListener('DOMContentLoaded',function(){
+    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    setTimeout(()=>{ if(!isAdminV75()) lockUserDetailUIV75(); },1000);
+  });
+
+  // Expose one safe loader for future scripts.
+  window.loadMyOvertimeDetailStrict=loadOnlyMyOvertimeV75;
+})();
+</script>
+<!-- ================= END V7.5 PATCH ================= -->
+
