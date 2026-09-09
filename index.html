@@ -1677,6 +1677,10 @@ body { background: var(--pro-bg); }
     .sidebar:not(.expanded) .sidebar-toggle { position: absolute; left: auto; right: 14px; top: 20px; }
 }
 
+
+/* ================= V5 MANAGEMENT INTELLIGENCE ================= */
+.v5-admin-shell{display:none;padding-bottom:24px}.v5-admin-shell.active{display:block}.v5-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.v5-panel{background:#fff;border:1px solid #e5eaf2;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(30,41,59,.06)}.v5-panel h5{font-weight:700;margin:0 0 14px;color:#334155}.v5-wide{grid-column:1/-1}.v5-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.v5-stat{background:linear-gradient(135deg,#334155,#475569);color:#fff;border-radius:14px;padding:16px}.v5-stat .k{font-size:.72rem;letter-spacing:.08em;opacity:.75}.v5-stat .v{font-size:1.7rem;font-weight:800;margin-top:4px}.v5-bars{display:flex;align-items:flex-end;gap:9px;height:210px;padding:12px 4px;border-bottom:1px solid #e2e8f0}.v5-bar-wrap{flex:1;min-width:0;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:flex-end}.v5-bar{border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:4px;position:relative}.v5-bar.ot{background:linear-gradient(180deg,#fbbf24,#d97706)}.v5-bar-value{font-size:.68rem;margin-bottom:4px;color:#475569}.v5-bar-label{font-size:.65rem;margin-top:6px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v5-list{max-height:430px;overflow:auto}.v5-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #eef2f7}.v5-row:last-child{border-bottom:0}.v5-user{display:flex;align-items:center;gap:10px}.presence-dot{width:10px;height:10px;border-radius:50%;background:#94a3b8;display:inline-block}.presence-dot.online{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.12)}.presence-dot.away{background:#f59e0b}.v5-badge{font-size:.72rem;padding:4px 9px;border-radius:999px;background:#eef2ff;color:#3730a3}.v5-empty{padding:28px 10px;text-align:center;color:#94a3b8}.v5-action{border:0;background:#eef2ff;color:#3730a3;border-radius:9px;padding:6px 10px;font-size:.8rem}.v5-notification{border-left:4px solid #3b82f6;padding:11px 12px;background:#f8fafc;border-radius:8px;margin-bottom:9px}.v5-notification.warning{border-left-color:#f59e0b}.v5-notification.danger{border-left-color:#ef4444}.v5-notification small{color:#64748b}@media(max-width:900px){.v5-grid{grid-template-columns:1fr}.v5-stat-grid{grid-template-columns:repeat(2,1fr)}.v5-wide{grid-column:auto}}@media(max-width:520px){.v5-stat-grid{grid-template-columns:1fr}.v5-bars{gap:5px}}
+
 </style>
 </head>
 <body>
@@ -1730,6 +1734,10 @@ body { background: var(--pro-bg); }
         <ul class="sidebar-menu pro-dashboard-menu">
             <li id="dashboardMenuItem"><a href="#" data-tab="dashboard" class="active"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
             <li id="analyticsMenuItem" style="display:none;"><a href="#" data-tab="analytics"><i class="fas fa-chart-line"></i><span>Dashboard Analytics</span></a></li>
+            <li id="onlineMonitorMenuItem" style="display:none;"><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
+            <li id="activityScoreMenuItem" style="display:none;"><a href="#" data-tab="activity-score"><i class="fas fa-gauge-high"></i><span>Activity Frequency</span></a></li>
+            <li id="notificationCenterMenuItem" style="display:none;"><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
+            <li id="adminActivityMenuItem" style="display:none;"><a href="#" data-tab="admin-activity"><i class="fas fa-shield-halved"></i><span>Admin Activity Monitor</span></a></li>
         </ul>
 
         <!-- General Folder (User & Admin) -->
@@ -1866,6 +1874,7 @@ body { background: var(--pro-bg); }
                     <div class="metric-card"><div class="metric-icon"><i class="fas fa-clock"></i></div><div class="metric-label">OVERTIME RECORDS</div><div class="metric-value" id="dashOvertimeRecords">0</div><div class="metric-foot">Calculated overtime entries</div></div>
                     <div class="metric-card"><div class="metric-icon"><i class="fas fa-umbrella-beach"></i></div><div class="metric-label">LEAVE RECORDS</div><div class="metric-value" id="dashLeaveRecords">0</div><div class="metric-foot">Leave data currently stored</div></div>
                 </div>
+                <div class="dashboard-lower"><div class="dashboard-panel"><h5><i class="fas fa-chart-column me-2 text-primary"></i>Attendance Activity Trend</h5><div class="v5-bars" id="dashAttendanceChart"></div></div><div class="dashboard-panel"><h5><i class="fas fa-chart-simple me-2 text-warning"></i>Overtime by Employee</h5><div class="v5-bars" id="dashOvertimeChart"></div></div></div>
                 <div class="dashboard-lower">
                     <div class="dashboard-panel">
                         <h5><i class="fas fa-diagram-project me-2 text-primary"></i>Operational Data Flow</h5>
@@ -1907,6 +1916,31 @@ body { background: var(--pro-bg); }
                         <div id="analyticsShiftDistribution" class="analytics-list"></div>
                     </div>
                 </div>
+            </section>
+
+            <!-- V5 Admin Intelligence: User Online / Last Access -->
+            <section class="v5-admin-shell" id="onlineMonitorShell">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Live Workforce Visibility</div><h2 class="dashboard-title">User Online & Last Access Monitor</h2><p class="dashboard-subtitle">Real-time presence, last access and recent user heartbeat. Admin only.</p></div>
+                <div class="v5-stat-grid"><div class="v5-stat"><div class="k">ONLINE NOW</div><div class="v" id="onlineNowCount">0</div></div><div class="v5-stat"><div class="k">ACTIVE TODAY</div><div class="v" id="activeTodayCount">0</div></div><div class="v5-stat"><div class="k">REGISTERED USERS</div><div class="v" id="monitorUserCount">0</div></div><div class="v5-stat"><div class="k">LAST REFRESH</div><div class="v" id="monitorRefreshTime">--:--</div></div></div>
+                <div class="v5-panel"><h5><i class="fas fa-users me-2 text-success"></i>User Presence</h5><div class="v5-list" id="onlineMonitorList"></div></div>
+            </section>
+
+            <!-- V5 Admin Intelligence: Activity Frequency -->
+            <section class="v5-admin-shell" id="activityScoreShell">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Engagement Intelligence</div><h2 class="dashboard-title">Activity Frequency Score</h2><p class="dashboard-subtitle">User engagement score based on login, menu access and recent application activity.</p></div>
+                <div class="v5-grid"><div class="v5-panel v5-wide"><h5><i class="fas fa-chart-column me-2 text-primary"></i>Activity Score Ranking</h5><div id="activityScoreList" class="v5-list"></div></div></div>
+            </section>
+
+            <!-- V5 Admin Intelligence: Notification Center -->
+            <section class="v5-admin-shell" id="notificationCenterShell">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Operational Alerts</div><h2 class="dashboard-title">Notification Center</h2><p class="dashboard-subtitle">System alerts and administrative notices. Admin only.</p></div>
+                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-bell me-2 text-warning"></i>Notifications</h5><button class="v5-action" id="refreshNotificationsBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="notificationCenterList"></div></div>
+            </section>
+
+            <!-- V5 Admin Intelligence: Admin Activity Monitoring -->
+            <section class="v5-admin-shell" id="adminActivityShell">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Audit Trail</div><h2 class="dashboard-title">Admin Activity Monitoring</h2><p class="dashboard-subtitle">Recent administrative and user activity events recorded by the application.</p></div>
+                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-shield-halved me-2 text-danger"></i>Activity Log</h5><button class="v5-action" id="refreshActivityBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="adminActivityList" class="v5-list"></div></div>
             </section>
 
             <!-- Filter Section for Main Folder -->
@@ -2868,6 +2902,10 @@ body { background: var(--pro-bg); }
         let outputDataLoaded = false; // Flag to track if output data has been loaded
         let overtimeDataLoaded = false; // Flag to track if overtime data has been loaded
         let attendancePeriodConfig = { startDay: 11, endDay: 10 }; // Admin configurable recurring cycle
+        // V5 Management Intelligence
+        let presenceHeartbeatTimer = null;
+        let activityLogCache = [];
+        let presenceCache = [];
 
         // PERBAIKAN: Variabel untuk sorting di overtime calculation
         let overtimeSortColumn = 'date';
@@ -4214,6 +4252,8 @@ body { background: var(--pro-bg); }
         }
 
         // Event listeners untuk koneksi
+        window.addEventListener('beforeunload', () => { try { if (currentUser) updatePresence('offline'); } catch(_){} });
+
         window.addEventListener('online', () => {
             isOnline = true;
             checkConnection();
@@ -4320,6 +4360,8 @@ body { background: var(--pro-bg); }
                 document.querySelector('.header-subtitle').innerHTML = `Modern and Efficient Attendance Management | Logged in as: ${currentUser.name || currentUser.email} (${currentUser.role})`;
                 
                 setupMenuByRole(currentUser.role);
+                await trackActivity('login');
+                startPresenceHeartbeat();
                 setupFilterByRole(currentUser.role);
                 
                 // Setup real-time listeners setelah login berhasil
@@ -5025,6 +5067,7 @@ body { background: var(--pro-bg); }
         function showDashboard() {
             if (!currentUser || currentUser.role !== 'admin') { showNotification('Dashboard is available for Admin only.', 'error'); return; }
             document.getElementById('analyticsShell')?.style.setProperty('display','none');
+            if (typeof hideV5Shells === 'function') hideV5Shells();
             currentTab = 'dashboard';
             document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.remove('show','active'));
             document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
@@ -5032,11 +5075,13 @@ body { background: var(--pro-bg); }
             document.getElementById('dashboardShell')?.classList.add('active');
             ['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
             updateDashboardMetrics();
+            updateRealDashboardCharts();
         }
 
         function showAnalytics() {
             if (!currentUser || currentUser.role !== 'admin') { showNotification('Dashboard Analytics is available for Admin only.', 'error'); return; }
             currentTab = 'analytics';
+            if (typeof hideV5Shells === 'function') hideV5Shells();
             document.querySelectorAll('.tab-pane').forEach(tab => tab.classList.remove('show','active'));
             document.getElementById('dashboardShell')?.classList.remove('active');
             const shell = document.getElementById('analyticsShell');
@@ -5100,10 +5145,57 @@ body { background: var(--pro-bg); }
             // Auto-save hanya dilakukan saat tombol save diklik
         }
 
+        // ================= V5 MANAGEMENT INTELLIGENCE =================
+        function escapeHtmlV5(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+        function v5NowISO() { return new Date().toISOString(); }
+        function v5FormatTime(value) { if (!value) return 'Never'; const d = value.toDate ? value.toDate() : new Date(value); return isNaN(d) ? 'Unknown' : d.toLocaleString(); }
+        function v5Relative(value) { if (!value) return 'Never'; const d=value.toDate?value.toDate():new Date(value); const sec=Math.max(0,Math.floor((Date.now()-d.getTime())/1000)); if(sec<60)return 'Just now'; if(sec<3600)return Math.floor(sec/60)+' min ago'; if(sec<86400)return Math.floor(sec/3600)+' h ago'; return Math.floor(sec/86400)+' d ago'; }
+        async function trackActivity(action, meta={}) {
+            if (!currentUser) return;
+            const event={uid:currentUser.uid,email:currentUser.email||'',name:currentUser.name||'',role:normalizeRole(currentUser.role),action,meta,createdAt:v5NowISO()};
+            try { await db.collection('activityLogs').add(event); } catch(e) { console.warn('V5 activity cloud log unavailable; local fallback used.',e); }
+            try { const key='cdc_v5_activity_local'; const arr=JSON.parse(localStorage.getItem(key)||'[]'); arr.unshift(event); localStorage.setItem(key,JSON.stringify(arr.slice(0,200))); } catch(_){}
+        }
+        async function updatePresence(status='online') {
+            if (!currentUser) return;
+            const data={uid:currentUser.uid,email:currentUser.email||'',name:currentUser.name||'',role:normalizeRole(currentUser.role),status,lastAccess:v5NowISO(),updatedAt:v5NowISO()};
+            try { await db.collection('userPresence').doc(currentUser.uid).set(data,{merge:true}); } catch(e) { console.warn('V5 presence update unavailable',e); }
+        }
+        function startPresenceHeartbeat(){ if(presenceHeartbeatTimer) clearInterval(presenceHeartbeatTimer); updatePresence('online'); presenceHeartbeatTimer=setInterval(()=>updatePresence(navigator.onLine?'online':'away'),60000); }
+        function stopPresenceHeartbeat(){ if(presenceHeartbeatTimer) clearInterval(presenceHeartbeatTimer); presenceHeartbeatTimer=null; if(currentUser) updatePresence('offline'); }
+        async function loadV5Presence(){
+            const byUid={};
+            (users||[]).forEach(u=>{const id=u.id||u.uid; if(id) byUid[id]={uid:id,email:u.email||'',name:u.name||u.email||'Unknown',role:normalizeRole(u.role),status:'offline',lastAccess:null};});
+            try { const snap=await db.collection('userPresence').get(); snap.forEach(d=>{byUid[d.id]={...(byUid[d.id]||{}),uid:d.id,...d.data()};}); } catch(e){console.warn('V5 presence read unavailable',e);}
+            presenceCache=Object.values(byUid); return presenceCache;
+        }
+        async function loadV5Activities(){
+            let cloud=[]; try { const snap=await db.collection('activityLogs').limit(300).get(); snap.forEach(d=>cloud.push({id:d.id,...d.data()})); } catch(e){console.warn('V5 activity read unavailable',e);}
+            if(!cloud.length){ try{cloud=JSON.parse(localStorage.getItem('cdc_v5_activity_local')||'[]');}catch(_){} }
+            activityLogCache=cloud.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); return activityLogCache;
+        }
+        function renderOnlineMonitor(data){
+            const now=Date.now(); let online=0,activeToday=0; const startToday=new Date(); startToday.setHours(0,0,0,0);
+            data.forEach(u=>{const last=u.lastAccess?new Date(u.lastAccess):null; const isOnline=last && (now-last.getTime()<2*60*1000) && u.status!=='offline'; if(isOnline)online++; if(last&&last>=startToday)activeToday++;});
+            const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;}; set('onlineNowCount',online);set('activeTodayCount',activeToday);set('monitorUserCount',data.length);set('monitorRefreshTime',new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+            const el=document.getElementById('onlineMonitorList'); if(!el)return; const sorted=[...data].sort((a,b)=>new Date(b.lastAccess||0)-new Date(a.lastAccess||0));
+            el.innerHTML=sorted.length?sorted.map(u=>{const last=u.lastAccess?new Date(u.lastAccess):null;const isOnline=last&&(now-last.getTime()<120000)&&u.status!=='offline';return `<div class="v5-row"><div class="v5-user"><span class="presence-dot ${isOnline?'online':u.status==='away'?'away':''}"></span><div><strong>${escapeHtmlV5(u.name||u.email||'Unknown')}</strong><div class="text-muted small">${escapeHtmlV5(u.email||'')} · ${escapeHtmlV5(u.role||'user')}</div></div></div><div class="text-end"><span class="v5-badge">${isOnline?'Online':v5Relative(u.lastAccess)}</span><div class="small text-muted mt-1">${v5FormatTime(u.lastAccess)}</div></div></div>`}).join(''):'<div class="v5-empty">No user presence data available yet.</div>';
+        }
+        async function refreshOnlineMonitor(){ const data=await loadV5Presence(); renderOnlineMonitor(data); }
+        async function refreshActivityScore(){ const acts=await loadV5Activities(); const score={}; acts.forEach(a=>{const k=a.uid||a.email||'unknown'; if(!score[k])score[k]={name:a.name||a.email||'Unknown',email:a.email||'',count:0,login:0,last:a.createdAt}; score[k].count++; if(a.action==='login')score[k].login++; if(new Date(a.createdAt)>new Date(score[k].last||0))score[k].last=a.createdAt;}); const rows=Object.values(score).map(x=>({...x,score:x.count*2+x.login*5})).sort((a,b)=>b.score-a.score); const max=Math.max(1,...rows.map(x=>x.score)); const el=document.getElementById('activityScoreList'); if(!el)return; el.innerHTML=rows.length?rows.map((x,i)=>`<div class="v5-row"><div><strong>#${i+1} ${escapeHtmlV5(x.name)}</strong><div class="small text-muted">${escapeHtmlV5(x.email)} · ${x.count} activities · Last ${v5Relative(x.last)}</div><div style="height:7px;background:#e2e8f0;border-radius:8px;margin-top:7px;overflow:hidden"><div style="height:100%;width:${Math.round(x.score/max*100)}%;background:#2563eb"></div></div></div><div class="v5-badge">${x.score} pts</div></div>`).join(''):'<div class="v5-empty">Activity data will appear after users start using the application.</div>'; }
+        async function loadNotificationsV5(){ let rows=[]; try{const snap=await db.collection('notifications').limit(100).get();snap.forEach(d=>rows.push({id:d.id,...d.data()}));}catch(e){console.warn('V5 notifications read unavailable',e);} const el=document.getElementById('notificationCenterList'); if(!el)return; rows.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); el.innerHTML=rows.length?rows.map(n=>`<div class="v5-notification ${escapeHtmlV5(n.type||'')}"><strong>${escapeHtmlV5(n.title||'Notification')}</strong><div>${escapeHtmlV5(n.message||'')}</div><small>${v5FormatTime(n.createdAt)}</small></div>`).join(''):'<div class="v5-empty"><i class="fas fa-bell-slash d-block mb-2"></i>No notifications available.</div>'; }
+        async function refreshAdminActivity(){ const acts=await loadV5Activities(); const el=document.getElementById('adminActivityList'); if(!el)return; el.innerHTML=acts.slice(0,100).map(a=>`<div class="v5-row"><div><strong>${escapeHtmlV5(a.action||'activity')}</strong><div class="small text-muted">${escapeHtmlV5(a.name||a.email||'Unknown')} · ${escapeHtmlV5(a.role||'user')} ${a.meta&&a.meta.tab?'· '+escapeHtmlV5(a.meta.tab):''}</div></div><div class="small text-muted">${v5FormatTime(a.createdAt)}</div></div>`).join('')||'<div class="v5-empty">No activity has been recorded yet.</div>'; }
+        function hideV5Shells(){ ['onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');}); }
+        async function showV5AdminPanel(tab){ if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('This feature is available for Admin only.','error');return;} document.getElementById('dashboardShell')?.classList.remove('active');document.getElementById('analyticsShell')?.classList.remove('active');document.getElementById('analyticsShell')?.style.setProperty('display','none');hideV5Shells();['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';}); const map={'online-monitor':'onlineMonitorShell','activity-score':'activityScoreShell','notification-center':'notificationCenterShell','admin-activity':'adminActivityShell'}; const shell=document.getElementById(map[tab]); if(shell)shell.classList.add('active'); currentTab=tab; await trackActivity('open_admin_panel',{tab}); if(tab==='online-monitor')refreshOnlineMonitor();if(tab==='activity-score')refreshActivityScore();if(tab==='notification-center')loadNotificationsV5();if(tab==='admin-activity')refreshAdminActivity(); }
+        function updateRealDashboardCharts(){
+            const source=(outputData&&outputData.length?outputData:overtimeCalcData||[]); const groups={}; source.forEach(x=>{const d=x.date||x.attendanceDate||'';if(!d)return;groups[d]=(groups[d]||0)+1;}); const top=Object.entries(groups).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))).slice(-10); const max=Math.max(1,...top.map(x=>x[1])); const bars=top.map(([d,c])=>`<div class="v5-bar-wrap"><div class="v5-bar-value">${c}</div><div class="v5-bar" style="height:${Math.max(4,c/max*165)}px"></div><div class="v5-bar-label">${escapeHtmlV5(String(d).slice(0,5))}</div></div>`).join(''); const el=document.getElementById('dashAttendanceChart'); if(el)el.innerHTML=bars||'<div class="v5-empty">No attendance records for chart.</div>';
+            const byName={};(overtimeCalcData||[]).forEach(x=>{const n=x.name||x.employeeName||'Unknown';byName[n]=(byName[n]||0)+timeToMinutes(x.overTime||x.overtime||'');});const ot=Object.entries(byName).sort((a,b)=>b[1]-a[1]).slice(0,8);const maxOt=Math.max(1,...ot.map(x=>x[1]));const oe=document.getElementById('dashOvertimeChart');if(oe)oe.innerHTML=ot.map(([n,m])=>`<div class="v5-bar-wrap"><div class="v5-bar-value">${minutesToHHMM(m)}</div><div class="v5-bar ot" style="height:${Math.max(4,m/maxOt*165)}px"></div><div class="v5-bar-label">${escapeHtmlV5(n.split(' ')[0])}</div></div>`).join('')||'<div class="v5-empty">No overtime records for chart.</div>';
+        }
+
         // ACCESS CONTROL V4.6
         // Jaminan: SEMUA user yang berhasil login selalu dapat mengakses seluruh menu GENERAL.
         const GENERAL_TABS = ['absen-tabel','cuti-detail','form-rekap-lembur','overtime-detail-admin'];
-        const ADMIN_TABS = ['dashboard','analytics','entry','output','overtime','cuti','summary-overtime','setting'];
+        const ADMIN_TABS = ['dashboard','analytics','online-monitor','activity-score','notification-center','admin-activity','entry','output','overtime','cuti','summary-overtime','setting'];
 
         function normalizeRole(role) {
             return String(role || 'user').trim().toLowerCase() === 'admin' ? 'admin' : 'user';
@@ -5137,6 +5229,7 @@ body { background: var(--pro-bg); }
             document.querySelectorAll('.sidebar-menu a').forEach(menu => { menu.style.display = 'none'; });
             document.getElementById('dashboardMenuItem').style.display = 'none';
             document.getElementById('analyticsMenuItem').style.display = 'none';
+            ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
             
             document.querySelectorAll('.sidebar-folder').forEach(folder => {
                 folder.style.display = 'none';
@@ -5162,8 +5255,10 @@ body { background: var(--pro-bg); }
                 document.querySelector('[data-tab="setting"]').style.display = 'flex';
                 document.getElementById('dashboardMenuItem').style.display = 'block';
                 document.getElementById('analyticsMenuItem').style.display = 'block';
+                ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
                 document.querySelector('[data-tab="dashboard"]').style.display = 'flex';
                 document.querySelector('[data-tab="analytics"]').style.display = 'flex';
+                ['online-monitor','activity-score','notification-center','admin-activity'].forEach(tab=>{const e=document.querySelector(`[data-tab="${tab}"]`);if(e)e.style.display='flex';});
                 
                 // Untuk admin: sembunyikan Overtime Form, tampilkan Overtime Detail
                 document.getElementById('overtimeFormMenuItem').style.display = 'none';
@@ -5453,6 +5548,7 @@ body { background: var(--pro-bg); }
             unsubscribeListeners.forEach(unsubscribe => unsubscribe());
             unsubscribeListeners = [];
             
+            trackActivity('logout').finally(()=>stopPresenceHeartbeat());
             auth.signOut().then(() => {
                 currentUser = null;
                 // Reset UI ke state login
@@ -5505,20 +5601,35 @@ body { background: var(--pro-bg); }
         function initSidebar() {
             const sidebar = document.getElementById('sidebar');
             const sidebarToggle = document.getElementById('sidebarToggle');
+            // Idempotent: listener sidebar hanya boleh dipasang sekali untuk semua role.
+            if (!sidebar || !sidebarToggle || sidebar.dataset.sidebarInitialized === 'true') return;
+            sidebar.dataset.sidebarInitialized = 'true';
+            sidebarToggle.setAttribute('type', 'button');
+            sidebarToggle.setAttribute('aria-label', 'Toggle sidebar');
             
             // Pastikan event listener terpasang dengan benar
             if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('expanded');
-                    document.getElementById('mainContent').classList.toggle('expanded');
-                    document.body.classList.toggle('header-expanded');
-                    document.getElementById('userPasswordSection').classList.toggle('expanded');
+                sidebarToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const expanded = !sidebar.classList.contains('expanded');
+                    sidebar.classList.toggle('expanded', expanded);
+                    document.getElementById('mainContent')?.classList.toggle('expanded', expanded);
+                    document.body.classList.toggle('header-expanded', expanded);
+                    document.getElementById('userPasswordSection')?.classList.toggle('expanded', expanded);
+                    sidebarToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
                 });
             }
             
             // Folder toggle
             document.querySelectorAll('.sidebar-folder-header').forEach(header => {
                 header.addEventListener('click', function() {
+                    if (!sidebar.classList.contains('expanded')) {
+                        sidebar.classList.add('expanded');
+                        document.getElementById('mainContent')?.classList.add('expanded');
+                        document.body.classList.add('header-expanded');
+                        document.getElementById('userPasswordSection')?.classList.add('expanded');
+                    }
                     this.parentElement.classList.toggle('expanded');
                 });
             });
@@ -5528,6 +5639,8 @@ body { background: var(--pro-bg); }
             document.getElementById('dashOpenOutput')?.addEventListener('click', () => document.querySelector('[data-tab="output"]')?.click());
             document.getElementById('dashOpenOvertime')?.addEventListener('click', () => document.querySelector('[data-tab="overtime"]')?.click());
             document.getElementById('saveAttendancePeriodBtn')?.addEventListener('click', saveAttendancePeriodConfig);
+            document.getElementById('refreshNotificationsBtn')?.addEventListener('click', loadNotificationsV5);
+            document.getElementById('refreshActivityBtn')?.addEventListener('click', refreshAdminActivity);
 
             // Menu item clicks
             document.querySelectorAll('.sidebar-menu a[data-tab]').forEach(item => {
@@ -5547,11 +5660,14 @@ body { background: var(--pro-bg); }
                     
                     // Show corresponding tab
                     if (tabName === 'dashboard') { showDashboard(); return; }
-                    if (tabName === 'analytics') { showAnalytics(); return; }
+                    if (tabName === 'analytics') { showAnalytics(); trackActivity('open_admin_panel',{tab:'analytics'}); return; }
+                    if (['online-monitor','activity-score','notification-center','admin-activity'].includes(tabName)) { showV5AdminPanel(tabName); return; }
                     document.getElementById('dashboardShell')?.classList.remove('active');
                     document.getElementById('analyticsShell')?.classList.remove('active');
                     document.getElementById('analyticsShell')?.style.setProperty('display','none');
+                    hideV5Shells();
                     currentTab = tabName;
+                    trackActivity('open_menu',{tab:tabName});
                     updateFilterSectionTitle(tabName);
                     
                     document.querySelectorAll('.tab-pane').forEach(tab => {
@@ -5635,6 +5751,8 @@ body { background: var(--pro-bg); }
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+            if (!sidebar || sidebar.dataset.mobileInitialized === 'true') return;
+            sidebar.dataset.mobileInitialized = 'true';
             
             if (mobileMenuToggle) {
                 mobileMenuToggle.addEventListener('click', function() {
@@ -7732,5 +7850,134 @@ body { background: var(--pro-bg); }
         }
     </script>
 <script>setTimeout(() => { if (typeof updateDashboardMetrics === 'function') updateDashboardMetrics(); }, 1200);</script>
+
+<!-- V5.1 ROLE + SIDEBAR STABILITY PATCH -->
+<style id="v51RoleSidebarPatch">
+/* Toggle selalu terlihat dan tidak tertutup branding */
+#sidebar .sidebar-header { position: relative !important; }
+#sidebar #sidebarToggle.sidebar-toggle {
+    position: absolute !important;
+    z-index: 5000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+#sidebar:not(.expanded) #sidebarToggle.sidebar-toggle {
+    right: 14px !important;
+    top: 20px !important;
+}
+#sidebar.expanded #sidebarToggle.sidebar-toggle {
+    right: 14px !important;
+    top: 20px !important;
+}
+#sidebar #sidebarToggle.sidebar-toggle:focus-visible {
+    outline: 2px solid #7db3ff !important;
+    outline-offset: 2px !important;
+}
+
+/* GENERAL adalah akses universal, jangan pernah disembunyikan oleh role filtering */
+#generalFolder { display: block !important; visibility: visible !important; }
+#generalFolder .sidebar-folder-header,
+#generalFolder .sidebar-folder-content,
+#generalFolder .sidebar-menu,
+#generalFolder .sidebar-menu li { pointer-events: auto !important; }
+#generalFolder .sidebar-menu a { cursor: pointer !important; }
+
+/* Saat compact, jangan paksa content GENERAL terbuka; buka melalui klik folder/toggle */
+.sidebar:not(.expanded) #generalFolder.expanded .sidebar-folder-content {
+    display: none !important;
+}
+.sidebar.expanded #generalFolder.expanded .sidebar-folder-content {
+    display: block !important;
+}
+</style>
+
+<script id="v51RoleSidebarPatchScript">
+(function () {
+    // Single source of truth untuk role: hanya admin atau user.
+    window.normalizeRole = function(role) {
+        return String(role || 'user').trim().toLowerCase() === 'admin' ? 'admin' : 'user';
+    };
+
+    window.enforceRoleAndGeneralAccess = function() {
+        if (typeof currentUser === 'undefined' || !currentUser) return;
+        currentUser.role = normalizeRole(currentUser.role);
+
+        const general = document.getElementById('generalFolder');
+        if (general) {
+            general.style.display = 'block';
+            general.classList.add('expanded');
+            general.querySelectorAll('a[data-tab]').forEach(a => {
+                a.style.display = 'flex';
+                a.style.pointerEvents = 'auto';
+                a.removeAttribute('disabled');
+                a.removeAttribute('aria-disabled');
+            });
+        }
+
+        const isAdmin = currentUser.role === 'admin';
+        const main = document.getElementById('mainFolder');
+        if (main) main.style.display = isAdmin ? 'block' : 'none';
+
+        const setting = document.querySelector('[data-tab="setting"]');
+        if (setting) setting.style.display = isAdmin ? 'flex' : 'none';
+
+        const dashboardIds = [
+            'dashboardMenuItem','analyticsMenuItem','onlineMonitorMenuItem',
+            'activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'
+        ];
+        dashboardIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = isAdmin ? 'block' : 'none';
+        });
+
+        const userOt = document.getElementById('overtimeFormMenuItem');
+        const adminOt = document.getElementById('overtimeDetailMenuItem');
+        if (userOt) userOt.style.display = isAdmin ? 'none' : 'flex';
+        if (adminOt) adminOt.style.display = isAdmin ? 'flex' : 'none';
+
+        const logout = document.getElementById('logoutBtn');
+        if (logout) logout.style.display = 'flex';
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Bind sidebar segera setelah DOM siap, tidak menunggu Firebase/load data.
+        if (typeof initSidebar === 'function') initSidebar();
+        if (typeof initMobileMenu === 'function') initMobileMenu();
+
+        // Safety hook: setelah klik menu/folder, GENERAL tidak boleh hilang.
+        document.addEventListener('click', function(e) {
+            const generalHeader = e.target.closest('#generalFolder .sidebar-folder-header');
+            if (generalHeader) {
+                setTimeout(() => {
+                    const g = document.getElementById('generalFolder');
+                    if (g) { g.style.display = 'block'; }
+                }, 0);
+            }
+        });
+    });
+
+    // Perbaiki setup role lama tanpa mengubah arsitektur aplikasi.
+    const previousSetup = window.setupMenuByRole;
+    if (typeof previousSetup === 'function') {
+        window.setupMenuByRole = function(role) {
+            const normalized = normalizeRole(role);
+            const result = previousSetup(normalized);
+            if (window.currentUser) currentUser.role = normalized;
+            enforceRoleAndGeneralAccess();
+            return result;
+        };
+    }
+})();
+</script>
+
 </body>
 </html>
