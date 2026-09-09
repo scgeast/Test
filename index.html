@@ -9124,3 +9124,99 @@ body { background: var(--pro-bg); }
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
+
+
+<!-- ================= V7.8 FINAL ADMIN CONTROL ROUTING FIX ================= -->
+<script id="v78FinalAdminRoutingFix">
+(function(){
+  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management','admin-activity'];
+  const SHELL_MAP={analytics:'analyticsShell','online-monitor':'onlineMonitorShell','activity-score':'activityScoreShell','notification-center':'notificationCenterShell','admin-activity':'adminActivityShell'};
+  const $=id=>document.getElementById(id);
+  const admin=()=>String((window.currentUser||{}).role||'').toLowerCase()==='admin';
+
+  function clearAdminViews(){
+    document.querySelectorAll('.tab-pane').forEach(p=>{p.classList.remove('show','active');p.style.display='none';});
+    ['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{
+      const x=$(id); if(x){x.classList.remove('active');x.style.display='none';}
+    });
+  }
+
+  async function runTab(tab){
+    if(!ADMIN_TABS.includes(tab)) return false;
+    if(!admin()){ if(typeof showNotification==='function')showNotification('Admin only','error'); return true; }
+    clearAdminViews();
+    document.querySelectorAll('.sidebar-menu a[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
+    if(typeof window.currentTab!=='undefined') window.currentTab=tab;
+
+    const shellId=SHELL_MAP[tab];
+    if(shellId){
+      const shell=$(shellId);
+      if(shell){shell.style.display='block';shell.classList.add('active');}
+    }else{
+      const pane=$(tab);
+      if(pane){pane.style.display='block';pane.classList.add('show','active');}
+    }
+
+    try{
+      // Use the application's existing loaders where available.
+      if(tab==='analytics'){
+        if(typeof window.refreshAnalytics==='function') await window.refreshAnalytics();
+        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('analytics');
+      }
+      if(tab==='online-monitor'){
+        if(typeof window.refreshOnlineMonitor==='function') await window.refreshOnlineMonitor();
+        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('online-monitor');
+      }
+      if(tab==='activity-score'){
+        if(typeof window.refreshActivityScore==='function') await window.refreshActivityScore();
+        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('activity-score');
+      }
+      if(tab==='notification-center'){
+        if(typeof window.loadNotificationsV5==='function') await window.loadNotificationsV5();
+        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('notification-center');
+      }
+      if(tab==='admin-activity'){
+        if(typeof window.refreshAdminActivity==='function') await window.refreshAdminActivity();
+        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('admin-activity');
+      }
+      if(tab==='audit-logs' && typeof window.refreshAuditLogs==='function') await window.refreshAuditLogs();
+      if(tab==='approval-center' && typeof window.loadApprovalCenter==='function') await window.loadApprovalCenter();
+      if(tab==='system-health' && typeof window.refreshSystemHealth==='function') await window.refreshSystemHealth();
+    }catch(err){console.error('V7.8 Admin Control loader error:',tab,err);}
+    return true;
+  }
+
+  // FINAL capture handler: this runs after all earlier patches and blocks legacy handlers.
+  document.addEventListener('click',function(e){
+    const a=e.target.closest('#adminControlFolder a[data-tab]');
+    if(!a) return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    runTab(a.dataset.tab);
+  },true);
+
+  // Repair menu visibility and pointer events after every role setup / DOM mutation.
+  function repairMenu(){
+    const folder=$('adminControlFolder'); if(!folder)return;
+    folder.style.display=admin()?'block':'none';
+    if(!admin())return;
+    folder.classList.add('expanded');
+    folder.querySelectorAll('a[data-tab]').forEach(a=>{
+      a.style.display='flex';a.style.pointerEvents='auto';a.style.opacity='1';a.removeAttribute('disabled');a.removeAttribute('aria-disabled');
+      const li=a.closest('li');if(li){li.style.display='block';li.style.pointerEvents='auto';}
+    });
+  }
+
+  const priorSetup=window.setupMenuByRole;
+  window.setupMenuByRole=function(role){
+    const r=typeof priorSetup==='function'?priorSetup.apply(this,arguments):undefined;
+    setTimeout(repairMenu,0);setTimeout(repairMenu,300);return r;
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{repairMenu();setTimeout(repairMenu,800);});
+  const obs=new MutationObserver(()=>{if(admin())repairMenu();});
+  obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+
+  window.openAdminControlTabV78=runTab;
+})();
+</script>
+<!-- ================= END V7.8 PATCH ================= -->
