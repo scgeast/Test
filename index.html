@@ -8599,7 +8599,7 @@ body { background: var(--pro-bg); }
 <script>
 /* ================= V7 LIVE ADMIN CONTROL CENTER ================= */
 (function(){
-  const V7_ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','system-health','data-management'];
+  const V7_ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
   const $=id=>document.getElementById(id);
   const esc=v=>{const d=document.createElement('div');d.textContent=v??'';return d.innerHTML};
   const now=()=>new Date();
@@ -8661,7 +8661,7 @@ body { background: var(--pro-bg); }
 
   async function submitLeaveV7(){if(!currentUser)return;const type=$('leaveType')?.value,start=$('leaveStartDate')?.value,end=$('leaveEndDate')?.value,reason=$('leaveReason')?.value.trim();if(!start||!end||!reason)return showNotification('Please complete all leave fields','error');if(end<start)return showNotification('End Date cannot be earlier than Start Date','error');const ref=await db.collection('leaveRequests').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'User',userEmail:currentUser.email||'',leaveType:type,startDate:start,endDate:end,reason,status:'pending',createdAt:fsNow(),updatedAt:fsNow()});await v7Audit('submit_leave_request','leave',{requestId:ref.id});await v7Notify('admin','New Leave Request',`${currentUser.name||currentUser.email||'User'} submitted ${type} (${start} to ${end}).`,'leave',{requestId:ref.id});$('leaveReason').value='';$('leaveStartDate').value='';$('leaveEndDate').value='';showNotification('Leave request submitted successfully','success')}
 
-  async function route(tab){if(!V7_ADMIN_TABS.includes(tab))return; if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only','error');return}document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));try{if(tab==='analytics')await analytics();if(tab==='online-monitor')await onlineMonitor();if(tab==='activity-score')await activityMonitor();if(tab==='audit-logs')await auditLogs();if(tab==='approval-center')await approval();if(tab==='notification-center')await notifications();if(tab==='reports')await reports();if(tab==='system-health')await systemHealth();if(tab==='data-management')await dataManagement();await v7Audit('open_admin_panel','admin-control',{tab})}catch(e){console.error('V7 route',tab,e);showNotification('Failed to load '+tab+': '+e.message,'error')}}
+  async function route(tab){if(!V7_ADMIN_TABS.includes(tab))return; if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only','error');return}document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));try{if(tab==='analytics')await analytics();if(tab==='online-monitor')await onlineMonitor();if(tab==='activity-score')await activityMonitor();if(tab==='audit-logs')await auditLogs();if(tab==='approval-center')await approval();if(tab==='notification-center')await notifications();if(tab==='reports')await reports();if(tab==='role-permissions')await roles();if(tab==='system-health')await systemHealth();if(tab==='data-management')await dataManagement();await v7Audit('open_admin_panel','admin-control',{tab})}catch(e){console.error('V7 route',tab,e);showNotification('Failed to load '+tab+': '+e.message,'error')}}
 
   document.addEventListener('click',async e=>{
     const admin=e.target.closest('.sidebar-menu a[data-tab]');if(admin&&V7_ADMIN_TABS.includes(admin.dataset.tab)){e.preventDefault();e.stopImmediatePropagation();await route(admin.dataset.tab);return}
@@ -8677,81 +8677,6 @@ body { background: var(--pro-bg); }
   const oldSetup=window.setupMenuByRole;window.setupMenuByRole=function(role){oldSetup&&oldSetup(role);const isAdmin=normalizeRole(role)==='admin';$('settingsMenuItem')&&( $('settingsMenuItem').style.display=isAdmin?'':'none');$('changePasswordSidebarBtn')&&( $('changePasswordSidebarBtn').style.display='flex');$('logoutBtn')&&( $('logoutBtn').style.display='flex')};
 })();
 </script>
-
-
-<!-- ================= V7.7 ROLE PERMISSIONS HANG FIX ================= -->
-<script>
-(function(){
-  // Final safety: Role & Permissions must never trap the UI or block DevTools/browser shortcuts.
-  window.addEventListener('error',function(e){ console.error('V7.7 captured error:',e.error||e.message); });
-  window.addEventListener('unhandledrejection',function(e){ console.error('V7.7 unhandled rejection:',e.reason); });
-})();
-</script>
-<!-- ================= END V7.7 PATCH ================= -->
-
-<script>
-/* ================= V7.8 CLEAN ROLE & PERMISSIONS ================= */
-(function(){
-  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
-  const MENU_ITEMS=[
-    ['absen-tabel','Attendance'],['form-rekap-lembur','Entry Overtime'],['overtime-detail-admin','Overtime Detail'],['propose-leave','Propose Leave'],['my-leave-history','My Leave History'],
-    ['entry','Attendance Entry'],['output','Attendance Output'],['overtime','Overtime Calculation'],['summary-overtime','Summary Overtime'],
-    ['analytics','Dashboard Analytics'],['online-monitor','User Online Monitor'],['activity-score','Activity Monitor'],['audit-logs','Audit Logs'],['approval-center','Approval Center'],['notification-center','Notification Center'],['reports','Reports'],['role-permissions','Role & Permissions'],['system-health','System Health'],['data-management','Data Management']
-  ];
-  const DEFAULT_USER=['absen-tabel','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history'];
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-  const getRole=()=>String((window.currentUser||window.currentUserData||{}).role||'').toLowerCase();
-  const isAdmin=()=>getRole()==='admin';
-  function activate(tab){
-    document.querySelectorAll('.tab-pane').forEach(p=>{p.classList.remove('show','active');p.style.display='none';});
-    const pane=document.getElementById(tab);if(pane){pane.style.display='block';pane.classList.add('show','active');}
-    document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
-  }
-  async function render(){
-    if(!isAdmin()){ if(typeof showNotification==='function')showNotification('Admin only','error'); return; }
-    activate('role-permissions');
-    const pane=document.getElementById('role-permissions'); if(!pane)return;
-    pane.innerHTML='<div class="card border-0 shadow-sm p-3"><h4 class="mb-3"><i class="fas fa-user-shield me-2"></i>Role & Permissions</h4><p class="text-muted">Select a user, check the menus they may access, then Save.</p><div class="mb-3"><label class="form-label fw-bold">User</label><select id="v78UserSelect" class="form-select"><option value="">Loading users...</option></select></div><div id="v78PermissionArea" style="display:none"><div id="v78RoleInfo" class="small text-muted mb-2"></div><div id="v78MenuChecklist" class="row g-2"></div><button type="button" id="v78SavePermissions" class="btn btn-primary mt-4"><i class="fas fa-save me-1"></i>Save Permissions</button></div></div>';
-    try{
-      const snap=await db.collection('users').get();
-      const users=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||'')));
-      const sel=document.getElementById('v78UserSelect');
-      sel.innerHTML='<option value="">-- Select User --</option>'+users.map(u=>`<option value="${esc(u.id)}">${esc(u.name||u.email||u.id)} (${esc(u.email||'')})</option>`).join('');
-      sel.addEventListener('change',()=>load(users.find(u=>u.id===sel.value)));
-    }catch(err){
-      console.error('Role permissions load error',err);
-      const sel=document.getElementById('v78UserSelect');sel.innerHTML='<option value="">Failed to load users</option>';
-      if(typeof showNotification==='function')showNotification('Failed to load users: '+err.message,'error');
-    }
-  }
-  function load(user){
-    const area=document.getElementById('v78PermissionArea'), list=document.getElementById('v78MenuChecklist'), info=document.getElementById('v78RoleInfo');
-    if(!user){area.style.display='none';return;} area.style.display='block';
-    const admin=String(user.role||'').toLowerCase()==='admin', perms=user.permissions||{};
-    info.textContent='Current role: '+(user.role||'user')+(admin?' — Admin always has full access.':'');
-    list.innerHTML=MENU_ITEMS.map(([key,label])=>{const checked=admin||perms[key]===true||(!Object.keys(perms).length&&DEFAULT_USER.includes(key));return `<div class="col-12 col-md-6"><label class="border rounded p-2 w-100 d-flex align-items-center gap-2"><input type="checkbox" class="form-check-input m-0 v78perm" data-key="${esc(key)}" ${checked?'checked':''} ${admin?'disabled':''}><span>${esc(label)}</span></label></div>`}).join('');
-    document.getElementById('v78SavePermissions').onclick=async()=>{
-      if(admin){if(typeof showNotification==='function')showNotification('Admin already has full access','info');return;}
-      const selected={};document.querySelectorAll('.v78perm').forEach(c=>selected[c.dataset.key]=!!c.checked);
-      const btn=document.getElementById('v78SavePermissions');btn.disabled=true;btn.textContent='Saving...';
-      try{await db.collection('users').doc(user.id).set({permissions:selected,permissionsUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),permissionsUpdatedBy:(window.currentUser||{}).uid||null},{merge:true});if(typeof showNotification==='function')showNotification('Permissions saved successfully','success');}
-      catch(err){console.error(err);if(typeof showNotification==='function')showNotification('Failed to save permissions: '+err.message,'error');}
-      finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-save me-1"></i>Save Permissions';}
-    };
-  }
-  // Capture only this link, stop propagation (not stopImmediatePropagation), preventing old routers from running.
-  document.addEventListener('click',function(e){
-    const a=e.target.closest('#rolePermissionsMenuItem a[data-tab="role-permissions"], a[data-tab="role-permissions"]');
-    if(!a)return;
-    e.preventDefault();e.stopPropagation();
-    render().catch(err=>{console.error(err);if(typeof showNotification==='function')showNotification('Role & Permissions error: '+err.message,'error');});
-  },true);
-  // Admin hard full-access UI override.
-  const oldSetup=window.setupMenuByRole;
-  window.setupMenuByRole=function(role){const r=typeof oldSetup==='function'?oldSetup.apply(this,arguments):undefined;setTimeout(()=>{if(String(role||getRole()).toLowerCase()==='admin'){const folder=document.getElementById('adminControlFolder');if(folder)folder.style.display='block';document.querySelectorAll('#adminControlFolder a[data-tab]').forEach(a=>a.style.display='flex');}},0);return r;};
-})();
-</script>
-<!-- ================= END V7.8 CLEAN ROLE & PERMISSIONS ================= -->
 
 </body>
 </html>
@@ -9044,90 +8969,3 @@ body { background: var(--pro-bg); }
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
-\n<!-- ================= V7.5 SECURITY + FLEXIBLE PERMISSIONS PATCH ================= -->
-<script id="v75SecurityPermissions">
-(function(){
-  const PERMISSION_MENUS=[
-    ['absen-tabel','Attendance'],['form-rekap-lembur','Entry Overtime'],['overtime-detail-admin','Overtime Detail'],['propose-leave','Propose Leave'],['my-leave-history','My Leave History'],
-    ['entry','Attendance Entry'],['output','Attendance Output'],['overtime','Overtime Calculation'],['summary-overtime','Summary Overtime'],
-    ['analytics','Dashboard Analytics'],['online-monitor','User Online Monitor'],['activity-score','Activity Monitor'],['audit-logs','Audit Logs'],['approval-center','Approval Center'],['notification-center','Notification Center'],['reports','Reports'],['role-permissions','Role & Permissions'],['system-health','System Health'],['data-management','Data Management']
-  ];
-  const ownOnlyTabs=new Set(['absen-tabel','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history']);
-  window.__v75ApplyPermissions=async function(){
-    if(!window.currentUser || !window.db) return;
-    const role=String(currentUser.role||'user').toLowerCase();
-    if(role==='admin') return;
-    let permissions={};
-    try{const snap=await db.collection('users').doc(currentUser.uid).get(); permissions=(snap.exists&&snap.data().permissions)||{}; currentUser.permissions=permissions;}catch(e){console.warn('Permission read failed',e)}
-    document.querySelectorAll('.sidebar-menu a[data-tab]').forEach(a=>{
-      const tab=a.dataset.tab;
-      if(!PERMISSION_MENUS.some(x=>x[0]===tab)) return;
-      const allowed=permissions[tab]===true || ownOnlyTabs.has(tab);
-      a.style.display=allowed?'flex':'none';
-    });
-  };
-  // Hard override: ordinary users can NEVER receive other users' overtime through UI data loading.
-  window.loadUserOvertimeData=async function(){
-    if(!window.currentUser||!window.db)return;
-    try{
-      let snap;
-      if(String(currentUser.role||'').toLowerCase()==='admin') snap=await db.collection('overtimeRecords').get();
-      else snap=await db.collection('overtimeRecords').where('employeeEmail','==',currentUser.email).get();
-      window.rekapLemburData=[];
-      snap.forEach(d=>window.rekapLemburData.push({id:d.id,...d.data()}));
-      window.rekapLemburData.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      if(typeof window.updateOvertimeDetailTable==='function') window.updateOvertimeDetailTable();
-    }catch(e){console.error('V7.5 overtime load error',e); if(typeof showNotification==='function')showNotification('Failed to load overtime data: '+e.message,'error');}
-  };
-  // Defense-in-depth: remove any foreign rows rendered for a normal user.
-  function enforceOwnOvertimeRows(){
-    if(!window.currentUser || String(currentUser.role||'').toLowerCase()==='admin')return;
-    const own=String(currentUser.email||'').trim().toLowerCase();
-    const tbody=document.getElementById('adminOvertimeDetailTableBody');
-    if(!tbody)return;
-    [...tbody.querySelectorAll('tr')].forEach(tr=>{
-      const rowEmail=String(tr.dataset.employeeEmail||'').trim().toLowerCase();
-      if(rowEmail && rowEmail!==own) tr.remove();
-    });
-  }
-  document.addEventListener('click',e=>{
-    const a=e.target.closest('a[data-tab="overtime-detail-admin"]');
-    if(a){setTimeout(async()=>{await window.loadUserOvertimeData();enforceOwnOvertimeRows();},80);}
-  },true);
-  const overtimeObserver=new MutationObserver(enforceOwnOvertimeRows);
-  document.addEventListener('DOMContentLoaded',()=>{
-    const tb=document.getElementById('adminOvertimeDetailTableBody'); if(tb)overtimeObserver.observe(tb,{childList:true,subtree:true});
-    setTimeout(window.__v75ApplyPermissions,900);
-  });
-
-  window.v75RenderRoles=async function(){
-    if(!window.db)return;
-    const pane=document.getElementById('role-permissions'); if(!pane)return;
-    const snap=await db.collection('users').get();
-    const users=[]; snap.forEach(d=>users.push({id:d.id,...d.data()}));
-    users.sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||'')));
-    pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p class="text-muted">Select a user, check the menus they may access, then Save.</p><div class="row g-3"><div class="col-md-5"><label class="form-label fw-bold">User</label><select id="v75PermissionUser" class="form-select"><option value="">-- Select User --</option>${users.map(u=>`<option value="${u.id}">${String(u.name||u.email||'').replace(/</g,'&lt;')} (${String(u.email||'').replace(/</g,'&lt;')})</option>`).join('')}</select><div id="v75SelectedRole" class="small text-muted mt-2"></div></div><div class="col-md-7"><div id="v75PermissionList" class="border rounded p-3 bg-light"><span class="text-muted">Select a user to manage menu access.</span></div></div></div><div class="mt-3"><button id="v75SavePermissions" class="btn btn-primary" disabled><i class="fas fa-save me-1"></i>Save Permissions</button></div></div>`;
-    const sel=document.getElementById('v75PermissionUser'), list=document.getElementById('v75PermissionList'), save=document.getElementById('v75SavePermissions');
-    sel.addEventListener('change',()=>{
-      const u=users.find(x=>x.id===sel.value); if(!u){list.innerHTML='<span class="text-muted">Select a user to manage menu access.</span>';save.disabled=true;return;}
-      const perms=u.permissions||{}; document.getElementById('v75SelectedRole').textContent='Current role: '+String(u.role||'user');
-      list.innerHTML='<div class="fw-bold mb-2">Menu Access</div>'+PERMISSION_MENUS.map(([id,label])=>`<div class="form-check mb-2"><input class="form-check-input v75-perm" type="checkbox" id="v75p_${id}" data-menu="${id}" ${perms[id]===true?'checked':''}><label class="form-check-label" for="v75p_${id}">${label}</label></div>`).join('');
-      save.disabled=false;
-    });
-    save.addEventListener('click',async()=>{
-      const uid=sel.value;if(!uid)return; const u=users.find(x=>x.id===uid); const permissions={}; list.querySelectorAll('.v75-perm').forEach(c=>permissions[c.dataset.menu]=c.checked);
-      save.disabled=true; save.textContent='Saving...';
-      try{await db.collection('users').doc(uid).set({permissions,permissionsUpdatedAt:firebase.firestore.FieldValue.serverTimestamp(),permissionsUpdatedBy:currentUser.uid},{merge:true}); if(typeof v7Audit==='function')await v7Audit('update_permissions','role-permissions',{targetUid:uid,permissions}); if(typeof showNotification==='function')showNotification('Menu permissions saved successfully','success');}
-      catch(e){console.error(e);if(typeof showNotification==='function')showNotification('Failed to save permissions: '+e.message,'error');}
-      finally{save.disabled=false;save.innerHTML='<i class="fas fa-save me-1"></i>Save Permissions';}
-    });
-  };
-  // Replace V7 role screen with requested dropdown + checklist screen whenever opened.
-  /* V7.7 disabled competing Role & Permissions click renderer */
-  // If older router calls roles(), intercept by wrapping it.
-  const oldRoles=window.roles; window.roles=async function(){if(typeof oldRoles==='function')await oldRoles();await window.v75RenderRoles();};
-})();
-</script>
-<!-- ================= END V7.5 PATCH ================= -->
-
-
