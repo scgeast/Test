@@ -8678,6 +8678,161 @@ body { background: var(--pro-bg); }
 })();
 </script>
 
+
+
+<!-- ================= V7.6 OVERTIME NULL ERROR + USER FORM FIX ================= -->
+<script id="v76OvertimeHardFix">
+(function(){
+  const originalLoadAll = window.loadAllOvertimeData;
+
+  function isAdmin(){
+    return String((window.currentUser||{}).role||'').toLowerCase()==='admin';
+  }
+  function safeEl(id){ return document.getElementById(id); }
+  function currentEmail(){ return String((window.currentUser||{}).email||'').trim().toLowerCase(); }
+  function escapeHtml(v){
+    return String(v==null?'':v).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
+  }
+  function parseDateSafe(v){
+    if(!v) return 0;
+    if(v && typeof v.toDate==='function') return v.toDate().getTime();
+    if(v instanceof Date) return v.getTime();
+    const s=String(v);
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+      const [d,m,y]=s.split('/'); return new Date(`${y}-${m}-${d}`).getTime()||0;
+    }
+    return new Date(s).getTime()||0;
+  }
+
+  // HARD FIX: old function referenced #overtimeDetailTableBody, but this element no longer exists.
+  window.updateOvertimeDetailTable = function(){
+    const tbody=safeEl('adminOvertimeDetailTableBody');
+    if(!tbody) return; // fail-safe: never crash application because an old table id is missing
+
+    const user=window.currentUser||{};
+    const email=currentEmail();
+    let data=Array.isArray(window.rekapLemburData)?window.rekapLemburData.slice():[];
+
+    if(!isAdmin()){
+      // STRICT PRIVACY: user can NEVER render another user's overtime.
+      if(!email) data=[];
+      else data=data.filter(r=>String(r.employeeEmail||'').trim().toLowerCase()===email);
+    } else {
+      const filter=safeEl('adminOvertimeEmployeeFilter');
+      if(filter && filter.value && filter.value!=='all') data=data.filter(r=>r.employeeName===filter.value);
+    }
+
+    data.sort((a,b)=>parseDateSafe(b.date)-parseDateSafe(a.date));
+    tbody.innerHTML='';
+
+    if(!data.length){
+      tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
+      const total=safeEl('adminTotalOvertimeValue'); if(total) total.textContent='00:00';
+      return;
+    }
+
+    let no=1, totalMinutes=0;
+    data.forEach(record=>{
+      const duration=String(record.overtimeDuration||'00:00');
+      const dm=duration.match(/^(\d+):(\d{1,2})$/); if(dm) totalMinutes+=(+dm[1])*60+(+dm[2]);
+      const rows=Array.isArray(record.tableData)&&record.tableData.length?record.tableData:[{}];
+      rows.forEach((r,index)=>{
+        const tr=document.createElement('tr');
+        const action=isAdmin()?`<button class="btn-edit-overtime" onclick="editOvertimeDetail('${escapeHtml(record.id)}')"><i class="fas fa-edit"></i></button>
+          <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${escapeHtml(record.id)}')"><i class="fas fa-trash"></i></button>`:'';
+        tr.dataset.overtimeId=record.id||'';
+        tr.innerHTML=`
+          <td>${no++}</td><td>${escapeHtml(record.employeeName)}</td>
+          <td>${index===0?escapeHtml(record.date):''}</td><td>${index===0?escapeHtml(record.startTime):''}</td>
+          <td>${index===0?escapeHtml(record.endTime):''}</td><td>${index===0?escapeHtml(duration):''}</td>
+          <td>${escapeHtml(r.totalProject)}</td><td>${escapeHtml(r.totalPlant)}</td>
+          <td>${escapeHtml(r.plantNames)}</td><td>${escapeHtml(r.volume)}</td>
+          <td>${index===0?escapeHtml(record.taskDescription):''}</td><td class="overtime-action-buttons">${action}</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+    const total=safeEl('adminTotalOvertimeValue');
+    if(total){ total.textContent=String(Math.floor(totalMinutes/60)).padStart(2,'0')+':'+String(totalMinutes%60).padStart(2,'0'); }
+  };
+
+  // HARD FIX: never load all overtime records for normal users, even if legacy startup calls loadAllOvertimeData().
+  window.loadAllOvertimeData = async function(){
+    try{
+      const user=window.currentUser||{};
+      let query;
+      if(isAdmin()) query=await db.collection('overtimeRecords').get();
+      else {
+        const email=currentEmail();
+        if(!email){ window.rekapLemburData=[]; window.updateOvertimeDetailTable(); return; }
+        query=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
+      }
+      window.rekapLemburData=[];
+      query.forEach(doc=>window.rekapLemburData.push({id:doc.id,...doc.data()}));
+      window.updateOvertimeDetailTable();
+      if(isAdmin() && typeof window.updateAdminOvertimeDetailTable==='function') window.updateAdminOvertimeDetailTable();
+      if(typeof window.updateTotalOvertime==='function') { try{window.updateTotalOvertime();}catch(e){} }
+    }catch(err){ console.error('Error loading overtime data:',err); }
+  };
+
+  // FIX: Entry Overtime must always have visible form for normal users and no references to deleted legacy ids.
+  window.initOvertimeForm = function(){
+    const form=safeEl('userOvertimeForm');
+    const pane=safeEl('form-rekap-lembur');
+    if(pane) pane.style.display='';
+
+    if(isAdmin()){
+      if(form) form.style.display='none';
+      return;
+    }
+
+    if(form) form.style.display='block';
+    const date=safeEl('rekapDate'); if(date && !date.value) date.valueAsDate=new Date();
+    const tbody=safeEl('rekapLemburTableBody');
+    if(tbody){
+      tbody.innerHTML='';
+      window.currentRekapRows=[];
+      if(typeof window.addRekapRow==='function') window.addRekapRow();
+      // Last-resort visible row if legacy addRekapRow fails or is unavailable.
+      if(!tbody.children.length){
+        tbody.innerHTML='<tr><td>1</td><td><input type="number" class="form-control form-control-sm" min="0"></td><td><input type="number" class="form-control form-control-sm" min="0"></td><td><input type="text" class="form-control form-control-sm"></td><td><input type="number" class="form-control form-control-sm" min="0"></td><td></td></tr>';
+      }
+    }
+    const save=safeEl('saveRekapLembur');
+    if(save && !save.dataset.v76Bound && typeof window.saveRekapLembur==='function'){
+      save.addEventListener('click',window.saveRekapLembur); save.dataset.v76Bound='1';
+    }
+    if(typeof window.loadUserOvertimeData==='function') window.loadUserOvertimeData();
+  };
+
+  // Safe admin initializer: old version referenced #adminOvertimeDetail and #overtimeFilterSection which do not exist.
+  window.initOvertimeDetailAdmin = function(){
+    if(isAdmin()){
+      const filter=safeEl('adminOvertimeEmployeeFilter'); if(filter) filter.closest('.overtime-filter').style.display='';
+      if(typeof window.setupAdminOvertimeEmployeeFilter==='function') { try{window.setupAdminOvertimeEmployeeFilter();}catch(e){console.warn(e);} }
+    } else {
+      const filter=safeEl('adminOvertimeEmployeeFilter'); if(filter && filter.closest('.overtime-filter')) filter.closest('.overtime-filter').style.display='none';
+    }
+    window.loadAllOvertimeData();
+  };
+
+  // Ensure tab click always initializes the correct UI after legacy navigation code.
+  document.addEventListener('click',function(e){
+    const a=e.target.closest('a[data-tab]'); if(!a) return;
+    const tab=a.dataset.tab;
+    if(tab==='form-rekap-lembur') setTimeout(()=>window.initOvertimeForm(),0);
+    if(tab==='overtime-detail-admin') setTimeout(()=>window.initOvertimeDetailAdmin(),0);
+  },true);
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    setTimeout(()=>{
+      const form=safeEl('userOvertimeForm');
+      if(form && !isAdmin()) form.style.display='block';
+    },300);
+  });
+})();
+</script>
+<!-- ================= END V7.6 PATCH ================= -->
+
 </body>
 </html>
 <!-- ================= V7.2 GENERAL OVERTIME RESTORE PATCH ================= -->
@@ -8969,176 +9124,3 @@ body { background: var(--pro-bg); }
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
-
-
-<!-- ================= V7.5 STRICT USER OVERTIME PRIVACY PATCH ================= -->
-<script id="v75StrictUserOvertimePrivacy">
-(function(){
-  'use strict';
-
-  function isAdminV75(){
-    const u=window.currentUser||{};
-    return String(u.role||'').trim().toLowerCase()==='admin';
-  }
-
-  function getUserEmailV75(){
-    const u=window.currentUser||{};
-    const authUser=(window.firebase&&firebase.auth&&firebase.auth().currentUser)||null;
-    return String(u.email||(authUser&&authUser.email)||'').trim().toLowerCase();
-  }
-
-  function sameOwnerV75(record){
-    const email=getUserEmailV75();
-    if(!email) return false; // fail closed: tanpa identitas jangan tampilkan data
-    return String(record&&record.employeeEmail||'').trim().toLowerCase()===email;
-  }
-
-  function escapeHtmlV75(v){
-    return String(v==null?'':v).replace(/[&<>"']/g,function(c){
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
-    });
-  }
-
-  function parseMinutesV75(value){
-    const m=String(value||'').match(/^(\d+):(\d+)$/);
-    return m?(Number(m[1])*60+Number(m[2])):0;
-  }
-
-  function formatMinutesV75(total){
-    total=Math.max(0,Number(total)||0);
-    return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
-  }
-
-  function getPaneV75(){ return document.getElementById('overtime-detail-admin'); }
-
-  function lockUserDetailUIV75(){
-    if(isAdminV75()) return;
-    const pane=getPaneV75();
-    if(!pane) return;
-
-    pane.querySelectorAll('.overtime-filter,#overtimeFilterSection,#adminOvertimeEmployeeFilter,#overtimeEmployeeFilter').forEach(el=>{
-      const wrap=el.closest('.overtime-filter')||el;
-      wrap.style.display='none';
-    });
-
-    const btn=pane.querySelector('.collapsible');
-    if(btn) btn.innerHTML='My Overtime Detail <i class="fas fa-chevron-down"></i>';
-    const desc=pane.querySelector('.collapsible-content p');
-    if(desc) desc.textContent='You can only view your own overtime records.';
-
-    pane.querySelectorAll('.btn-edit-overtime,.btn-delete-overtime,.overtime-action-buttons button').forEach(b=>b.remove());
-  }
-
-  async function loadOnlyMyOvertimeV75(){
-    if(isAdminV75()) return;
-    const email=getUserEmailV75();
-    const tbody=document.getElementById('adminOvertimeDetailTableBody');
-    if(!tbody) return;
-
-    lockUserDetailUIV75();
-    tbody.innerHTML='<tr><td colspan="12" class="text-center">Loading my overtime data...</td></tr>';
-
-    if(!email){
-      tbody.innerHTML='<tr><td colspan="12" class="text-center text-danger">Unable to verify your account. No overtime data is displayed.</td></tr>';
-      return;
-    }
-
-    try{
-      const snap=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
-      const records=[];
-      snap.forEach(doc=>{
-        const data={id:doc.id,...doc.data()};
-        // Defense in depth: hasil query tetap diverifikasi lagi sebelum dirender.
-        if(sameOwnerV75(data)) records.push(data);
-      });
-
-      records.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      tbody.innerHTML='';
-
-      if(!records.length){
-        tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
-        const total=document.getElementById('adminTotalOvertimeValue');
-        if(total) total.textContent='00:00';
-        return;
-      }
-
-      let no=1,totalMinutes=0;
-      records.forEach(record=>{
-        const duration=String(record.overtimeDuration||'00:00');
-        totalMinutes+=parseMinutesV75(duration);
-        const rows=Array.isArray(record.tableData)&&record.tableData.length?record.tableData:[{}];
-        rows.forEach((row,index)=>{
-          const tr=document.createElement('tr');
-          tr.dataset.overtimeId=record.id;
-          tr.innerHTML=`
-            <td>${no++}</td>
-            <td>${escapeHtmlV75(record.employeeName)}</td>
-            <td>${index===0?escapeHtmlV75(record.date):''}</td>
-            <td>${index===0?escapeHtmlV75(record.startTime):''}</td>
-            <td>${index===0?escapeHtmlV75(record.endTime):''}</td>
-            <td>${index===0?escapeHtmlV75(duration):''}</td>
-            <td>${escapeHtmlV75(row.totalProject)}</td>
-            <td>${escapeHtmlV75(row.totalPlant)}</td>
-            <td>${escapeHtmlV75(row.plantNames)}</td>
-            <td>${escapeHtmlV75(row.volume)}</td>
-            <td>${index===0?escapeHtmlV75(record.taskDescription):''}</td>
-            <td>-</td>`;
-          tbody.appendChild(tr);
-        });
-      });
-
-      const total=document.getElementById('adminTotalOvertimeValue');
-      if(total) total.textContent=formatMinutesV75(totalMinutes);
-      lockUserDetailUIV75();
-    }catch(err){
-      console.error('V7.5 strict overtime privacy error:',err);
-      tbody.innerHTML='<tr><td colspan="12" class="text-center text-danger">Failed to load overtime data</td></tr>';
-      if(typeof showNotification==='function') showNotification('Gagal memuat overtime detail: '+(err.message||err),'error');
-    }
-  }
-
-  // Hard block client-side edit/delete attempts by normal users.
-  ['editOvertimeDetail','deleteOvertimeDetail'].forEach(name=>{
-    const original=window[name];
-    if(typeof original!=='function') return;
-    window[name]=async function(id){
-      if(!isAdminV75()){
-        if(typeof showNotification==='function') showNotification('Access denied: you can only view your own overtime detail','error');
-        return false;
-      }
-      return original.apply(this,arguments);
-    };
-  });
-
-  // Capture navigation BEFORE other click handlers can load all records.
-  document.addEventListener('click',function(e){
-    const link=e.target.closest('a[data-tab="overtime-detail-admin"]');
-    if(!link || isAdminV75()) return;
-    lockUserDetailUIV75();
-    setTimeout(loadOnlyMyOvertimeV75,0);
-    setTimeout(loadOnlyMyOvertimeV75,80);
-    setTimeout(loadOnlyMyOvertimeV75,300);
-  },true);
-
-  // If another legacy renderer injects rows, immediately replace with own data only.
-  let refreshTimer=null;
-  const observer=new MutationObserver(function(){
-    if(isAdminV75()) return;
-    const pane=getPaneV75();
-    if(!pane || !pane.classList.contains('active')) return;
-    lockUserDetailUIV75();
-    clearTimeout(refreshTimer);
-    refreshTimer=setTimeout(loadOnlyMyOvertimeV75,40);
-  });
-
-  document.addEventListener('DOMContentLoaded',function(){
-    observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-    setTimeout(()=>{ if(!isAdminV75()) lockUserDetailUIV75(); },1000);
-  });
-
-  // Expose one safe loader for future scripts.
-  window.loadMyOvertimeDetailStrict=loadOnlyMyOvertimeV75;
-})();
-</script>
-<!-- ================= END V7.5 PATCH ================= -->
-
