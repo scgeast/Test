@@ -8757,6 +8757,48 @@ body { background: var(--pro-bg); }
 </script>
 <!-- ================= END V7.8 CLEAN ROLE & PERMISSIONS ================= -->
 
+
+<!-- V8.0 Emergency Stability Fix: null-safe overtime detail renderer -->
+<script>
+(function(){
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  window.updateOvertimeDetailTable = function(){
+    try {
+      const tbody = document.getElementById('overtimeDetailTableBody') || document.getElementById('adminOvertimeDetailTableBody');
+      if (!tbody) return;
+      const user = window.currentUser || {};
+      const isAdmin = String(user.role||'').toLowerCase()==='admin';
+      let data = Array.isArray(window.rekapLemburData) ? window.rekapLemburData.slice() : [];
+      if (!isAdmin) {
+        const email=String(user.email||'').trim().toLowerCase();
+        data=data.filter(r=>String(r.employeeEmail||'').trim().toLowerCase()===email);
+      } else {
+        const ef=document.getElementById('overtimeEmployeeFilter') || document.getElementById('adminOvertimeEmployeeFilter');
+        if (ef && ef.value && ef.value!=='all') data=data.filter(r=>r.employeeName===ef.value);
+      }
+      const s=document.getElementById('startDateOvertimeOutput');
+      const e=document.getElementById('endDateOvertimeOutput');
+      const start=s && s.value ? new Date(s.value+'T00:00:00') : null;
+      const end=e && e.value ? new Date(e.value+'T23:59:59') : null;
+      if(start || end) data=data.filter(r=>{ const d=r.date?new Date(String(r.date)+'T12:00:00'):null; return d && (!start||d>=start) && (!end||d<=end); });
+      tbody.innerHTML='';
+      if(!data.length){ tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>'; return; }
+      let no=1;
+      data.forEach(r=>{
+        const rows=Array.isArray(r.tableData)&&r.tableData.length?r.tableData:[{}];
+        rows.forEach((x,i)=>{
+          const tr=document.createElement('tr');
+          tr.dataset.employeeEmail=String(r.employeeEmail||'').toLowerCase();
+          const action=isAdmin?`<button class="btn btn-sm btn-danger" onclick="deleteOvertimeRecord('${esc(r.id)}')"><i class="fas fa-trash"></i></button>`:'-';
+          tr.innerHTML=`<td>${no++}</td><td>${esc(r.employeeName)}</td><td>${i===0?esc(r.date):''}</td><td>${i===0?esc(r.startTime):''}</td><td>${i===0?esc(r.endTime):''}</td><td>${i===0?esc(r.overtimeDuration):''}</td><td>${esc(x.totalProject)}</td><td>${esc(x.totalPlant)}</td><td>${esc(x.plantNames)}</td><td>${esc(x.volume)}</td><td>${i===0?esc(r.taskDescription):''}</td><td>${action}</td>`;
+          tbody.appendChild(tr);
+        });
+      });
+    } catch(err) { console.error('Safe updateOvertimeDetailTable error:',err); }
+  };
+  window.addEventListener('error',function(ev){ if(String(ev.message||'').includes('updateOvertimeDetailTable')) console.error('Overtime renderer trapped:',ev.error||ev.message); });
+})();
+</script>
 </body>
 </html>
 <!-- ================= V7.2 GENERAL OVERTIME RESTORE PATCH ================= -->
