@@ -38,6 +38,15 @@
             overflow-x: hidden;
         }
 
+        /* PERBAIKAN: Sembunyikan tombol edit/delete untuk user biasa di overtime detail */
+.user-overtime-detail .overtime-action-buttons {
+  display: none !important;
+}
+
+/* Pastikan filter overtime disembunyikan untuk user biasa */
+.overtime-filter.hidden {
+  display: none !important;
+}
         /* Login Styles - Responsive */
         .login-container {
             position: fixed;
@@ -5285,58 +5294,56 @@ body { background: var(--pro-bg); }
             openDefaultGeneralTab();
         }
 
-        // Setup menu berdasarkan role
-        function setupMenuByRole(role) {
-            role = normalizeRole(role);
-            if (currentUser) currentUser.role = role;
-
-            // Sembunyikan semua menu dulu
-            document.querySelectorAll('.sidebar-menu a').forEach(menu => { menu.style.display = 'none'; });
-            document.getElementById('dashboardMenuItem').style.display = 'none';
-            document.getElementById('analyticsMenuItem').style.display = 'none';
-            ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-            
-            document.querySelectorAll('.sidebar-folder').forEach(folder => {
-                folder.style.display = 'none';
-            });
-            
-            // V4.6: GENERAL WAJIB tersedia untuk SEMUA USER + ADMIN.
-            const generalFolder = document.getElementById('generalFolder');
-            generalFolder.style.display = 'block';
-            generalFolder.classList.add('expanded');
-            document.querySelectorAll('#generalFolder .sidebar-menu a').forEach(menu => {
-                menu.style.display = 'flex';
-                menu.removeAttribute('aria-disabled');
-                menu.style.pointerEvents = 'auto';
-                menu.style.opacity = '1';
-            });
-            
-            // Tampilkan menu Main dan Settings untuk admin
-            if (role === 'admin') {
-                document.getElementById('mainFolder').style.display = 'block';
-                document.querySelectorAll('#mainFolder .sidebar-menu a').forEach(menu => {
-                    menu.style.display = 'flex';
-                });
-                document.querySelector('[data-tab="setting"]').style.display = 'flex';
-                document.getElementById('dashboardMenuItem').style.display = 'block';
-                document.getElementById('analyticsMenuItem').style.display = 'block';
-                ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
-                document.querySelector('[data-tab="dashboard"]').style.display = 'flex';
-                document.querySelector('[data-tab="analytics"]').style.display = 'flex';
-                ['online-monitor','activity-score','notification-center','admin-activity'].forEach(tab=>{const e=document.querySelector(`[data-tab="${tab}"]`);if(e)e.style.display='flex';});
-                
-                // Untuk admin: sembunyikan Overtime Form, tampilkan Overtime Detail
-                document.getElementById('overtimeFormMenuItem').style.display = 'none';
-                document.getElementById('overtimeDetailMenuItem').style.display = 'flex';
-            } else {
-                // Untuk user biasa: tampilkan Overtime Form, sembunyikan Overtime Detail
-                document.getElementById('overtimeFormMenuItem').style.display = 'flex';
-                document.getElementById('overtimeDetailMenuItem').style.display = 'none';
-            }
-            
-            // Tampilkan logout untuk semua role
-            document.getElementById('logoutBtn').style.display = 'flex';
-        }
+function setupMenuByRole(role) {
+  role = normalizeRole(role);
+  if (currentUser) currentUser.role = role;
+  
+  // Sembunyikan semua menu dulu
+  document.querySelectorAll('.sidebar-menu a').forEach(menu => { menu.style.display = 'none'; });
+  document.getElementById('dashboardMenuItem').style.display = 'none';
+  document.getElementById('analyticsMenuItem').style.display = 'none';
+  ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  document.querySelectorAll('.sidebar-folder').forEach(folder => {
+    folder.style.display = 'none';
+  });
+  
+  // V4.6: GENERAL WAJIB tersedia untuk SEMUA USER + ADMIN.
+  const generalFolder = document.getElementById('generalFolder');
+  generalFolder.style.display = 'block';
+  generalFolder.classList.add('expanded');
+  document.querySelectorAll('#generalFolder .sidebar-menu a').forEach(menu => {
+    menu.style.display = 'flex';
+    menu.removeAttribute('aria-disabled');
+    menu.style.pointerEvents = 'auto';
+    menu.style.opacity = '1';
+  });
+  
+  // Tampilkan menu Main dan Settings untuk admin
+  if (role === 'admin') {
+    document.getElementById('mainFolder').style.display = 'block';
+    document.querySelectorAll('#mainFolder .sidebar-menu a').forEach(menu => {
+      menu.style.display = 'flex';
+    });
+    document.querySelector('[data-tab="setting"]').style.display = 'flex';
+    document.getElementById('dashboardMenuItem').style.display = 'block';
+    document.getElementById('analyticsMenuItem').style.display = 'block';
+    ['onlineMonitorMenuItem','activityScoreMenuItem','notificationCenterMenuItem','adminActivityMenuItem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
+    document.querySelector('[data-tab="dashboard"]').style.display = 'flex';
+    document.querySelector('[data-tab="analytics"]').style.display = 'flex';
+    ['online-monitor','activity-score','notification-center','admin-activity'].forEach(tab=>{const e=document.querySelector(`[data-tab="${tab}"]`);if(e)e.style.display='flex';});
+    
+    // Untuk admin: sembunyikan Overtime Form, tampilkan Overtime Detail
+    document.getElementById('overtimeFormMenuItem').style.display = 'none';
+    document.getElementById('overtimeDetailMenuItem').style.display = 'flex';
+  } else {
+    // PERBAIKAN: Untuk user biasa: tampilkan KEDUANYA (Overtime Form DAN Overtime Detail)
+    document.getElementById('overtimeFormMenuItem').style.display = 'flex';
+    document.getElementById('overtimeDetailMenuItem').style.display = 'flex';
+  }
+  
+  // Tampilkan logout untuk semua role
+  document.getElementById('logoutBtn').style.display = 'flex';
+}
 
         // Setup filter berdasarkan role
         function setupFilterByRole(role) {
@@ -6290,18 +6297,26 @@ body { background: var(--pro-bg); }
             document.getElementById('endDateOvertimeOutput').addEventListener('change', updateOvertimeDisplay);
         }
 
-        // PERBAIKAN: Fungsi untuk inisialisasi Overtime Detail Admin
-        function initOvertimeDetailAdmin() {
-            // Setup employee filter untuk admin
-            setupAdminOvertimeEmployeeFilter();
-            
-            // Load semua data overtime
-            loadAllOvertimeData();
-            
-            // Setup event listeners untuk filter
-            document.getElementById('startDateOvertimeOutput').addEventListener('change', updateAdminOvertimeDetailTable);
-            document.getElementById('endDateOvertimeOutput').addEventListener('change', updateAdminOvertimeDetailTable);
-        }
+// PERBAIKAN: Fungsi untuk inisialisasi Overtime Detail - handle admin dan user
+function initOvertimeDetailAdmin() {
+  // Setup employee filter untuk admin
+  setupAdminOvertimeEmployeeFilter();
+  
+  // PERBAIKAN: Sembunyikan filter employee untuk user biasa
+  const overtimeFilterSection = document.querySelector('#overtime-detail-admin .overtime-filter');
+  if (currentUser.role !== 'admin' && overtimeFilterSection) {
+    overtimeFilterSection.style.display = 'none';
+  } else if (currentUser.role === 'admin' && overtimeFilterSection) {
+    overtimeFilterSection.style.display = 'flex';
+  }
+  
+  // Load semua data overtime
+  loadAllOvertimeData();
+  
+  // Setup event listeners untuk filter
+  document.getElementById('startDateOvertimeOutput').addEventListener('change', updateAdminOvertimeDetailTable);
+  document.getElementById('endDateOvertimeOutput').addEventListener('change', updateAdminOvertimeDetailTable);
+}
 
         // PERBAIKAN: Fungsi untuk setup filter employee pada overtime detail admin
         function setupAdminOvertimeEmployeeFilter() {
@@ -6334,136 +6349,156 @@ body { background: var(--pro-bg); }
             adminOvertimeEmployeeFilter.addEventListener('change', updateAdminOvertimeDetailTable);
         }
 
-        // PERBAIKAN: Fungsi untuk update admin overtime detail table
-        function updateAdminOvertimeDetailTable() {
-            const tbody = document.getElementById('adminOvertimeDetailTableBody');
-            tbody.innerHTML = '';
-            
-            // Filter data berdasarkan date range
-            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
-            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
-            
-            // Filter berdasarkan employee
-            const employeeFilter = document.getElementById('adminOvertimeEmployeeFilter').value;
-            let filteredData = rekapLemburData;
-            
-            if (employeeFilter !== 'all') {
-                filteredData = rekapLemburData.filter(record => record.employeeName === employeeFilter);
-            }
-            
-            // Filter berdasarkan date range
-            if (startDate && endDate) {
-                filteredData = filteredData.filter(record => {
-                    const recordDate = new Date(record.date);
-                    return recordDate >= startDate && recordDate <= endDate;
-                });
-            }
-            
-            if (filteredData.length === 0) {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="12" class="text-center">No overtime data found</td>`;
-                tbody.appendChild(row);
-                return;
-            }
-            
-            let rowNumber = 1;
-            filteredData.forEach(record => {
-                // Jika ada data tabel, tampilkan setiap baris
-                if (record.tableData && record.tableData.length > 0) {
-                    record.tableData.forEach((tableRow, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${rowNumber++}</td>
-                            <td>${record.employeeName}</td>
-                            <td>${index === 0 ? record.date : ''}</td>
-                            <td>${index === 0 ? record.startTime : ''}</td>
-                            <td>${index === 0 ? record.endTime : ''}</td>
-                            <td>${index === 0 ? record.overtimeDuration : ''}</td>
-                            <td>${tableRow.totalProject || ''}</td>
-                            <td>${tableRow.totalPlant || ''}</td>
-                            <td>${tableRow.plantNames || ''}</td>
-                            <td>${tableRow.volume || ''}</td>
-                            <td>${index === 0 ? record.taskDescription : ''}</td>
-                            <td class="overtime-action-buttons">
-                                <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                } else {
-                    // Jika tidak ada data tabel, tampilkan satu baris saja
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${rowNumber++}</td>
-                        <td>${record.employeeName}</td>
-                        <td>${record.date}</td>
-                        <td>${record.startTime}</td>
-                        <td>${record.endTime}</td>
-                        <td>${record.overtimeDuration}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td>${record.taskDescription}</td>
-                        <td class="overtime-action-buttons">
-                            <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                }
-            });
-            
-            // PERBAIKAN: Update total overtime untuk admin
-            updateAdminTotalOvertime(filteredData);
-        }
+// PERBAIKAN: Fungsi untuk update admin overtime detail table - dengan filter role
+function updateAdminOvertimeDetailTable() {
+  const tbody = document.getElementById('adminOvertimeDetailTableBody');
+  tbody.innerHTML = '';
+  
+  // Filter data berdasarkan date range
+  const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
+  const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
+  
+  let filteredData = rekapLemburData;
+  
+  // PERBAIKAN: Filter berdasarkan role
+  if (currentUser.role === 'admin') {
+    // Admin: terapkan filter employee jika dipilih
+    const employeeFilter = document.getElementById('adminOvertimeEmployeeFilter').value;
+    if (employeeFilter !== 'all') {
+      filteredData = filteredData.filter(record => record.employeeName === employeeFilter);
+    }
+  } else {
+    // User biasa: HANYA tampilkan data milik sendiri berdasarkan email
+    filteredData = filteredData.filter(record => 
+      record.employeeEmail === currentUser.email
+    );
+  }
+  
+  // Filter berdasarkan date range
+  if (startDate && endDate) {
+    filteredData = filteredData.filter(record => {
+      const recordDate = new Date(record.date);
+      return recordDate >= startDate && recordDate <= endDate;
+    });
+  }
+  
+  if (filteredData.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td colspan="12" class="text-center">No overtime data found</td>`;
+    tbody.appendChild(row);
+    return;
+  }
+  
+  let rowNumber = 1;
+  filteredData.forEach(record => {
+    // Jika ada data tabel, tampilkan setiap baris
+    if (record.tableData && record.tableData.length > 0) {
+      record.tableData.forEach((tableRow, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${rowNumber++}</td>
+          <td>${record.employeeName}</td>
+          <td>${index === 0 ? record.date : ''}</td>
+          <td>${index === 0 ? record.startTime : ''}</td>
+          <td>${index === 0 ? record.endTime : ''}</td>
+          <td>${index === 0 ? record.overtimeDuration : ''}</td>
+          <td>${tableRow.totalProject || ''}</td>
+          <td>${tableRow.totalPlant || ''}</td>
+          <td>${tableRow.plantNames || ''}</td>
+          <td>${tableRow.volume || ''}</td>
+          <td>${index === 0 ? record.taskDescription : ''}</td>
+          <td class="overtime-action-buttons">
+            ${currentUser.role === 'admin' ? `
+              <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            ` : '<span class="text-muted">-</span>'}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    } else {
+      // Jika tidak ada data tabel, tampilkan satu baris saja
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${rowNumber++}</td>
+        <td>${record.employeeName}</td>
+        <td>${record.date}</td>
+        <td>${record.startTime}</td>
+        <td>${record.endTime}</td>
+        <td>${record.overtimeDuration}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>${record.taskDescription}</td>
+        <td class="overtime-action-buttons">
+          ${currentUser.role === 'admin' ? `
+            <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          ` : '<span class="text-muted">-</span>'}
+        </td>
+      `;
+      tbody.appendChild(row);
+    }
+  });
+  
+  // PERBAIKAN: Update total overtime untuk admin
+  updateAdminTotalOvertime(filteredData);
+}
 
-        // PERBAIKAN: Fungsi untuk update total overtime admin
-        function updateAdminTotalOvertime(filteredData = null) {
-            const adminTotalOvertimeElement = document.getElementById('adminTotalOvertimeValue');
-            
-            // Gunakan data yang sudah difilter jika diberikan, jika tidak gunakan semua data
-            let dataToCalculate = filteredData || rekapLemburData;
-            
-            // Filter berdasarkan employee
-            const employeeFilter = document.getElementById('adminOvertimeEmployeeFilter').value;
-            if (employeeFilter !== 'all') {
-                dataToCalculate = dataToCalculate.filter(record => record.employeeName === employeeFilter);
-            }
-            
-            // Filter berdasarkan date range
-            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
-            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
-            
-            if (startDate && endDate) {
-                dataToCalculate = dataToCalculate.filter(record => {
-                    const recordDate = new Date(record.date);
-                    return recordDate >= startDate && recordDate <= endDate;
-                });
-            }
-            
-            // Hitung total overtime
-            let totalMinutes = 0;
-            dataToCalculate.forEach(record => {
-                const [hours, minutes] = record.overtimeDuration.split(':').map(Number);
-                totalMinutes += hours * 60 + minutes;
-            });
-            
-            const totalHours = Math.floor(totalMinutes / 60);
-            const remainingMinutes = totalMinutes % 60;
-            
-            adminTotalOvertimeElement.textContent = 
-                `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
-        }
+// PERBAIKAN: Fungsi untuk update total overtime admin - dengan filter role
+function updateAdminTotalOvertime(filteredData = null) {
+  const adminTotalOvertimeElement = document.getElementById('adminTotalOvertimeValue');
+  
+  // Gunakan data yang sudah difilter jika diberikan, jika tidak gunakan semua data
+  let dataToCalculate = filteredData || rekapLemburData;
+  
+  // PERBAIKAN: Filter berdasarkan role
+  if (currentUser.role !== 'admin') {
+    // User biasa: hanya hitung data milik sendiri
+    dataToCalculate = dataToCalculate.filter(record => 
+      record.employeeEmail === currentUser.email
+    );
+  } else {
+    // Admin: terapkan filter employee jika dipilih
+    const employeeFilter = document.getElementById('adminOvertimeEmployeeFilter').value;
+    if (employeeFilter !== 'all') {
+      dataToCalculate = dataToCalculate.filter(record => record.employeeName === employeeFilter);
+    }
+  }
+  
+  // Filter berdasarkan date range
+  const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
+  const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
+  
+  if (startDate && endDate) {
+    dataToCalculate = dataToCalculate.filter(record => {
+      const recordDate = new Date(record.date);
+      return recordDate >= startDate && recordDate <= endDate;
+    });
+  }
+  
+  // Hitung total overtime
+  let totalMinutes = 0;
+  dataToCalculate.forEach(record => {
+    const [hours, minutes] = record.overtimeDuration.split(':').map(Number);
+    totalMinutes += hours * 60 + minutes;
+  });
+  
+  const totalHours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  
+  adminTotalOvertimeElement.textContent =
+    `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
+}
 
         // PERBAIKAN: Fungsi untuk setup filter employee pada overtime detail
         function setupOvertimeEmployeeFilter() {
