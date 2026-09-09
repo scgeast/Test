@@ -1731,27 +1731,12 @@ body { background: var(--pro-bg); }
             </button>
         </div>
         
-        <div class="sidebar-folder" id="adminControlFolder" style="display:none;">
-            <div class="sidebar-folder-header">
-                <i class="fas fa-shield-halved"></i><span>Admin Control Center</span>
-            </div>
-            <div class="sidebar-folder-content">
-                <ul class="sidebar-menu">
-                    <li id="analyticsMenuItem"><a href="#" data-tab="analytics"><i class="fas fa-chart-line"></i><span>Dashboard Analytics</span></a></li>
-                    <li id="onlineMonitorMenuItem"><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
-                    <li id="activityScoreMenuItem"><a href="#" data-tab="activity-score"><i class="fas fa-gauge-high"></i><span>Activity Monitor</span></a></li>
-                    <li id="auditLogsMenuItem"><a href="#" data-tab="audit-logs"><i class="fas fa-clipboard-list"></i><span>Audit Logs</span></a></li>
-                    <li id="approvalCenterMenuItem"><a href="#" data-tab="approval-center"><i class="fas fa-check-double"></i><span>Approval Center</span></a></li>
-                    <li id="notificationCenterMenuItem"><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
-                    <li id="reportsMenuItem"><a href="#" data-tab="reports"><i class="fas fa-file-lines"></i><span>Reports</span></a></li>
-                    <li id="rolePermissionsMenuItem"><a href="#" data-tab="role-permissions"><i class="fas fa-user-shield"></i><span>Role & Permissions</span></a></li>
-                    <li id="systemHealthMenuItem"><a href="#" data-tab="system-health"><i class="fas fa-heart-pulse"></i><span>System Health</span></a></li>
-                    <li id="dataManagementMenuItem"><a href="#" data-tab="data-management"><i class="fas fa-database"></i><span>Data Management</span></a></li>
-                </ul>
-            </div>
-        </div>
-        <ul class="sidebar-menu pro-dashboard-menu" style="display:none;">
-            <li id="dashboardMenuItem"><a href="#" data-tab="dashboard"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
+        <ul class="sidebar-menu pro-dashboard-menu">
+            <li id="dashboardMenuItem"><a href="#" data-tab="dashboard" class="active"><i class="fas fa-grid-2"></i><span>Dashboard</span></a></li>
+            <li id="analyticsMenuItem" style="display:none;"><a href="#" data-tab="analytics"><i class="fas fa-chart-line"></i><span>Dashboard Analytics</span></a></li>
+            <li id="onlineMonitorMenuItem" style="display:none;"><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
+            <li id="activityScoreMenuItem" style="display:none;"><a href="#" data-tab="activity-score"><i class="fas fa-gauge-high"></i><span>Activity Frequency</span></a></li>
+            <li id="notificationCenterMenuItem" style="display:none;"><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
             <li id="adminActivityMenuItem" style="display:none;"><a href="#" data-tab="admin-activity"><i class="fas fa-shield-halved"></i><span>Admin Activity Monitor</span></a></li>
         </ul>
 
@@ -1766,37 +1751,67 @@ body { background: var(--pro-bg); }
                     <li>
                         <a href="#" data-tab="absen-tabel">
                             <i class="fas fa-table"></i>
-                            <span>Attendance</span>
+                            <span>Attendance Table</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#" data-tab="cuti-detail">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Summarize Leave</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-tab="propose-leave">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Propose Leave</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-tab="my-leave-history">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <span>My Leave History</span>
+                        </a>
+                    </li>
+                    <!-- Menu Overtime Form hanya untuk user biasa -->
                     <li id="overtimeFormMenuItem" style="display: none;">
                         <a href="#" data-tab="form-rekap-lembur">
                             <i class="fas fa-calculator"></i>
-                            <span>Entry Overtime</span>
+                            <span>Overtime Form</span>
                         </a>
                     </li>
+                    <!-- Menu Overtime Detail untuk admin -->
                     <li id="overtimeDetailMenuItem" style="display: none;">
                         <a href="#" data-tab="overtime-detail-admin">
                             <i class="fas fa-list-alt"></i>
                             <span>Overtime Detail</span>
                         </a>
                     </li>
-                    <li id="proposeLeaveMenuItem">
-                        <a href="#" data-tab="propose-leave">
-                            <i class="fas fa-paper-plane"></i>
-                            <span>Propose Leave</span>
-                        </a>
-                    </li>
-                    <li id="myLeaveHistoryMenuItem">
-                        <a href="#" data-tab="my-leave-history">
-                            <i class="fas fa-clock-rotate-left"></i>
-                            <span>My Leave History</span>
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
         
+        <!-- ADMIN CONTROL CENTER -->
+        <div class="sidebar-folder" id="adminControlFolder" style="display:none;">
+            <div class="sidebar-folder-header">
+                <i class="fas fa-shield-halved"></i>
+                <span>Admin Control Center</span>
+            </div>
+            <div class="sidebar-folder-content">
+                <ul class="sidebar-menu">
+                    <li><a href="#" data-tab="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard Analytics</span></a></li>
+                    <li><a href="#" data-tab="online-monitor"><i class="fas fa-user-clock"></i><span>User Online Monitor</span></a></li>
+                    <li><a href="#" data-tab="activity-score"><i class="fas fa-chart-column"></i><span>Activity Monitor</span></a></li>
+                    <li><a href="#" data-tab="admin-activity"><i class="fas fa-list-check"></i><span>Audit Logs</span></a></li>
+                    <li><a href="#" data-tab="approval-center"><i class="fas fa-circle-check"></i><span>Approval Center</span></a></li>
+                    <li><a href="#" data-tab="notification-center"><i class="fas fa-bell"></i><span>Notification Center</span></a></li>
+                    <li><a href="#" data-tab="admin-reports"><i class="fas fa-file-chart-column"></i><span>Reports</span></a></li>
+                    <li><a href="#" data-tab="role-permissions"><i class="fas fa-user-shield"></i><span>Role &amp; Permissions</span></a></li>
+                    <li><a href="#" data-tab="system-health"><i class="fas fa-heart-pulse"></i><span>System Health</span></a></li>
+                    <li><a href="#" data-tab="data-management"><i class="fas fa-database"></i><span>Data Management</span></a></li>
+                </ul>
+            </div>
+        </div>
+
         <!-- Main Folder (Admin Only) -->
         <div class="sidebar-folder" id="mainFolder">
             <div class="sidebar-folder-header">
@@ -1824,6 +1839,12 @@ body { background: var(--pro-bg); }
                         </a>
                     </li>
                     <li>
+                        <a href="#" data-tab="cuti">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Leave Management</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#" data-tab="summary-overtime">
                             <i class="fas fa-chart-bar"></i>
                             <span>Summary Overtime</span>
@@ -1833,18 +1854,12 @@ body { background: var(--pro-bg); }
             </div>
         </div>
         
-        <!-- Account Actions -->
-        <ul class="sidebar-menu account-actions-menu">
-            <li id="settingsMenuItem">
+        <!-- Settings Menu (Admin Only) -->
+        <ul class="sidebar-menu">
+            <li>
                 <a href="#" data-tab="setting">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" id="changePasswordSidebarBtn">
-                    <i class="fas fa-key"></i>
-                    <span>Change Password</span>
                 </a>
             </li>
             <li>
@@ -1856,8 +1871,13 @@ body { background: var(--pro-bg); }
         </ul>
     </div>
 
-    <!-- Legacy password section kept hidden for compatibility -->
-    <div class="user-password-section" id="userPasswordSection" style="display:none!important"></div>
+    <!-- User Password Section -->
+    <div class="user-password-section" id="userPasswordSection">
+        <button class="user-password-btn" id="changePasswordSidebarBtn">
+            <i class="fas fa-key"></i>
+            <span>Change Password</span>
+        </button>
+    </div>
 
     <!-- Header -->
     <header class="futuristic-header">
@@ -1956,6 +1976,46 @@ body { background: var(--pro-bg); }
                 <div class="dashboard-hero"><div class="dashboard-eyebrow">CDC East · Audit Trail</div><h2 class="dashboard-title">Admin Activity Monitoring</h2><p class="dashboard-subtitle">Recent administrative and user activity events recorded by the application.</p></div>
                 <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-shield-halved me-2 text-danger"></i>Activity Log</h5><button class="v5-action" id="refreshActivityBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="adminActivityList" class="v5-list"></div></div>
             </section>
+
+            <!-- USER: PROPOSE LEAVE -->
+            <div class="tab-pane fade" id="propose-leave" role="tabpanel">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">GENERAL · LEAVE</div><h2 class="dashboard-title">Propose Leave</h2><p class="dashboard-subtitle">Ajukan cuti untuk diproses oleh Admin.</p></div>
+                <div class="v5-panel" style="max-width:760px">
+                    <h5><i class="fas fa-paper-plane me-2"></i>PROPOSE LEAVE</h5>
+                    <div class="row g-3 mt-1">
+                        <div class="col-12 col-md-6"><label class="form-label">Leave Type</label><select class="form-select" id="proposeLeaveType"><option value="Annual Leave">Annual Leave</option><option value="Sick Leave">Sick Leave</option><option value="Personal Leave">Personal Leave</option><option value="Other Leave">Other Leave</option></select></div>
+                        <div class="col-12 col-md-6"><label class="form-label">Start Date</label><input type="date" class="form-control" id="proposeLeaveStart"></div>
+                        <div class="col-12 col-md-6"><label class="form-label">End Date</label><input type="date" class="form-control" id="proposeLeaveEnd"></div>
+                        <div class="col-12"><label class="form-label">Reason</label><textarea class="form-control" id="proposeLeaveReason" rows="4" placeholder="Jelaskan alasan pengajuan cuti..."></textarea></div>
+                        <div class="col-12"><small class="text-muted"><i class="fas fa-circle-info me-1"></i>Attachment tidak digunakan.</small></div>
+                        <div class="col-12"><button class="btn btn-futuristic" id="submitLeaveRequest"><i class="fas fa-paper-plane me-1"></i>Submit Leave Request</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USER: MY LEAVE HISTORY -->
+            <div class="tab-pane fade" id="my-leave-history" role="tabpanel">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">GENERAL · PERSONAL</div><h2 class="dashboard-title">My Leave History</h2><p class="dashboard-subtitle">Hanya menampilkan pengajuan cuti milik akun yang sedang login.</p></div>
+                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Riwayat Pengajuan</h5><button class="v5-action" id="refreshMyLeaveBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Type</th><th>Start</th><th>End</th><th>Reason</th><th>Status</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div></div>
+            </div>
+
+            <!-- ADMIN: APPROVAL CENTER -->
+            <section class="v5-admin-shell" id="approvalCenterShell">
+                <div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · APPROVAL</div><h2 class="dashboard-title">Approval Center</h2><p class="dashboard-subtitle">Approval workflow hanya untuk Leave Request. Tidak ada overtime approval.</p></div>
+                <div class="v5-panel"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0"><i class="fas fa-circle-check me-2"></i>Pending Leave Requests</h5><button class="v5-action" id="refreshLeaveApprovalBtn"><i class="fas fa-rotate me-1"></i>Refresh</button></div><div id="leaveApprovalList" class="v5-list"></div></div>
+            </section>
+
+            <!-- ADMIN: REPORTS -->
+            <section class="v5-admin-shell" id="adminReportsShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · REPORTS</div><h2 class="dashboard-title">Reports</h2><p class="dashboard-subtitle">Ringkasan attendance, overtime dan leave.</p></div><div class="v5-grid"><div class="v5-panel"><h5>Attendance</h5><div id="adminReportAttendance">0 records</div></div><div class="v5-panel"><h5>Overtime</h5><div id="adminReportOvertime">0 records</div></div><div class="v5-panel"><h5>Leave Requests</h5><div id="adminReportLeave">0 requests</div></div></div></section>
+
+            <!-- ADMIN: ROLE & PERMISSIONS -->
+            <section class="v5-admin-shell" id="rolePermissionsShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · SECURITY</div><h2 class="dashboard-title">Role &amp; Permissions</h2><p class="dashboard-subtitle">Kontrol akses berbasis role. User hanya dapat mengakses General; Admin memiliki kontrol penuh.</p></div><div class="v5-panel"><div class="v5-list"><div class="more-item"><div class="more-item-main"><div class="more-item-title">Admin</div><div class="more-item-sub">Dashboard, monitoring, approval, reports, users dan system controls.</div></div><span class="more-pill">FULL ACCESS</span></div><div class="more-item"><div class="more-item-main"><div class="more-item-title">User</div><div class="more-item-sub">Attendance, Overtime, Propose Leave dan My Leave History milik sendiri.</div></div><span class="more-pill">GENERAL</span></div></div></div></section>
+
+            <!-- ADMIN: SYSTEM HEALTH -->
+            <section class="v5-admin-shell" id="systemHealthShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · HEALTH</div><h2 class="dashboard-title">System Health</h2><p class="dashboard-subtitle">Status koneksi browser dan Firebase.</p></div><div class="v5-grid"><div class="v5-panel"><h5>Network</h5><div id="systemNetworkStatus">Checking...</div></div><div class="v5-panel"><h5>Firebase Auth</h5><div id="systemAuthStatus">Checking...</div></div><div class="v5-panel"><h5>Firestore</h5><div id="systemFirestoreStatus">Checking...</div></div></div></section>
+
+            <!-- ADMIN: DATA MANAGEMENT -->
+            <section class="v5-admin-shell" id="dataManagementShell"><div class="dashboard-hero"><div class="dashboard-eyebrow">ADMIN CONTROL CENTER · DATA</div><h2 class="dashboard-title">Data Management</h2><p class="dashboard-subtitle">Kelola dan inspeksi data aplikasi tanpa menghapus data secara tidak sengaja.</p></div><div class="v5-panel"><button class="v5-action" id="adminRefreshAllData"><i class="fas fa-rotate me-1"></i>Refresh All Data</button><div id="dataManagementSummary" class="mt-3"></div></div></section>
 
             <!-- Filter Section for Main Folder -->
             <div class="filter-section filter-section-main" id="filterSectionMain">
@@ -2273,53 +2333,8 @@ body { background: var(--pro-bg); }
                     </div>
                 </div>
 
-                <!-- V6 Leave Request: User self-service -->
-                <div class="tab-pane fade" id="propose-leave" role="tabpanel">
-                    <div class="card border-0 shadow-sm p-3">
-                        <h4 class="mb-3"><i class="fas fa-paper-plane me-2"></i>Propose Leave</h4>
-                        <div class="row g-3">
-                            <div class="col-md-4"><label class="form-label">Leave Type</label>
-                                <select id="leaveType" class="form-select"><option>Annual Leave</option><option>Sick Leave</option><option>Personal Leave</option><option>Emergency Leave</option><option>Unpaid Leave</option><option>Other</option></select>
-                            </div>
-                            <div class="col-md-4"><label class="form-label">Start Date</label><input type="date" id="leaveStartDate" class="form-control"></div>
-                            <div class="col-md-4"><label class="form-label">End Date</label><input type="date" id="leaveEndDate" class="form-control"></div>
-                            <div class="col-12"><label class="form-label">Reason</label><textarea id="leaveReason" class="form-control" rows="4" placeholder="Explain your leave reason..."></textarea></div>
-                            <div class="col-12"><button type="button" id="submitLeaveRequestBtn" class="btn btn-futuristic"><i class="fas fa-paper-plane me-1"></i> Submit Leave Request</button></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="my-leave-history" role="tabpanel">
-                    <div class="card border-0 shadow-sm p-3">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                            <div>
-                                <h4 class="mb-1"><i class="fas fa-clock-rotate-left me-2"></i><span id="leaveHistoryTitle">My Leave History</span></h4>
-                                <small class="text-muted" id="leaveHistorySubtitle">View your leave records by year.</small>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <label for="leaveHistoryYear" class="small text-muted mb-0">Year</label>
-                                <select id="leaveHistoryYear" class="form-select form-select-sm" style="width:auto;min-width:120px"></select>
-                                <button class="btn btn-sm btn-outline-secondary" id="refreshMyLeaveBtn"><i class="fas fa-rotate"></i> Refresh</button>
-                            </div>
-                        </div>
-                        <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th>No</th><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason / Remarks</th><th>Status</th><th>Submitted</th></tr></thead><tbody id="myLeaveHistoryBody"></tbody></table></div>
-                    </div>
-                </div>
-
-                <!-- Approval Center: Admin, Leave Only -->
-                <div class="tab-pane fade" id="approval-center" role="tabpanel">
-                    <div class="card border-0 shadow-sm p-3"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0"><i class="fas fa-check-double me-2"></i>Approval Center</h4><span class="badge bg-info">Leave Approval Only</span></div>
-                    <div class="table-responsive"><table class="table table-striped"><thead><tr><th>Employee</th><th>Leave Type</th><th>Period</th><th>Reason</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead><tbody id="approvalLeaveBody"></tbody></table></div></div>
-                </div>
-
-                <div class="tab-pane fade" id="audit-logs" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Audit Logs</h4><div id="auditLogsBody" class="v5-list"></div></div></div>
-                <div class="tab-pane fade" id="reports" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Reports</h4><p class="text-muted">Report Center foundation is ready. Attendance, Overtime and Leave reports will be consolidated here.</p></div></div>
-                <div class="tab-pane fade" id="role-permissions" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p><strong>Admin:</strong> full access. <strong>User:</strong> Attendance, Overtime, Propose Leave and My Leave History only.</p></div></div>
-                <div class="tab-pane fade" id="system-health" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>System Health</h4><div id="systemHealthBody">Checking Firebase connection...</div></div></div>
-                <div class="tab-pane fade" id="data-management" role="tabpanel"><div class="card border-0 shadow-sm p-3"><h4>Data Management</h4><p class="text-muted">Admin-only data export, archive and maintenance center.</p></div></div>
-
-                <!-- Legacy Leave Management UI retired in V7.1. Historical records remain in Firestore and are consolidated into My Leave History. -->
-                <div class="tab-pane fade d-none" id="cuti" role="tabpanel" aria-hidden="true">
+                <!-- Cuti Tab - PERBAIKAN: Tambah tombol delete -->
+                <div class="tab-pane fade" id="cuti" role="tabpanel">
                     <button type="button" class="collapsible">Leave Management <i class="fas fa-chevron-down"></i></button>
                     <div class="collapsible-content">
                         <p class="small">Here you can manage employee leave data.</p>
@@ -2460,13 +2475,56 @@ body { background: var(--pro-bg); }
                             </button>
                         </div>
                     </div>
+
+                    <!-- PERBAIKAN: Overtime Detail untuk admin dan user -->
+                    <div class="overtime-form-container" id="adminOvertimeDetail">
+                        <div class="overtime-controls">
+                            <div class="overtime-filter" id="overtimeFilterSection">
+                                <label for="overtimeEmployeeFilter" class="form-label me-2">Employee Name:</label>
+                                <select class="form-select form-select-sm" id="overtimeEmployeeFilter">
+                                    <option value="all">All Employees</option>
+                                    <!-- Options will be filled by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="total-overtime-container">
+                                <span class="me-2">Total Overtime:</span>
+                                <span class="total-overtime-value" id="totalOvertimeValue">00:00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive mt-3">
+                            <h5>Overtime Detail</h5>
+                            <table class="overtime-table table-striped table-sm" id="overtimeDetailTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Employee Name</th>
+                                        <th>Date</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Duration</th> <!-- Kolom baru Duration -->
+                                        <th>Total Project</th>
+                                        <th>Total Plant</th>
+                                        <th>Plant Name</th>
+                                        <th>Volume (m3)</th>
+                                        <th>Task Description</th>
+                                        <!-- PERBAIKAN: Kolom Action untuk admin di overtime detail -->
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overtimeDetailTableBody">
+                                    <!-- Data akan diisi setelah menyimpan -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- NEW: Overtime Detail Tab -->
+                <!-- NEW: Overtime Detail Admin Tab -->
                 <div class="tab-pane fade" id="overtime-detail-admin" role="tabpanel">
-                    <button type="button" class="collapsible">Overtime Detail <i class="fas fa-chevron-down"></i></button>
+                    <button type="button" class="collapsible">Overtime Detail Management <i class="fas fa-chevron-down"></i></button>
                     <div class="collapsible-content">
-                        <p class="small">View overtime records. Admin can view all users; users can only view their own overtime records.</p>
+                        <p class="small">Manage all employee overtime records. Changes here will sync with user overtime data and overtime calculation.</p>
                     </div>
 
                     <div class="overtime-controls">
@@ -5266,7 +5324,7 @@ body { background: var(--pro-bg); }
         async function refreshActivityScore(){ const acts=await loadV5Activities(); const score={}; acts.forEach(a=>{const k=a.uid||a.email||'unknown'; if(!score[k])score[k]={name:a.name||a.email||'Unknown',email:a.email||'',count:0,login:0,last:a.createdAt}; score[k].count++; if(a.action==='login')score[k].login++; if(new Date(a.createdAt)>new Date(score[k].last||0))score[k].last=a.createdAt;}); const rows=Object.values(score).map(x=>({...x,score:x.count*2+x.login*5})).sort((a,b)=>b.score-a.score); const max=Math.max(1,...rows.map(x=>x.score)); const el=document.getElementById('activityScoreList'); if(!el)return; el.innerHTML=rows.length?rows.map((x,i)=>`<div class="v5-row"><div><strong>#${i+1} ${escapeHtmlV5(x.name)}</strong><div class="small text-muted">${escapeHtmlV5(x.email)} · ${x.count} activities · Last ${v5Relative(x.last)}</div><div style="height:7px;background:#e2e8f0;border-radius:8px;margin-top:7px;overflow:hidden"><div style="height:100%;width:${Math.round(x.score/max*100)}%;background:#2563eb"></div></div></div><div class="v5-badge">${x.score} pts</div></div>`).join(''):'<div class="v5-empty">Activity data will appear after users start using the application.</div>'; }
         async function loadNotificationsV5(){ let rows=[]; try{const snap=await db.collection('notifications').limit(100).get();snap.forEach(d=>rows.push({id:d.id,...d.data()}));}catch(e){console.warn('V5 notifications read unavailable',e);} const el=document.getElementById('notificationCenterList'); if(!el)return; rows.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)); el.innerHTML=rows.length?rows.map(n=>`<div class="v5-notification ${escapeHtmlV5(n.type||'')}"><strong>${escapeHtmlV5(n.title||'Notification')}</strong><div>${escapeHtmlV5(n.message||'')}</div><small>${v5FormatTime(n.createdAt)}</small></div>`).join(''):'<div class="v5-empty"><i class="fas fa-bell-slash d-block mb-2"></i>No notifications available.</div>'; }
         async function refreshAdminActivity(){ const acts=await loadV5Activities(); const el=document.getElementById('adminActivityList'); if(!el)return; el.innerHTML=acts.slice(0,100).map(a=>`<div class="v5-row"><div><strong>${escapeHtmlV5(a.action||'activity')}</strong><div class="small text-muted">${escapeHtmlV5(a.name||a.email||'Unknown')} · ${escapeHtmlV5(a.role||'user')} ${a.meta&&a.meta.tab?'· '+escapeHtmlV5(a.meta.tab):''}</div></div><div class="small text-muted">${v5FormatTime(a.createdAt)}</div></div>`).join('')||'<div class="v5-empty">No activity has been recorded yet.</div>'; }
-        function hideV5Shells(){ ['onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');}); }
+        function hideV5Shells(){ ['onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell','approvalCenterShell','adminReportsShell','rolePermissionsShell','systemHealthShell','dataManagementShell'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');}); }
         async function showV5AdminPanel(tab){ if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('This feature is available for Admin only.','error');return;} document.getElementById('dashboardShell')?.classList.remove('active');document.getElementById('analyticsShell')?.classList.remove('active');document.getElementById('analyticsShell')?.style.setProperty('display','none');hideV5Shells();['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';}); const map={'online-monitor':'onlineMonitorShell','activity-score':'activityScoreShell','notification-center':'notificationCenterShell','admin-activity':'adminActivityShell'}; const shell=document.getElementById(map[tab]); if(shell)shell.classList.add('active'); currentTab=tab; await trackActivity('open_admin_panel',{tab}); if(tab==='online-monitor')refreshOnlineMonitor();if(tab==='activity-score')refreshActivityScore();if(tab==='notification-center')loadNotificationsV5();if(tab==='admin-activity')refreshAdminActivity(); }
         function updateRealDashboardCharts(){
             const source=(outputData&&outputData.length?outputData:overtimeCalcData||[]); const groups={}; source.forEach(x=>{const d=x.date||x.attendanceDate||'';if(!d)return;groups[d]=(groups[d]||0)+1;}); const top=Object.entries(groups).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))).slice(-10); const max=Math.max(1,...top.map(x=>x[1])); const bars=top.map(([d,c])=>`<div class="v5-bar-wrap"><div class="v5-bar-value">${c}</div><div class="v5-bar" style="height:${Math.max(4,c/max*165)}px"></div><div class="v5-bar-label">${escapeHtmlV5(String(d).slice(0,5))}</div></div>`).join(''); const el=document.getElementById('dashAttendanceChart'); if(el)el.innerHTML=bars||'<div class="v5-empty">No attendance records for chart.</div>';
@@ -5275,8 +5333,8 @@ body { background: var(--pro-bg); }
 
         // ACCESS CONTROL V4.6
         // Jaminan: SEMUA user yang berhasil login selalu dapat mengakses seluruh menu GENERAL.
-        const GENERAL_TABS = ['absen-tabel','cuti-detail','form-rekap-lembur','overtime-detail-admin'];
-        const ADMIN_TABS = ['dashboard','analytics','online-monitor','activity-score','notification-center','admin-activity','entry','output','overtime','cuti','summary-overtime','setting'];
+        const GENERAL_TABS = ['absen-tabel','cuti-detail','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history'];
+        const ADMIN_TABS = ['dashboard','analytics','online-monitor','activity-score','notification-center','admin-activity','approval-center','admin-reports','role-permissions','system-health','data-management','entry','output','overtime','cuti','summary-overtime','setting'];
 
         function normalizeRole(role) {
             return String(role || 'user').trim().toLowerCase() === 'admin' ? 'admin' : 'user';
@@ -5320,6 +5378,8 @@ body { background: var(--pro-bg); }
             const generalFolder = document.getElementById('generalFolder');
             generalFolder.style.display = 'block';
             generalFolder.classList.add('expanded');
+            const adminControlFolder = document.getElementById('adminControlFolder');
+            if (adminControlFolder) adminControlFolder.style.display = role === 'admin' ? 'block' : 'none';
             document.querySelectorAll('#generalFolder .sidebar-menu a').forEach(menu => {
                 menu.style.display = 'flex';
                 menu.removeAttribute('aria-disabled');
@@ -5740,6 +5800,7 @@ body { background: var(--pro-bg); }
                     this.classList.add('active');
                     
                     // Show corresponding tab
+                    if (['approval-center','admin-reports','role-permissions','system-health','data-management'].includes(tabName)) { showAdminControlPanel(tabName); return; }
                     if (tabName === 'dashboard') { showDashboard(); return; }
                     if (tabName === 'analytics') { showAnalytics(); trackActivity('open_admin_panel',{tab:'analytics'}); return; }
                     if (['online-monitor','activity-score','notification-center','admin-activity'].includes(tabName)) { showV5AdminPanel(tabName); return; }
@@ -7753,6 +7814,83 @@ body { background: var(--pro-bg); }
         // =============================================
 
         // Initialize aplikasi saat DOM ready - DIPERBAIKI
+        // ADMIN CONTROL CENTER + LEAVE REQUEST WORKFLOW
+        let leaveRequestUnsubscribe = null;
+        function currentEmployeeKeys(){
+            const keys = new Set();
+            if(!currentUser) return keys;
+            [currentUser.name,currentUser.email,currentUser.email ? String(currentUser.email).split('@')[0] : ''].forEach(v=>{if(v)keys.add(String(v).trim().toLowerCase());});
+            return keys;
+        }
+        function leaveRequestOwnerMatches(d){
+            const keys=currentEmployeeKeys();
+            return keys.has(String(d.userName||'').trim().toLowerCase()) || keys.has(String(d.userEmail||'').trim().toLowerCase()) || keys.has(String(d.employeeName||'').trim().toLowerCase());
+        }
+        async function submitLeaveRequest(){
+            if(!currentUser)return;
+            const type=document.getElementById('proposeLeaveType')?.value;
+            const start=document.getElementById('proposeLeaveStart')?.value;
+            const end=document.getElementById('proposeLeaveEnd')?.value;
+            const reason=(document.getElementById('proposeLeaveReason')?.value||'').trim();
+            if(!type||!start||!end||!reason){showNotification('Lengkapi Leave Type, Start Date, End Date dan Reason.','error');return;}
+            if(end<start){showNotification('End Date tidak boleh sebelum Start Date.','error');return;}
+            try{
+                await db.collection('leaveRequests').add({type,startDate:start,endDate:end,reason,userUid:currentUser.uid,userName:currentUser.name||currentUser.email,userEmail:currentUser.email,status:'pending',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+                await trackActivity('propose_leave',{type,startDate:start,endDate:end});
+                document.getElementById('proposeLeaveReason').value='';
+                showNotification('Leave request berhasil dikirim ke Admin.','success');
+                loadMyLeaveHistory();
+            }catch(e){console.error(e);showNotification('Gagal mengirim leave request: '+e.message,'error');}
+        }
+        async function loadMyLeaveHistory(){
+            const body=document.getElementById('myLeaveHistoryBody'); if(!body||!currentUser)return;
+            body.innerHTML='<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+            try{
+                const snap=await db.collection('leaveRequests').where('userUid','==',currentUser.uid).get();
+                const rows=[]; snap.forEach(doc=>rows.push({id:doc.id,...doc.data()})); rows.sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')));
+                body.innerHTML=rows.length?rows.map(r=>`<tr><td>${escapeHtmlV5(r.type||'-')}</td><td>${r.startDate||'-'}</td><td>${r.endDate||'-'}</td><td>${escapeHtmlV5(r.reason||'-')}</td><td><span class="more-pill">${escapeHtmlV5((r.status||'pending').toUpperCase())}</span></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-muted">Belum ada pengajuan cuti.</td></tr>';
+            }catch(e){body.innerHTML=`<tr><td colspan="5" class="text-center text-danger">${escapeHtmlV5(e.message)}</td></tr>`;}
+        }
+        function renderLeaveApproval(rows){
+            const el=document.getElementById('leaveApprovalList'); if(!el)return;
+            el.innerHTML=rows.length?rows.map(r=>`<div class="more-item"><div class="more-item-main"><div class="more-item-title">${escapeHtmlV5(r.userName||r.userEmail||'User')} · ${escapeHtmlV5(r.type||'Leave')}</div><div class="more-item-sub">${r.startDate||'-'} → ${r.endDate||'-'} · ${escapeHtmlV5(r.reason||'-')}</div></div><div style="display:flex;gap:6px"><button class="v5-action approve-leave" data-id="${r.id}"><i class="fas fa-check"></i> Approve</button><button class="v5-action reject-leave" data-id="${r.id}"><i class="fas fa-xmark"></i> Reject</button></div></div>`).join(''):'<div class="v5-empty">Tidak ada leave request pending.</div>';
+            el.querySelectorAll('.approve-leave').forEach(b=>b.onclick=()=>updateLeaveApproval(b.dataset.id,'approved'));
+            el.querySelectorAll('.reject-leave').forEach(b=>b.onclick=()=>updateLeaveApproval(b.dataset.id,'rejected'));
+        }
+        async function loadLeaveApprovals(){
+            if(!currentUser||normalizeRole(currentUser.role)!=='admin')return;
+            const el=document.getElementById('leaveApprovalList');if(el)el.innerHTML='<div class="v5-empty">Loading...</div>';
+            try{const snap=await db.collection('leaveRequests').where('status','==','pending').get();const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));renderLeaveApproval(rows);}catch(e){if(el)el.innerHTML='<div class="v5-empty">'+escapeHtmlV5(e.message)+'</div>';}
+        }
+        async function updateLeaveApproval(id,status){
+            if(!currentUser||normalizeRole(currentUser.role)!=='admin')return;
+            try{await db.collection('leaveRequests').doc(id).update({status,approvedBy:currentUser.uid,approvedByName:currentUser.name||currentUser.email,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});await trackActivity('leave_'+status,{requestId:id});showNotification('Leave request '+status+'.','success');loadLeaveApprovals();}catch(e){showNotification('Gagal memproses approval: '+e.message,'error');}
+        }
+        async function showAdminControlPanel(tab){
+            if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only.','error');return;}
+            hideV5Shells();document.getElementById('dashboardShell')?.classList.remove('active');document.getElementById('analyticsShell')?.classList.remove('active');
+            const map={'approval-center':'approvalCenterShell','admin-reports':'adminReportsShell','role-permissions':'rolePermissionsShell','system-health':'systemHealthShell','data-management':'dataManagementShell'};
+            const shell=document.getElementById(map[tab]);if(shell)shell.classList.add('active');
+            if(tab==='approval-center')loadLeaveApprovals();
+            if(tab==='admin-reports'){document.getElementById('adminReportAttendance').textContent=(outputData||[]).length+' records';document.getElementById('adminReportOvertime').textContent=(overtimeCalcData||[]).length+' records';try{const s=await db.collection('leaveRequests').get();document.getElementById('adminReportLeave').textContent=s.size+' requests';}catch(e){}}
+            if(tab==='system-health'){document.getElementById('systemNetworkStatus').textContent=navigator.onLine?'ONLINE':'OFFLINE';document.getElementById('systemAuthStatus').textContent=auth.currentUser?'AUTHENTICATED':'NOT AUTHENTICATED';try{await db.collection('leaveRequests').limit(1).get();document.getElementById('systemFirestoreStatus').textContent='CONNECTED';}catch(e){document.getElementById('systemFirestoreStatus').textContent='ERROR';}}
+            if(tab==='data-management'){document.getElementById('dataManagementSummary').innerHTML=`Users: ${(users||[]).length} · Attendance: ${(absensiData||[]).length} · Leave records: ${(cutiData||[]).length} · Overtime: ${(overtimeCalcData||[]).length}`;}
+        }
+        // DOM helper hooks for the new workflow
+        document.addEventListener('click',function(e){
+            const a=e.target.closest('a[data-tab]'); if(!a)return; const tab=a.getAttribute('data-tab');
+            if(tab==='approval-center'||tab==='admin-reports'||tab==='role-permissions'||tab==='system-health'||tab==='data-management'){e.preventDefault();showAdminControlPanel(tab);}
+            if(tab==='propose-leave'){setTimeout(()=>{const d=document.getElementById('proposeLeaveStart');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);const e2=document.getElementById('proposeLeaveEnd');if(e2&&!e2.value)e2.value=d?.value||'';},0);}
+            if(tab==='my-leave-history')setTimeout(loadMyLeaveHistory,0);
+        });
+        document.addEventListener('DOMContentLoaded',function(){
+            document.getElementById('submitLeaveRequest')?.addEventListener('click',submitLeaveRequest);
+            document.getElementById('refreshMyLeaveBtn')?.addEventListener('click',loadMyLeaveHistory);
+            document.getElementById('refreshLeaveApprovalBtn')?.addEventListener('click',loadLeaveApprovals);
+            document.getElementById('adminRefreshAllData')?.addEventListener('click',()=>{loadInitialData();loadLeaveApprovals();showNotification('Data refreshed.','success');});
+            document.getElementById('adminControlFolder')?.classList.remove('expanded');
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             // Check connection status awal
             checkConnection();
@@ -8007,6 +8145,8 @@ body { background: var(--pro-bg); }
         const isAdmin = currentUser.role === 'admin';
         const main = document.getElementById('mainFolder');
         if (main) main.style.display = isAdmin ? 'block' : 'none';
+        const adminControlFolder = document.getElementById('adminControlFolder');
+        if (adminControlFolder) adminControlFolder.style.display = isAdmin ? 'block' : 'none';
 
         const setting = document.querySelector('[data-tab="setting"]');
         if (setting) setting.style.display = isAdmin ? 'flex' : 'none';
@@ -8476,525 +8616,5 @@ body { background: var(--pro-bg); }
 })();
 </script>
 
-
-
-<script>
-/* ================= V6 ADMIN CONTROL CENTER + LEAVE SYSTEM ================= */
-(function(){
-  const V6_GENERAL=['absen-tabel','form-rekap-lembur','propose-leave','my-leave-history'];
-  const V6_ADMIN=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management','admin-activity','entry','output','overtime','cuti','summary-overtime','setting','dashboard'];
-
-  window.canAccessTab=function(tab){ if(V6_GENERAL.includes(tab)) return !!window.currentUser || !!currentUser; return normalizeRole((window.currentUser||currentUser||{}).role)==='admin' && V6_ADMIN.includes(tab); };
-
-  window.setupMenuByRole=function(role){
-    role=normalizeRole(role); if(currentUser) currentUser.role=role;
-    document.querySelectorAll('.sidebar-menu a').forEach(a=>a.style.display='none');
-    document.querySelectorAll('.sidebar-folder').forEach(f=>f.style.display='none');
-    const general=document.getElementById('generalFolder'); if(general){general.style.display='block';general.classList.add('expanded');}
-    ['absen-tabel','propose-leave','my-leave-history'].forEach(tab=>{const e=document.querySelector(`#generalFolder [data-tab="${tab}"]`);if(e)e.style.display='flex';});
-    const overtime=document.getElementById('overtimeFormMenuItem'); if(overtime) overtime.style.display=role==='user'?'flex':'none';
-    const detail=document.getElementById('overtimeDetailMenuItem'); if(detail) detail.style.display=role==='admin'?'flex':'none';
-    if(role==='admin'){
-      const main=document.getElementById('mainFolder'); if(main){main.style.display='block';document.querySelectorAll('#mainFolder .sidebar-menu a').forEach(a=>a.style.display='flex');}
-      const ac=document.getElementById('adminControlFolder'); if(ac){ac.style.display='block';ac.classList.add('expanded');document.querySelectorAll('#adminControlFolder .sidebar-menu a').forEach(a=>a.style.display='flex');}
-      document.querySelector('[data-tab="setting"]')?.style && (document.querySelector('[data-tab="setting"]').style.display='flex');
-    }
-    document.getElementById('dashboardMenuItem') && (document.getElementById('dashboardMenuItem').style.display='none');
-    document.getElementById('logoutBtn') && (document.getElementById('logoutBtn').style.display='flex');
-  };
-
-  function ts(){return firebase.firestore.FieldValue.serverTimestamp();}
-  function esc(v){const d=document.createElement('div');d.textContent=v||'';return d.innerHTML;}
-  function badge(st){const c=st==='approved'?'success':st==='rejected'?'danger':'warning text-dark';return `<span class="badge bg-${c}">${esc((st||'pending').toUpperCase())}</span>`;}
-
-  async function submitLeave(){
-    if(!currentUser) return showNotification('Please login first','error');
-    const type=document.getElementById('leaveType').value, start=document.getElementById('leaveStartDate').value, end=document.getElementById('leaveEndDate').value, reason=document.getElementById('leaveReason').value.trim();
-    if(!start||!end||!reason) return showNotification('Please complete all leave fields','error');
-    if(end<start) return showNotification('End Date cannot be earlier than Start Date','error');
-    const ref=await db.collection('leaveRequests').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'User',userEmail:currentUser.email||'',leaveType:type,startDate:start,endDate:end,reason,status:'pending',createdAt:ts(),updatedAt:ts()});
-    await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action:'submit_leave_request',module:'leave',requestId:ref.id,createdAt:ts()});
-    document.getElementById('leaveReason').value='';document.getElementById('leaveStartDate').value='';document.getElementById('leaveEndDate').value='';
-    showNotification('Leave request submitted successfully','success');
-  }
-  function leaveYearFromRecord(x){
-    const d=String(x.startDate||x.createdAt?.toDate?.()?.toISOString?.()||'');
-    const m=d.match(/^(\d{4})/) || d.match(/(\d{4})$/);
-    return m?Number(m[1]):new Date().getFullYear();
-  }
-  function leaveDuration(x){
-    if(Number.isFinite(Number(x.duration))) return Number(x.duration);
-    if(x.startDate&&x.endDate){const a=new Date(x.startDate+'T00:00:00'),b=new Date(x.endDate+'T00:00:00');const n=Math.floor((b-a)/86400000)+1;return Number.isFinite(n)&&n>0?n:1;}
-    return '-';
-  }
-  async function loadMyLeave(){
-    if(!currentUser)return;
-    const body=document.getElementById('myLeaveHistoryBody'); if(!body)return; body.innerHTML='<tr><td colspan="9">Loading...</td></tr>';
-    const yearSelect=document.getElementById('leaveHistoryYear');
-    const isAdmin=normalizeRole(currentUser?.role)==='admin';
-    const title=document.getElementById('leaveHistoryTitle'), subtitle=document.getElementById('leaveHistorySubtitle');
-    if(title) title.textContent=isAdmin?'Leave History':'My Leave History';
-    if(subtitle) subtitle.textContent=isAdmin?'View all users\' leave history by year.':'View your leave records by year.';
-    const [requestSnap,legacySnap]=await Promise.all([db.collection('leaveRequests').get(),db.collection('cuti').get().catch(()=>({docs:[]}))]);
-    const requestRows=requestSnap.docs.map(d=>({id:d.id,source:'request',...d.data()}));
-    const legacyRows=legacySnap.docs.map(d=>({id:d.id,source:'legacy',...d.data(),leaveType:d.data().leaveType||'Legacy Leave',status:d.data().status||'recorded'}));
-    const all=[...requestRows,...legacyRows].map(x=>({
-      ...x,
-      employeeName:x.userName||x.employeeName||x.userEmail||'-',
-      year:leaveYearFromRecord(x)
-    }));
-    const userName=String(currentUser.name||'').trim().toLowerCase();
-    const userEmail=String(currentUser.email||'').trim().toLowerCase();
-    const visible=isAdmin?all:all.filter(x=>x.uid===currentUser.uid || (!x.uid && (String(x.employeeName||'').trim().toLowerCase()===userName || String(x.userEmail||'').trim().toLowerCase()===userEmail)));
-    const years=[...new Set(visible.map(x=>x.year).filter(Number.isFinite))].sort((a,b)=>b-a);
-    const currentYear=new Date().getFullYear(); if(!years.includes(currentYear)) years.unshift(currentYear);
-    const previous=yearSelect?.value;
-    if(yearSelect){yearSelect.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');yearSelect.value=years.includes(Number(previous))?previous:String(years[0]||currentYear);}
-    const selectedYear=Number(yearSelect?.value||currentYear);
-    const rows=visible.filter(x=>x.year===selectedYear).sort((a,b)=>{const da=String(a.startDate||''),dbb=String(b.startDate||'');return dbb.localeCompare(da)});
-    body.innerHTML=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.employeeName)}</td><td>${esc(x.leaveType||'Leave')}</td><td>${esc(x.startDate||'-')}</td><td>${esc(x.endDate||x.startDate||'-')}</td><td>${esc(String(leaveDuration(x)))}</td><td>${esc(x.reason||x.remarks||'-')}</td><td>${badge(x.status||'recorded')}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():x.updatedAt?.toDate?x.updatedAt.toDate().toLocaleString():x.source==='legacy'?'Legacy record':'-'}</td></tr>`).join(''):`<tr><td colspan="9" class="text-center text-muted">No leave history for ${selectedYear}.</td></tr>`;
-  }
-  async function loadApproval(){
-    const body=document.getElementById('approvalLeaveBody'); if(!body)return; body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';
-    const snap=await db.collection('leaveRequests').get(); const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==='pending');
-    body.innerHTML=rows.length?rows.map(x=>`<tr><td>${esc(x.userName)}</td><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)} - ${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</td><td>${badge(x.status)}</td><td><button class="btn btn-sm btn-success v6-approve" data-id="${x.id}">Approve</button> <button class="btn btn-sm btn-danger v6-reject" data-id="${x.id}">Reject</button></td></tr>`).join(''):'<tr><td colspan="7" class="text-center text-muted">No pending leave requests.</td></tr>';
-  }
-  async function decideLeave(id,status){
-    if(normalizeRole(currentUser?.role)!=='admin') return showNotification('Admin only','error');
-    await db.collection('leaveRequests').doc(id).update({status,updatedAt:ts(),approvedBy:currentUser.uid});
-    await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action:status+'_leave_request',module:'approval',requestId:id,createdAt:ts()});
-    showNotification('Leave request '+status,'success');loadApproval();
-  }
-  async function loadAudit(){
-    const el=document.getElementById('auditLogsBody');if(!el)return;const snap=await db.collection('auditLogs').limit(100).get();
-    const rows=snap.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
-    el.innerHTML=rows.map(x=>`<div class="v5-row"><strong>${esc(x.action||'activity')}</strong><div class="small text-muted">${esc(x.userName||'')} · ${esc(x.module||'')} · ${x.createdAt?.toDate?x.createdAt.toDate().toLocaleString():''}</div></div>`).join('')||'<div class="text-muted">No audit logs yet.</div>';
-  }
-  async function health(){const e=document.getElementById('systemHealthBody');if(!e)return;try{await db.collection('users').limit(1).get();e.innerHTML='<span class="text-success">● Firestore Connected</span><br><span class="text-success">● Authentication Active</span><br><span class="text-success">● Application Healthy</span>';}catch(err){e.innerHTML='<span class="text-danger">● Connection issue: '+esc(err.message)+'</span>';}}
-  document.addEventListener('change',e=>{if(e.target && e.target.id==='leaveHistoryYear') loadMyLeave();});
-  document.addEventListener('click',async e=>{
-    if(e.target.closest('#submitLeaveRequestBtn')){try{await submitLeave();}catch(err){console.error(err);showNotification(err.message||'Failed to submit leave','error');}}
-    if(e.target.closest('#refreshMyLeaveBtn')) loadMyLeave();
-    const a=e.target.closest('.v6-approve');if(a) decideLeave(a.dataset.id,'approved');
-    const r=e.target.closest('.v6-reject');if(r) decideLeave(r.dataset.id,'rejected');
-    const link=e.target.closest('.sidebar-menu a[data-tab]');if(link){const tab=link.dataset.tab;if(tab==='my-leave-history')setTimeout(loadMyLeave,50);if(tab==='approval-center')setTimeout(loadApproval,50);if(tab==='audit-logs')setTimeout(loadAudit,50);if(tab==='system-health')setTimeout(health,50);}
-  });
-})();
-</script>
-
-
-<style id="v7-admin-style">
-/* ================= V7 ADMIN CONTROL CENTER ================= */
-.account-actions-menu{margin-top:auto;border-top:1px solid rgba(255,255,255,.12);padding-top:10px}
-.v7-shell{display:none}.v7-shell.active{display:block}
-.v7-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
-.v7-card{background:#fff;border:1px solid #e7edf5;border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
-.v7-card .label{font-size:12px;color:#64748b;font-weight:700;letter-spacing:.04em}.v7-card .value{font-size:28px;font-weight:800;margin-top:8px;color:#1e293b}.v7-card .sub{font-size:12px;color:#94a3b8;margin-top:4px}
-.v7-table-wrap{overflow:auto}.v7-table{width:100%;border-collapse:collapse}.v7-table th,.v7-table td{padding:11px;border-bottom:1px solid #edf2f7;text-align:left;font-size:13px}.v7-table th{color:#64748b;text-transform:uppercase;font-size:11px;letter-spacing:.04em}
-.v7-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.v7-toolbar input,.v7-toolbar select{max-width:220px}
-.v7-btn{border:0;border-radius:9px;padding:8px 12px;font-weight:700;background:#2563eb;color:#fff;cursor:pointer}.v7-btn.secondary{background:#e2e8f0;color:#334155}.v7-btn.danger{background:#dc2626}.v7-muted{color:#64748b;font-size:13px}.v7-empty{padding:28px;text-align:center;color:#94a3b8}
-.v7-status{display:inline-block;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}.v7-online{background:#dcfce7;color:#166534}.v7-away{background:#fef3c7;color:#92400e}.v7-offline{background:#e2e8f0;color:#475569}
-.v7-notification{border-left:4px solid #2563eb;padding:12px 14px;background:#f8fafc;border-radius:8px;margin-bottom:9px}.v7-notification.unread{background:#eff6ff}
-</style>
-<script>
-/* ================= V7 LIVE ADMIN CONTROL CENTER ================= */
-(function(){
-  const V7_ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
-  const $=id=>document.getElementById(id);
-  const esc=v=>{const d=document.createElement('div');d.textContent=v??'';return d.innerHTML};
-  const now=()=>new Date();
-  const iso=v=>{try{const d=v?.toDate?v.toDate():new Date(v);return isNaN(d)?'':d.toLocaleString()}catch(e){return ''}};
-  const age=v=>{try{const d=v?.toDate?v.toDate():new Date(v);const m=Math.max(0,Math.floor((Date.now()-d.getTime())/60000));return m<1?'Just now':m<60?m+' min ago':m<1440?Math.floor(m/60)+' h ago':Math.floor(m/1440)+' d ago'}catch(e){return 'Never'}};
-  const fsNow=()=>firebase.firestore.FieldValue.serverTimestamp();
-  const getDocs=async(name)=>{try{const s=await db.collection(name).get();return s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){console.warn('V7 '+name,e);return []}};
-  async function v7Audit(action,module,meta={}){try{if(!currentUser)return;await db.collection('auditLogs').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'',action,module,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
-  async function v7Notify(recipientUid,title,message,type='system',meta={}){try{await db.collection('notifications').add({recipientUid:recipientUid||'admin',title,message,type,read:false,meta,createdAt:fsNow()})}catch(e){console.warn(e)}}
-  function hideAllAdmin(){
-    // V7.4: Admin Control Center must never inherit legacy Overtime Detail / Attendance filter UI.
-    ['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{
-      const el=$(id); if(el){el.classList.remove('active'); if(id==='analyticsShell') el.style.display='none';}
-    });
-    document.querySelectorAll('.tab-pane').forEach(x=>{x.classList.remove('show','active');x.style.display='none';});
-    ['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'].forEach(id=>{const el=$(id);if(el)el.style.display='none';});
-    // Extra safety for shared date controls and the GENERAL Overtime Detail pane.
-    const overtimeDetail=$('overtime-detail-admin'); if(overtimeDetail) overtimeDetail.classList.remove('show','active');
-  }
-  function activatePane(id){hideAllAdmin();const e=$(id);if(e)e.classList.add('show','active');}
-
-  async function analytics(){
-    hideAllAdmin();const shell=$('analyticsShell');if(shell){shell.style.display='block';shell.classList.add('active')}
-    const [users,presence,activities,leaves,overtime]=await Promise.all([getDocs('users'),getDocs('userPresence'),getDocs('activityLogs'),getDocs('leaveRequests'),getDocs('overtimeRecords')]);
-    const online=presence.filter(p=>String(p.status).toLowerCase()==='online' && Date.now()-new Date(p.updatedAt||p.lastAccess||0).getTime()<180000).length;
-    const today=new Date().toDateString(); const activeToday=new Set(activities.filter(a=>new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt).toDateString()===today).map(a=>a.uid)).size;
-    const pending=leaves.filter(x=>x.status==='pending').length;
-    const set=(id,v)=>{if($(id))$(id).textContent=v};
-    set('analyticsAttendanceRate',users.length?Math.min(100,Math.round(activeToday/Math.max(users.length,1)*100))+'%':'0%');
-    set('analyticsOvertimeHours',typeof minutesToHHMM==='function'?minutesToHHMM(overtime.reduce((n,x)=>n+(typeof timeToMinutes==='function'?timeToMinutes(x.overTime||x.overtime||''):0),0)):'00:00');
-    set('analyticsActiveCrew',activeToday); set('analyticsLeaveImpact',pending);
-    let extra=$('v7AnalyticsLive'); if(!extra){extra=document.createElement('div');extra.id='v7AnalyticsLive';shell.appendChild(extra)}
-    const top=Object.entries(activities.reduce((m,a)=>{const k=a.name||a.email||a.uid||'Unknown';m[k]=(m[k]||0)+1;return m},{})).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    extra.innerHTML=`<div class="v7-grid"><div class="v7-card"><div class="label">REGISTERED USERS</div><div class="value">${users.length}</div><div class="sub">All user accounts</div></div><div class="v7-card"><div class="label">ONLINE NOW</div><div class="value">${online}</div><div class="sub">Heartbeat under 3 minutes</div></div><div class="v7-card"><div class="label">ACTIVE TODAY</div><div class="value">${activeToday}</div><div class="sub">Unique activity users</div></div><div class="v7-card"><div class="label">PENDING LEAVE</div><div class="value">${pending}</div><div class="sub">Needs approval</div></div></div><div class="v7-card"><div class="d-flex justify-content-between"><h5>Top User Activity</h5><button class="v7-btn secondary" data-v7-refresh="analytics">Refresh</button></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>#</th><th>User</th><th>Activities</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x[0])}</td><td>${x[1]}</td></tr>`).join('')||'<tr><td colspan="3" class="v7-empty">No activity yet</td></tr>'}</tbody></table></div></div>`;
-  }
-
-  async function onlineMonitor(){hideAllAdmin();$('onlineMonitorShell')?.classList.add('active');const [users,presence]=await Promise.all([getDocs('users'),getDocs('userPresence')]);const map=new Map(users.map(u=>[u.id||u.uid,{uid:u.id||u.uid,name:u.name||u.email||'Unknown',email:u.email||'',status:'offline'}]));presence.forEach(p=>map.set(p.uid||p.id,{...(map.get(p.uid||p.id)||{}),...p}));const rows=[...map.values()].map(x=>{const t=x.updatedAt||x.lastAccess;const mins=t?Math.floor((Date.now()-new Date(t?.toDate?t.toDate():t).getTime())/60000):999999;let st=String(x.status||'offline').toLowerCase();if(st==='online'&&mins>3)st=mins<15?'away':'offline';return {...x,computed:st,last:t}}).sort((a,b)=>a.computed.localeCompare(b.computed));const list=$('onlineMonitorList');if(list)list.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="online">Refresh</button><span class="v7-muted">Auto status uses latest heartbeat.</span></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>User</th><th>Email</th><th>Status</th><th>Last Access</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td><span class="v7-status v7-${x.computed==='online'?'online':x.computed==='away'?'away':'offline'}">${esc(x.computed.toUpperCase())}</span></td><td>${esc(age(x.last))}</td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No presence data yet.</td></tr>'}</tbody></table></div>`;const online=rows.filter(x=>x.computed==='online').length; if($('onlineNowCount'))$('onlineNowCount').textContent=online;if($('monitorUserCount'))$('monitorUserCount').textContent=rows.length;if($('activeTodayCount'))$('activeTodayCount').textContent=rows.filter(x=>x.last&&new Date(x.last?.toDate?x.last.toDate():x.last).toDateString()===new Date().toDateString()).length;if($('monitorRefreshTime'))$('monitorRefreshTime').textContent=new Date().toLocaleTimeString();}
-
-  async function activityMonitor(){hideAllAdmin();$('activityScoreShell')?.classList.add('active');const acts=await getDocs('activityLogs');const m={};acts.forEach(a=>{const k=a.uid||a.email||'unknown';const r=m[k]||(m[k]={name:a.name||a.email||'Unknown',email:a.email||'',count:0,login:0,last:a.createdAt});r.count++;if(a.action==='login')r.login++;if(new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt)>new Date(r.last?.toDate?r.last.toDate():r.last))r.last=a.createdAt});const rows=Object.values(m).map(x=>({...x,score:x.count*2+x.login*5+(Date.now()-new Date(x.last?.toDate?x.last.toDate():x.last).getTime()<86400000?20:0)})).sort((a,b)=>b.score-a.score);const el=$('activityScoreList');if(el)el.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="activity">Refresh</button><span class="v7-muted">Score = usage + login + recent activity.</span></div><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>#</th><th>User</th><th>Activities</th><th>Score</th><th>Category</th><th>Last Activity</th></tr></thead><tbody>${rows.map((x,i)=>{const cat=x.score>=80?'Very Active':x.score>=40?'Active':x.score>=15?'Moderate':'Low';return `<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${x.count}</td><td><strong>${x.score}</strong></td><td>${cat}</td><td>${esc(age(x.last))}</td></tr>`}).join('')||'<tr><td colspan="6" class="v7-empty">Activity data will appear after users use the application.</td></tr>'}</tbody></table></div>`}
-
-  async function auditLogs(){activatePane('audit-logs');const logs=(await getDocs('auditLogs')).sort((a,b)=>new Date(b.createdAt?.toDate?b.createdAt.toDate():b.createdAt)-new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt));const body=$('auditLogsBody');if(body)body.innerHTML=`<div class="v7-toolbar"><input id="v7AuditSearch" class="form-control form-control-sm" placeholder="Search user / action / module"><button class="v7-btn secondary" data-v7-refresh="audit">Refresh</button></div><div id="v7AuditTable">${auditTable(logs)}</div>`;const inp=$('v7AuditSearch');inp?.addEventListener('input',()=>{const q=inp.value.toLowerCase();$('v7AuditTable').innerHTML=auditTable(logs.filter(x=>JSON.stringify(x).toLowerCase().includes(q)))})}
-  function auditTable(rows){return `<div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Module</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(iso(x.createdAt))}</td><td>${esc(x.userName||x.uid||'')}</td><td>${esc(x.action||'')}</td><td>${esc(x.module||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No audit logs.</td></tr>'}</tbody></table></div>`}
-
-  async function approval(){activatePane('approval-center');const body=$('approvalLeaveBody');if(body)body.innerHTML='<tr><td colspan="7">Loading...</td></tr>';const leaves=(await getDocs('leaveRequests')).filter(x=>x.status==='pending');if(body)body.innerHTML=leaves.map(x=>`<tr><td>${esc(x.userName)}</td><td>${esc(x.leaveType)}</td><td>${esc(x.startDate)} - ${esc(x.endDate)}</td><td>${esc(x.reason)}</td><td>${esc(iso(x.createdAt))}</td><td><span class="badge bg-warning text-dark">PENDING</span></td><td><button class="btn btn-sm btn-success" data-v7-leave="approved" data-id="${x.id}">Approve</button> <button class="btn btn-sm btn-danger" data-v7-leave="rejected" data-id="${x.id}">Reject</button></td></tr>`).join('')||'<tr><td colspan="7" class="text-center text-muted">No pending leave requests.</td></tr>'}
-  async function decideLeave(id,status){const req=(await db.collection('leaveRequests').doc(id).get());const data=req.exists?req.data():{};await db.collection('leaveRequests').doc(id).update({status,updatedAt:fsNow(),approvedBy:currentUser.uid,approvedByName:currentUser.name||currentUser.email||''});await v7Notify(data.uid,'Leave Request '+(status==='approved'?'Approved':'Rejected'),`Your ${data.leaveType||'leave'} request for ${data.startDate||''} has been ${status}.`,status==='approved'?'success':'warning',{requestId:id});await v7Audit(status+'_leave_request','approval',{requestId:id,employeeUid:data.uid});showNotification('Leave request '+status,'success');await approval()}
-
-  async function notifications(){hideAllAdmin();$('notificationCenterShell')?.classList.add('active');const rows=(await getDocs('notifications')).sort((a,b)=>new Date(b.createdAt?.toDate?b.createdAt.toDate():b.createdAt)-new Date(a.createdAt?.toDate?a.createdAt.toDate():a.createdAt));const el=$('notificationCenterList');if(el)el.innerHTML=`<div class="v7-toolbar"><button class="v7-btn secondary" data-v7-refresh="notifications">Refresh</button><button class="v7-btn" id="v7MarkAllRead">Mark All Read</button></div>${rows.map(n=>`<div class="v7-notification ${n.read?'':'unread'}"><div class="d-flex justify-content-between"><strong>${esc(n.title||'Notification')}</strong><small>${esc(age(n.createdAt))}</small></div><div>${esc(n.message||'')}</div><small>${esc(n.type||'system')} ${n.read?'· read':'· unread'}</small></div>`).join('')||'<div class="v7-empty">No notifications available.</div>'}`;$('v7MarkAllRead')?.addEventListener('click',async()=>{const unread=rows.filter(x=>!x.read);await Promise.all(unread.map(x=>db.collection('notifications').doc(x.id).update({read:true,readAt:fsNow()})));notifications()})}
-
-  async function reports(){activatePane('reports');const [users,leaves,audit]=await Promise.all([getDocs('users'),getDocs('leaveRequests'),getDocs('auditLogs')]);const body=$('reports');if(!body)return;body.innerHTML=`<div class="card border-0 shadow-sm p-3"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><div><h4>Reports Center</h4><p class="text-muted mb-0">Live export from current Firestore data.</p></div><div><button class="v7-btn" data-v7-export="leave">Export Leave CSV</button> <button class="v7-btn secondary" data-v7-export="audit">Export Audit CSV</button></div></div><div class="v7-grid"><div class="v7-card"><div class="label">USERS</div><div class="value">${users.length}</div></div><div class="v7-card"><div class="label">LEAVE REQUESTS</div><div class="value">${leaves.length}</div></div><div class="v7-card"><div class="label">AUDIT EVENTS</div><div class="value">${audit.length}</div></div></div></div>`}
-  function exportCsv(rows,name){if(!rows.length){showNotification('No data to export','error');return}const keys=[...new Set(rows.flatMap(Object.keys))];const csv=[keys.join(','),...rows.map(r=>keys.map(k=>`"${String(r[k]?.toDate?r[k].toDate().toISOString():r[k]??'').replaceAll('"','""')}"`).join(','))].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
-
-  async function roles(){activatePane('role-permissions');const users=await getDocs('users');const pane=$('role-permissions');if(!pane)return;pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Role & Permissions</h4><p class="text-muted">Role changes are recorded in Audit Logs.</p><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Save</th></tr></thead><tbody>${users.map(u=>`<tr><td>${esc(u.name||'')}</td><td>${esc(u.email||'')}</td><td><select class="form-select form-select-sm" id="v7role_${u.id}"><option value="user" ${String(u.role).toLowerCase()==='user'?'selected':''}>User</option><option value="admin" ${String(u.role).toLowerCase()==='admin'?'selected':''}>Admin</option></select></td><td><button class="v7-btn secondary" data-v7-role="${u.id}" data-old="${esc(u.role||'user')}">Save</button></td></tr>`).join('')||'<tr><td colspan="4" class="v7-empty">No users.</td></tr>'}</tbody></table></div></div>`}
-  async function saveRole(uid,old){const role=$('v7role_'+uid)?.value;if(!role)return;await db.collection('users').doc(uid).update({role,roleUpdatedAt:fsNow(),roleUpdatedBy:currentUser.uid});await v7Audit('change_user_role','role-permissions',{targetUid:uid,from:old,to:role});showNotification('Role updated','success')}
-
-  async function systemHealth(){activatePane('system-health');const started=performance.now();let ok=true,msg='';let users=[];try{users=await getDocs('users');await db.collection('users').limit(1).get()}catch(e){ok=false;msg=e.message}const ms=Math.round(performance.now()-started);const body=$('systemHealthBody');if(body)body.innerHTML=`<div class="v7-grid"><div class="v7-card"><div class="label">FIRESTORE</div><div class="value">${ok?'Healthy':'Issue'}</div><div class="sub">${esc(msg||'Read test successful')}</div></div><div class="v7-card"><div class="label">AUTH SESSION</div><div class="value">${auth.currentUser?'Active':'None'}</div><div class="sub">${esc(auth.currentUser?.email||'No session')}</div></div><div class="v7-card"><div class="label">LATENCY TEST</div><div class="value">${ms} ms</div><div class="sub">Client read measurement</div></div><div class="v7-card"><div class="label">REGISTERED USERS</div><div class="value">${users.length}</div><div class="sub">Firestore users collection</div></div></div><button class="v7-btn secondary" data-v7-refresh="health">Run Health Check Again</button>`}
-
-  async function dataManagement(){activatePane('data-management');const cols=['users','leaveRequests','auditLogs','activityLogs','notifications','userPresence'];const data=await Promise.all(cols.map(getDocs));const pane=$('data-management');if(!pane)return;pane.innerHTML=`<div class="card border-0 shadow-sm p-3"><h4>Data Management</h4><p class="text-muted">Safe export and database statistics. No destructive mass delete in V7.</p><div class="v7-table-wrap"><table class="v7-table"><thead><tr><th>Collection</th><th>Records</th><th>Export</th></tr></thead><tbody>${cols.map((c,i)=>`<tr><td>${c}</td><td>${data[i].length}</td><td><button class="v7-btn secondary" data-v7-export-col="${c}">Export JSON</button></td></tr>`).join('')}</tbody></table></div></div>`;window.__v7Collections=Object.fromEntries(cols.map((c,i)=>[c,data[i]]))}
-  function exportJson(name,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=name+'.json';a.click();URL.revokeObjectURL(a.href)}
-
-  async function submitLeaveV7(){if(!currentUser)return;const type=$('leaveType')?.value,start=$('leaveStartDate')?.value,end=$('leaveEndDate')?.value,reason=$('leaveReason')?.value.trim();if(!start||!end||!reason)return showNotification('Please complete all leave fields','error');if(end<start)return showNotification('End Date cannot be earlier than Start Date','error');const ref=await db.collection('leaveRequests').add({uid:currentUser.uid,userName:currentUser.name||currentUser.email||'User',userEmail:currentUser.email||'',leaveType:type,startDate:start,endDate:end,reason,status:'pending',createdAt:fsNow(),updatedAt:fsNow()});await v7Audit('submit_leave_request','leave',{requestId:ref.id});await v7Notify('admin','New Leave Request',`${currentUser.name||currentUser.email||'User'} submitted ${type} (${start} to ${end}).`,'leave',{requestId:ref.id});$('leaveReason').value='';$('leaveStartDate').value='';$('leaveEndDate').value='';showNotification('Leave request submitted successfully','success')}
-
-  async function route(tab){if(!V7_ADMIN_TABS.includes(tab))return; if(!currentUser||normalizeRole(currentUser.role)!=='admin'){showNotification('Admin only','error');return}document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));try{if(tab==='analytics')await analytics();if(tab==='online-monitor')await onlineMonitor();if(tab==='activity-score')await activityMonitor();if(tab==='audit-logs')await auditLogs();if(tab==='approval-center')await approval();if(tab==='notification-center')await notifications();if(tab==='reports')await reports();if(tab==='role-permissions')await roles();if(tab==='system-health')await systemHealth();if(tab==='data-management')await dataManagement();await v7Audit('open_admin_panel','admin-control',{tab})}catch(e){console.error('V7 route',tab,e);showNotification('Failed to load '+tab+': '+e.message,'error')}}
-
-  document.addEventListener('click',async e=>{
-    const admin=e.target.closest('.sidebar-menu a[data-tab]');if(admin&&V7_ADMIN_TABS.includes(admin.dataset.tab)){e.preventDefault();e.stopImmediatePropagation();await route(admin.dataset.tab);return}
-    const submit=e.target.closest('#submitLeaveRequestBtn');if(submit){e.preventDefault();e.stopImmediatePropagation();try{await submitLeaveV7()}catch(err){console.error(err);showNotification(err.message||'Failed to submit leave','error')}return}
-    const leave=e.target.closest('[data-v7-leave]');if(leave){e.preventDefault();await decideLeave(leave.dataset.id,leave.dataset.v7Leave);return}
-    const rr=e.target.closest('[data-v7-refresh]');if(rr){const x=rr.dataset.v7Refresh;if(x==='analytics')analytics();if(x==='online')onlineMonitor();if(x==='activity')activityMonitor();if(x==='audit')auditLogs();if(x==='notifications')notifications();if(x==='health')systemHealth();return}
-    const exp=e.target.closest('[data-v7-export]');if(exp){const type=exp.dataset.v7Export;if(type==='leave')exportCsv(await getDocs('leaveRequests'),'leave-report.csv');if(type==='audit')exportCsv(await getDocs('auditLogs'),'audit-report.csv');return}
-    const col=e.target.closest('[data-v7-export-col]');if(col)exportJson(col.dataset.v7ExportCol,window.__v7Collections?.[col.dataset.v7ExportCol]||[]);
-    const role=e.target.closest('[data-v7-role]');if(role){await saveRole(role.dataset.v7Role,role.dataset.old)}
-  },true);
-
-  // Ensure account actions remain visible for both roles; Settings is admin-only.
-  const oldSetup=window.setupMenuByRole;window.setupMenuByRole=function(role){oldSetup&&oldSetup(role);const isAdmin=normalizeRole(role)==='admin';$('settingsMenuItem')&&( $('settingsMenuItem').style.display=isAdmin?'':'none');$('changePasswordSidebarBtn')&&( $('changePasswordSidebarBtn').style.display='flex');$('logoutBtn')&&( $('logoutBtn').style.display='flex')};
-})();
-</script>
-
-
-
-<!-- ================= V7.6 OVERTIME NULL ERROR + USER FORM FIX ================= -->
-<script id="v76OvertimeHardFix">
-(function(){
-  const originalLoadAll = window.loadAllOvertimeData;
-
-  function isAdmin(){
-    return String((window.currentUser||{}).role||'').toLowerCase()==='admin';
-  }
-  function safeEl(id){ return document.getElementById(id); }
-  function currentEmail(){ return String((window.currentUser||{}).email||'').trim().toLowerCase(); }
-  function escapeHtml(v){
-    return String(v==null?'':v).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
-  }
-  function parseDateSafe(v){
-    if(!v) return 0;
-    if(v && typeof v.toDate==='function') return v.toDate().getTime();
-    if(v instanceof Date) return v.getTime();
-    const s=String(v);
-    if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
-      const [d,m,y]=s.split('/'); return new Date(`${y}-${m}-${d}`).getTime()||0;
-    }
-    return new Date(s).getTime()||0;
-  }
-
-  // HARD FIX: old function referenced #overtimeDetailTableBody, but this element no longer exists.
-  window.updateOvertimeDetailTable = function(){
-    const tbody=safeEl('adminOvertimeDetailTableBody');
-    if(!tbody) return; // fail-safe: never crash application because an old table id is missing
-
-    const user=window.currentUser||{};
-    const email=currentEmail();
-    let data=Array.isArray(window.rekapLemburData)?window.rekapLemburData.slice():[];
-
-    if(!isAdmin()){
-      // STRICT PRIVACY: user can NEVER render another user's overtime.
-      if(!email) data=[];
-      else data=data.filter(r=>String(r.employeeEmail||'').trim().toLowerCase()===email);
-    } else {
-      const filter=safeEl('adminOvertimeEmployeeFilter');
-      if(filter && filter.value && filter.value!=='all') data=data.filter(r=>r.employeeName===filter.value);
-    }
-
-    data.sort((a,b)=>parseDateSafe(b.date)-parseDateSafe(a.date));
-    tbody.innerHTML='';
-
-    if(!data.length){
-      tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
-      const total=safeEl('adminTotalOvertimeValue'); if(total) total.textContent='00:00';
-      return;
-    }
-
-    let no=1, totalMinutes=0;
-    data.forEach(record=>{
-      const duration=String(record.overtimeDuration||'00:00');
-      const dm=duration.match(/^(\d+):(\d{1,2})$/); if(dm) totalMinutes+=(+dm[1])*60+(+dm[2]);
-      const rows=Array.isArray(record.tableData)&&record.tableData.length?record.tableData:[{}];
-      rows.forEach((r,index)=>{
-        const tr=document.createElement('tr');
-        const action=isAdmin()?`<button class="btn-edit-overtime" onclick="editOvertimeDetail('${escapeHtml(record.id)}')"><i class="fas fa-edit"></i></button>
-          <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${escapeHtml(record.id)}')"><i class="fas fa-trash"></i></button>`:'';
-        tr.dataset.overtimeId=record.id||'';
-        tr.innerHTML=`
-          <td>${no++}</td><td>${escapeHtml(record.employeeName)}</td>
-          <td>${index===0?escapeHtml(record.date):''}</td><td>${index===0?escapeHtml(record.startTime):''}</td>
-          <td>${index===0?escapeHtml(record.endTime):''}</td><td>${index===0?escapeHtml(duration):''}</td>
-          <td>${escapeHtml(r.totalProject)}</td><td>${escapeHtml(r.totalPlant)}</td>
-          <td>${escapeHtml(r.plantNames)}</td><td>${escapeHtml(r.volume)}</td>
-          <td>${index===0?escapeHtml(record.taskDescription):''}</td><td class="overtime-action-buttons">${action}</td>`;
-        tbody.appendChild(tr);
-      });
-    });
-    const total=safeEl('adminTotalOvertimeValue');
-    if(total){ total.textContent=String(Math.floor(totalMinutes/60)).padStart(2,'0')+':'+String(totalMinutes%60).padStart(2,'0'); }
-  };
-
-  // HARD FIX: never load all overtime records for normal users, even if legacy startup calls loadAllOvertimeData().
-  window.loadAllOvertimeData = async function(){
-    try{
-      const user=window.currentUser||{};
-      let query;
-      if(isAdmin()) query=await db.collection('overtimeRecords').get();
-      else {
-        const email=currentEmail();
-        if(!email){ window.rekapLemburData=[]; window.updateOvertimeDetailTable(); return; }
-        query=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
-      }
-      window.rekapLemburData=[];
-      query.forEach(doc=>window.rekapLemburData.push({id:doc.id,...doc.data()}));
-      window.updateOvertimeDetailTable();
-      if(isAdmin() && typeof window.updateAdminOvertimeDetailTable==='function') window.updateAdminOvertimeDetailTable();
-      if(typeof window.updateTotalOvertime==='function') { try{window.updateTotalOvertime();}catch(e){} }
-    }catch(err){ console.error('Error loading overtime data:',err); }
-  };
-
-  // FIX: Entry Overtime must always have visible form for normal users and no references to deleted legacy ids.
-  window.initOvertimeForm = function(){
-    const form=safeEl('userOvertimeForm');
-    const pane=safeEl('form-rekap-lembur');
-    if(pane) pane.style.display='';
-
-    if(isAdmin()){
-      if(form) form.style.display='none';
-      return;
-    }
-
-    if(form) form.style.display='block';
-    const date=safeEl('rekapDate'); if(date && !date.value) date.valueAsDate=new Date();
-    const tbody=safeEl('rekapLemburTableBody');
-    if(tbody){
-      tbody.innerHTML='';
-      window.currentRekapRows=[];
-      if(typeof window.addRekapRow==='function') window.addRekapRow();
-      // Last-resort visible row if legacy addRekapRow fails or is unavailable.
-      if(!tbody.children.length){
-        tbody.innerHTML='<tr><td>1</td><td><input type="number" class="form-control form-control-sm" min="0"></td><td><input type="number" class="form-control form-control-sm" min="0"></td><td><input type="text" class="form-control form-control-sm"></td><td><input type="number" class="form-control form-control-sm" min="0"></td><td></td></tr>';
-      }
-    }
-    const save=safeEl('saveRekapLembur');
-    if(save && !save.dataset.v76Bound && typeof window.saveRekapLembur==='function'){
-      save.addEventListener('click',window.saveRekapLembur); save.dataset.v76Bound='1';
-    }
-    if(typeof window.loadUserOvertimeData==='function') window.loadUserOvertimeData();
-  };
-
-  // Safe admin initializer: old version referenced #adminOvertimeDetail and #overtimeFilterSection which do not exist.
-  window.initOvertimeDetailAdmin = function(){
-    if(isAdmin()){
-      const filter=safeEl('adminOvertimeEmployeeFilter'); if(filter) filter.closest('.overtime-filter').style.display='';
-      if(typeof window.setupAdminOvertimeEmployeeFilter==='function') { try{window.setupAdminOvertimeEmployeeFilter();}catch(e){console.warn(e);} }
-    } else {
-      const filter=safeEl('adminOvertimeEmployeeFilter'); if(filter && filter.closest('.overtime-filter')) filter.closest('.overtime-filter').style.display='none';
-    }
-    window.loadAllOvertimeData();
-  };
-
-  // Ensure tab click always initializes the correct UI after legacy navigation code.
-  document.addEventListener('click',function(e){
-    const a=e.target.closest('a[data-tab]'); if(!a) return;
-    const tab=a.dataset.tab;
-    if(tab==='form-rekap-lembur') setTimeout(()=>window.initOvertimeForm(),0);
-    if(tab==='overtime-detail-admin') setTimeout(()=>window.initOvertimeDetailAdmin(),0);
-  },true);
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    setTimeout(()=>{
-      const form=safeEl('userOvertimeForm');
-      if(form && !isAdmin()) form.style.display='block';
-    },300);
-  });
-})();
-</script>
-<!-- ================= END V7.6 PATCH ================= -->
-
-
-<!-- ================= V7.9 CLEAN GENERAL + OVERTIME DETAIL FIX ================= -->
-<style>
-/* Admin Control Center disabled temporarily */
-#adminControlFolder { display:none !important; }
-</style>
-<script id="v79GeneralOvertimeCleanFix">
-(function(){
-  'use strict';
-  const $ = id => document.getElementById(id);
-  const isAdmin = () => String((window.currentUser||{}).role||'').toLowerCase()==='admin';
-
-  function parseOTDate(v){
-    if(!v) return null;
-    if(v && typeof v.toDate==='function') return v.toDate();
-    if(v instanceof Date) return v;
-    const str=String(v);
-    if(/^\d{4}-\d{2}-\d{2}/.test(str)){ const d=new Date(str); return isNaN(d)?null:d; }
-    const m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(m) return new Date(+m[3],+m[2]-1,+m[1]);
-    const d=new Date(str); return isNaN(d)?null:d;
-  }
-
-  function safeHideAdminCenter(){
-    const folder=$('adminControlFolder');
-    if(folder){ folder.style.display='none'; folder.setAttribute('aria-hidden','true'); }
-  }
-
-  // Null-safe total calculation. This replaces the legacy function that assumes date filter elements exist.
-  window.updateTotalOvertime=function(filteredData){
-    const data=Array.isArray(filteredData) ? filteredData : (Array.isArray(window.rekapLemburData)?window.rekapLemburData:[]);
-    let minutes=0;
-    data.forEach(r=>{
-      const parts=String(r.overtimeDuration||'00:00').split(':');
-      minutes+=(parseInt(parts[0],10)||0)*60+(parseInt(parts[1],10)||0);
-    });
-    const text=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
-    ['totalOvertimeValue','adminTotalOvertimeValue'].forEach(id=>{const e=$(id);if(e)e.textContent=text;});
-    return text;
-  };
-
-  function ensureDetailFilters(){
-    const panel=$('overtime-detail-admin');
-    if(!panel) return;
-    let host=$('overtimeDetailDateFilterSection');
-    if(!host){
-      host=document.createElement('div');
-      host.id='overtimeDetailDateFilterSection';
-      host.className='filter-section mb-3';
-      host.innerHTML=`
-        <div class="row g-2 align-items-end">
-          <div class="col-12 col-md-3">
-            <label class="form-label">From Date</label>
-            <input type="date" class="form-control form-control-sm" id="overtimeDetailStartDate">
-          </div>
-          <div class="col-12 col-md-3">
-            <label class="form-label">To Date</label>
-            <input type="date" class="form-control form-control-sm" id="overtimeDetailEndDate">
-          </div>
-          <div class="col-12 col-md-4" id="overtimeDetailEmployeeWrap">
-            <label class="form-label">Employee / User</label>
-            <select class="form-select form-select-sm" id="adminOvertimeEmployeeFilterV79"><option value="all">All Employees</option></select>
-          </div>
-          <div class="col-12 col-md-2">
-            <button type="button" class="btn btn-futuristic btn-sm w-100" id="applyOvertimeDetailFilterV79"><i class="fas fa-filter me-1"></i>Apply Filter</button>
-          </div>
-        </div>`;
-      const first=panel.querySelector('.card, .collapsible, .overtime-controls, .table-responsive, h4, h5');
-      if(first && first.parentNode) first.parentNode.insertBefore(host,first); else panel.prepend(host);
-      ['overtimeDetailStartDate','overtimeDetailEndDate','adminOvertimeEmployeeFilterV79'].forEach(id=>{
-        const e=$(id); if(e) e.addEventListener('change',renderDetailV79);
-      });
-      $('applyOvertimeDetailFilterV79').addEventListener('click',renderDetailV79);
-    }
-    const wrap=$('overtimeDetailEmployeeWrap'); if(wrap) wrap.style.display=isAdmin()?'block':'none';
-  }
-
-  function fillEmployeeFilter(){
-    const sel=$('adminOvertimeEmployeeFilterV79'); if(!sel || !isAdmin()) return;
-    const current=sel.value||'all';
-    const names=new Set();
-    (window.rekapLemburData||[]).forEach(r=>{if(r.employeeName) names.add(r.employeeName);});
-    (window.absensiData||[]).forEach(r=>{if(r.name) names.add(r.name);});
-    (window.initialEmployees||[]).forEach(r=>{if(r.name) names.add(r.name);});
-    sel.innerHTML='<option value="all">All Employees</option>';
-    [...names].sort().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
-    sel.value=[...sel.options].some(o=>o.value===current)?current:'all';
-  }
-
-  function renderDetailV79(){
-    ensureDetailFilters();
-    const tbody=$('adminOvertimeDetailTableBody');
-    if(!tbody) return;
-    let rows=Array.isArray(window.rekapLemburData)?window.rekapLemburData.slice():[];
-    if(!isAdmin()){
-      const email=String((window.currentUser||{}).email||'').trim().toLowerCase();
-      rows=rows.filter(r=>String(r.employeeEmail||'').trim().toLowerCase()===email);
-    }else{
-      const f=$('adminOvertimeEmployeeFilterV79');
-      if(f && f.value && f.value!=='all') rows=rows.filter(r=>r.employeeName===f.value);
-    }
-    const st=$('overtimeDetailStartDate')?.value;
-    const en=$('overtimeDetailEndDate')?.value;
-    if(st){const d=new Date(st);d.setHours(0,0,0,0);rows=rows.filter(r=>{const x=parseOTDate(r.date);return x&&x>=d;});}
-    if(en){const d=new Date(en);d.setHours(23,59,59,999);rows=rows.filter(r=>{const x=parseOTDate(r.date);return x&&x<=d;});}
-    rows.sort((a,b)=>(parseOTDate(b.date)||0)-(parseOTDate(a.date)||0));
-    tbody.innerHTML='';
-    if(!rows.length){ tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data available</td></tr>'; window.updateTotalOvertime([]); return; }
-    rows.forEach((r,i)=>{
-      const tr=document.createElement('tr');
-      const td=[i+1,r.employeeName||'',r.date||'',r.startTime||'',r.endTime||'',r.overtimeDuration||'',r.tableData?.totalProject??r.totalProject??'',r.tableData?.totalPlant??r.totalPlant??'',r.tableData?.plantName??r.plantName??'',r.tableData?.volume??r.volume??'',r.taskDescription||''];
-      td.forEach(v=>{const c=document.createElement('td');c.textContent=v;tr.appendChild(c);});
-      const act=document.createElement('td');
-      if(isAdmin() && r.id && typeof window.editOvertimeDetail==='function'){const b=document.createElement('button');b.className='btn btn-sm btn-primary';b.textContent='Edit';b.onclick=()=>window.editOvertimeDetail(r.id);act.appendChild(b);}
-      tr.appendChild(act); tbody.appendChild(tr);
-    });
-    window.updateTotalOvertime(rows);
-  }
-
-  // Safe loaders: admin gets all records; normal user only gets own records.
-  window.loadAllOvertimeData=async function(){
-    try{
-      let snap;
-      if(isAdmin()) snap=await db.collection('overtimeRecords').get();
-      else {
-        const email=String((window.currentUser||{}).email||'').trim();
-        if(!email){window.rekapLemburData=[];renderDetailV79();return;}
-        snap=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
-      }
-      window.rekapLemburData=[]; snap.forEach(d=>window.rekapLemburData.push({id:d.id,...d.data()}));
-      fillEmployeeFilter(); renderDetailV79();
-    }catch(e){console.error('Error loading overtime data:',e);}
-  };
-  window.loadUserOvertimeData=window.loadAllOvertimeData;
-  window.updateOvertimeDetailTable=renderDetailV79;
-  window.updateAdminOvertimeDetailTable=renderDetailV79;
-
-  // Keep legacy init from crashing when obsolete elements are missing.
-  const oldInit=window.initOvertimeForm;
-  window.initOvertimeForm=function(){
-    safeHideAdminCenter();
-    try{ if(typeof oldInit==='function') oldInit(); }catch(e){ console.warn('Legacy initOvertimeForm ignored:',e); }
-    const form=$('userOvertimeForm'); if(form && !isAdmin()) form.style.display='block';
-    renderDetailV79();
-  };
-
-  const oldSetup=window.setupMenuByRole;
-  window.setupMenuByRole=function(role){
-    const result=typeof oldSetup==='function'?oldSetup.apply(this,arguments):undefined;
-    setTimeout(()=>{safeHideAdminCenter();ensureDetailFilters();fillEmployeeFilter();},0);
-    return result;
-  };
-
-  document.addEventListener('click',function(e){
-    const a=e.target.closest('a[data-tab]'); if(!a)return;
-    if(a.dataset.tab==='overtime-detail-admin') setTimeout(async()=>{ensureDetailFilters(); await window.loadAllOvertimeData();},0);
-  },true);
-
-  document.addEventListener('DOMContentLoaded',()=>{safeHideAdminCenter();ensureDetailFilters();setTimeout(fillEmployeeFilter,300);});
-  window.renderOvertimeDetailV79=renderDetailV79;
-})();
-</script>
-<!-- ================= END V7.9 PATCH ================= -->
 </body>
 </html>
