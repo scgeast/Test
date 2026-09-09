@@ -6965,54 +6965,79 @@ body { background: var(--pro-bg); }
             }
         }
 
-        // PERBAIKAN: Fungsi untuk update total overtime dengan parameter data yang sudah difilter
+        // STABILITY FIX V8.1: Update total overtime aman meskipun tab/elemen belum dirender
         function updateTotalOvertime(filteredData = null) {
             const totalOvertimeElement = document.getElementById('totalOvertimeValue');
-            
-            // Gunakan data yang sudah difilter jika diberikan, jika tidak gunakan semua data
-            let dataToCalculate = filteredData || rekapLemburData;
-            
-            // PERBAIKAN: Filter tambahan berdasarkan user role
-            if (currentUser.role === 'user') {
-                dataToCalculate = dataToCalculate.filter(record => 
-                    record.employeeEmail === currentUser.email
+
+            // Saat login/load awal, elemen overtime belum tentu tersedia.
+            // Jangan biarkan satu elemen null menghentikan seluruh navigasi aplikasi.
+            if (!totalOvertimeElement) {
+                console.warn('totalOvertimeValue not found; skipping total overtime render.');
+                return;
+            }
+
+            let dataToCalculate = Array.isArray(filteredData)
+                ? [...filteredData]
+                : (Array.isArray(rekapLemburData) ? [...rekapLemburData] : []);
+
+            // Filter berdasarkan role hanya jika currentUser tersedia.
+            if (currentUser && currentUser.role === 'user') {
+                dataToCalculate = dataToCalculate.filter(record =>
+                    record && record.employeeEmail === currentUser.email
                 );
-            } else if (currentUser.role === 'admin') {
-                const employeeFilter = document.getElementById('overtimeEmployeeFilter').value;
-                if (employeeFilter !== 'all') {
-                    dataToCalculate = dataToCalculate.filter(record => record.employeeName === employeeFilter);
+            } else if (currentUser && currentUser.role === 'admin') {
+                const employeeFilterElement = document.getElementById('overtimeEmployeeFilter');
+                const employeeFilter = employeeFilterElement ? employeeFilterElement.value : 'all';
+
+                if (employeeFilter && employeeFilter !== 'all') {
+                    dataToCalculate = dataToCalculate.filter(record =>
+                        record && record.employeeName === employeeFilter
+                    );
                 }
             }
-            
-            // Filter berdasarkan date range
-            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
-            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
-            
+
+            // Filter tanggal harus aman karena pada load awal tab bisa belum dirender.
+            const startDateElement = document.getElementById('startDateOvertimeOutput');
+            const endDateElement = document.getElementById('endDateOvertimeOutput');
+            const startDate = startDateElement ? startDateElement.valueAsDate : null;
+            const endDate = endDateElement ? endDateElement.valueAsDate : null;
+
             if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+
                 dataToCalculate = dataToCalculate.filter(record => {
-                    const recordDate = new Date(record.date);
-                    return recordDate >= startDate && recordDate <= endDate;
+                    if (!record || !record.date) return false;
+                    const recordDate = parseDateFromString(record.date) || new Date(record.date);
+                    return !isNaN(recordDate) && recordDate >= start && recordDate <= end;
                 });
             }
-            
-            // Hitung total overtime
+
             let totalMinutes = 0;
             dataToCalculate.forEach(record => {
-                const [hours, minutes] = record.overtimeDuration.split(':').map(Number);
+                const duration = String(record && record.overtimeDuration ? record.overtimeDuration : '00:00');
+                const parts = duration.split(':').map(Number);
+                const hours = Number.isFinite(parts[0]) ? parts[0] : 0;
+                const minutes = Number.isFinite(parts[1]) ? parts[1] : 0;
                 totalMinutes += hours * 60 + minutes;
             });
-            
+
             const totalHours = Math.floor(totalMinutes / 60);
             const remainingMinutes = totalMinutes % 60;
-            
-            totalOvertimeElement.textContent = 
+
+            totalOvertimeElement.textContent =
                 `${String(totalHours).padStart(2, '0')}:${String(remainingMinutes).padStart(2, '0')}`;
         }
 
         // Fungsi untuk update overtime display saat filter berubah
         function updateOvertimeDisplay() {
             updateOvertimeDetailTable();
-            updateAdminOvertimeDetailTable();
+            if (currentUser && currentUser.role === 'admin') {
+                updateAdminOvertimeDetailTable();
+            }
+            updateTotalOvertime();
         }
 
         // =============================================
