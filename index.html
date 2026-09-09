@@ -8678,6 +8678,16 @@ body { background: var(--pro-bg); }
 })();
 </script>
 
+
+<!-- ================= V7.7 ROLE PERMISSIONS HANG FIX ================= -->
+<script>
+(function(){
+  // Final safety: Role & Permissions must never trap the UI or block DevTools/browser shortcuts.
+  window.addEventListener('error',function(e){ console.error('V7.7 captured error:',e.error||e.message); });
+  window.addEventListener('unhandledrejection',function(e){ console.error('V7.7 unhandled rejection:',e.reason); });
+})();
+</script>
+<!-- ================= END V7.7 PATCH ================= -->
 </body>
 </html>
 <!-- ================= V7.2 GENERAL OVERTIME RESTORE PATCH ================= -->
@@ -9048,7 +9058,7 @@ body { background: var(--pro-bg); }
     });
   };
   // Replace V7 role screen with requested dropdown + checklist screen whenever opened.
-  document.addEventListener('click',e=>{const a=e.target.closest('a[data-tab="role-permissions"]');if(a)setTimeout(window.v75RenderRoles,120);},true);
+  /* V7.7 disabled competing Role & Permissions click renderer */
   // If older router calls roles(), intercept by wrapping it.
   const oldRoles=window.roles; window.roles=async function(){if(typeof oldRoles==='function')await oldRoles();await window.v75RenderRoles();};
 })();
@@ -9074,12 +9084,14 @@ body { background: var(--pro-bg); }
 
   function activate(tab){
     document.querySelectorAll('.tab-pane').forEach(p=>{p.classList.remove('show','active');});
-    const pane=document.getElementById(tab); if(pane){pane.classList.remove('d-none');pane.classList.add('show','active');}
+    const pane=document.getElementById(tab); if(pane){pane.style.display='block';pane.classList.remove('d-none');pane.classList.add('show','active');}
     document.querySelectorAll('.sidebar-menu a').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
   }
 
   async function getUsers(){
-    const snap=await db.collection('users').get();
+    if(!window.db) throw new Error('Database is not initialized');
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Loading users timed out')),8000));
+    const snap=await Promise.race([db.collection('users').get(),timeout]);
     return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name||a.email||'').localeCompare(String(b.name||b.email||'')));
   }
   function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
@@ -9092,7 +9104,13 @@ body { background: var(--pro-bg); }
       const users=await getUsers(); const sel=document.getElementById('v76UserSelect');
       sel.innerHTML='<option value="">-- Select User --</option>'+users.map(u=>`<option value="${esc(u.id)}">${esc(u.name||u.email||u.id)}${u.role?' ('+esc(u.role)+')':''}</option>`).join('');
       sel.onchange=()=>loadSelected(users.find(u=>u.id===sel.value));
-    }catch(e){pane.querySelector('#v76UserSelect').innerHTML='<option>Failed to load users</option>'; console.error(e);}
+    }catch(e){
+      const select=pane.querySelector('#v76UserSelect');
+      if(select) select.innerHTML='<option value="">Failed to load users - click Refresh below</option>';
+      const retry=document.createElement('button'); retry.type='button'; retry.className='btn btn-outline-secondary mt-2'; retry.textContent='Refresh Users'; retry.onclick=()=>window.v76RenderRolePermissions(); pane.querySelector('.card').appendChild(retry);
+      console.error('Role & Permissions user load failed',e);
+      if(typeof showNotification==='function')showNotification('Could not load users: '+(e.message||e),'error');
+    }
   };
 
   function loadSelected(user){
@@ -9108,16 +9126,15 @@ body { background: var(--pro-bg); }
     };
   }
 
-  /* Direct route repair for Role & Permissions and every Admin Control Center menu. */
+  /* V7.7 SAFE ROUTE REPAIR: never stop other application handlers. */
   document.addEventListener('click',function(e){
     const a=e.target.closest('a[data-tab]'); if(!a)return; const tab=a.dataset.tab;
     if(tab==='role-permissions'){
-      e.preventDefault();e.stopImmediatePropagation(); window.v76RenderRolePermissions(); return;
+      e.preventDefault();
+      setTimeout(()=>{ Promise.resolve(window.v76RenderRolePermissions()).catch(err=>console.error('Role permission render error',err)); },0);
+      return;
     }
-    if(ADMIN_TABS.includes(tab) && isAdmin()){
-      // Never block admin menu access; allow existing handler to run, then guarantee pane visibility.
-      setTimeout(()=>activate(tab),80);
-    }
+    if(ADMIN_TABS.includes(tab) && isAdmin()) setTimeout(()=>activate(tab),80);
   },true);
 
   /* Ensure all admin menu links are visible after role setup completes. */
