@@ -4089,8 +4089,10 @@ body { background: var(--pro-bg); }
 
         // PERBAIKAN: Fungsi untuk apply filter tanggal Overtime & Output
         async function applyDateFilterOvertimeOutput() {
-            const startDate = document.getElementById('startDateOvertimeOutput').valueAsDate;
-            const endDate = document.getElementById('endDateOvertimeOutput').valueAsDate;
+            const startDateEl = document.getElementById('startDateOvertimeOutput');
+            const endDateEl = document.getElementById('endDateOvertimeOutput');
+            const startDate = startDateEl ? startDateEl.valueAsDate : null;
+            const endDate = endDateEl ? endDateEl.valueAsDate : null;
 
             if (!startDate || !endDate) {
                 showNotification('Please select a valid date range', 'error');
@@ -6557,7 +6559,8 @@ body { background: var(--pro-bg); }
 
         // PERBAIKAN: Fungsi untuk update tabel detail overtime dengan kolom Duration - DIPERBAIKI
         function updateOvertimeDetailTable() {
-            const tbody = document.getElementById('overtimeDetailTableBody');
+            const tbody = document.getElementById('overtimeDetailTableBody') || document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) { console.warn('Overtime detail table body not found; skipping initial render.'); return; }
             tbody.innerHTML = '';
             
             // Filter data berdasarkan date range
@@ -6568,7 +6571,8 @@ body { background: var(--pro-bg); }
             let filteredData = rekapLemburData;
             
             if (currentUser.role === 'admin') {
-                const employeeFilter = document.getElementById('overtimeEmployeeFilter').value;
+                const employeeFilterEl = document.getElementById('overtimeEmployeeFilter') || document.getElementById('adminOvertimeEmployeeFilter');
+                const employeeFilter = employeeFilterEl ? employeeFilterEl.value : 'all';
                 if (employeeFilter !== 'all') {
                     filteredData = rekapLemburData.filter(record => record.employeeName === employeeFilter);
                 }
