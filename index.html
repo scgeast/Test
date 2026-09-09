@@ -8833,390 +8833,168 @@ body { background: var(--pro-bg); }
 </script>
 <!-- ================= END V7.6 PATCH ================= -->
 
-\n<!-- ================= V7.7 ADMIN CENTER + OVERTIME DETAIL STABILIZER ================= -->\n<script id="v77AdminOvertimeStabilizer">\n(function(){\n  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management','admin-activity'];\n  function isAdmin(){return String((window.currentUser||{}).role||'').toLowerCase()==='admin';}\n  function el(id){return document.getElementById(id);}\n  function ensureAdminCenter(){\n    const ac=el('adminControlFolder');\n    if(!ac) return;\n    if(isAdmin()){ ac.style.display='block'; ac.classList.add('expanded'); ac.querySelectorAll('a[data-tab]').forEach(a=>{a.style.display='flex';a.style.pointerEvents='auto';a.style.opacity='1';a.removeAttribute('aria-disabled');}); }\n    else ac.style.display='none';\n  }\n  // Repair Admin Control links even when legacy role patch hides them.\n  document.addEventListener('click',function(ev){\n    const a=ev.target.closest('#adminControlFolder a[data-tab]');\n    if(!a) return;\n    if(!isAdmin()){ev.preventDefault();return;}\n    ev.preventDefault(); ev.stopImmediatePropagation();\n    const tab=a.dataset.tab;\n    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));\n    const panel=el(tab);\n    if(panel) panel.classList.add('active');\n    document.querySelectorAll('.sidebar-menu a').forEach(x=>x.classList.remove('active'));\n    a.classList.add('active');\n    if(typeof window.currentTab!=='undefined') window.currentTab=tab;\n    setTimeout(()=>{ if(typeof window.initializeTab==='function') try{window.initializeTab(tab);}catch(e){console.warn('Admin tab init warning',e);} },0);\n  },true);\n\n  function ensureDateFilters(){\n    const panel=el('overtime-detail-admin'); if(!panel) return;\n    const controls=panel.querySelector('.overtime-controls'); if(!controls) return;\n    if(!el('overtimeDateFilterSection')){\n      const wrap=document.createElement('div'); wrap.id='overtimeDateFilterSection'; wrap.className='overtime-filter';\n      wrap.innerHTML='<label class="form-label me-2">From:</label><input type="date" class="form-control form-control-sm" id="overtimeDetailStartDate"><label class="form-label mx-2">To:</label><input type="date" class="form-control form-control-sm" id="overtimeDetailEndDate">';\n      controls.prepend(wrap);\n      ['overtimeDetailStartDate','overtimeDetailEndDate'].forEach(id=>el(id).addEventListener('change',renderDetail));\n    }\n    const emp=el('adminOvertimeEmployeeFilter'); if(emp){emp.closest('.overtime-filter').style.display=isAdmin()?'flex':'none';}\n  }\n  function toDate(v){\n    if(!v)return null; if(v.toDate)return v.toDate();\n    if(v instanceof Date)return v;\n    if(/^\\d{4}-\\d{2}-\\d{2}/.test(String(v))) return new Date(v);\n    const m=String(v).match(/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/); return m?new Date(+m[3],+m[2]-1,+m[1]):new Date(v);\n  }\n  function renderDetail(){\n    const tbody=el('adminOvertimeDetailTableBody'); if(!tbody)return;\n    let rows=Array.isArray(window.rekapLemburData)?window.rekapLemburData.slice():[];\n    if(!isAdmin()){const email=String((window.currentUser||{}).email||'').toLowerCase(); rows=rows.filter(r=>String(r.employeeEmail||'').toLowerCase()===email);}\n    else { const f=el('adminOvertimeEmployeeFilter'); if(f&&f.value&&f.value!=='all')rows=rows.filter(r=>r.employeeName===f.value); }\n    const st=el('overtimeDetailStartDate')?.value, en=el('overtimeDetailEndDate')?.value;\n    if(st){const d=new Date(st);d.setHours(0,0,0,0);rows=rows.filter(r=>{const x=toDate(r.date);return x&&x>=d;});}\n    if(en){const d=new Date(en);d.setHours(23,59,59,999);rows=rows.filter(r=>{const x=toDate(r.date);return x&&x<=d;});}\n    rows.sort((a,b)=>(toDate(b.date)||0)-(toDate(a.date)||0));\n    tbody.innerHTML=rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.employeeName||''}</td><td>${r.date||''}</td><td>${r.startTime||''}</td><td>${r.endTime||''}</td><td>${r.overtimeDuration||''}</td><td>${r.tableData?.totalProject||r.totalProject||''}</td><td>${r.tableData?.totalPlant||r.totalPlant||''}</td><td>${r.tableData?.plantName||r.plantName||''}</td><td>${r.tableData?.volume||r.volume||''}</td><td>${r.taskDescription||''}</td><td>${isAdmin()?'<button class="btn btn-sm btn-primary" onclick="editOvertimeDetail(\\\''+r.id+'\\\')">Edit</button>':''}</td></tr>`).join(''):'<tr><td colspan="12" class="text-center">No overtime data available</td></tr>';\n    const total=rows.reduce((n,r)=>{const p=String(r.overtimeDuration||'0:0').split(':').map(Number);return n+(p[0]||0)*60+(p[1]||0);},0); const tv=el('adminTotalOvertimeValue');if(tv)tv.textContent=String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');\n  }\n  window.updateOvertimeDetailTable=renderDetail; window.updateAdminOvertimeDetailTable=renderDetail;\n  const oldLoad=window.loadAllOvertimeData;\n  window.loadAllOvertimeData=async function(){try{const snap=await db.collection('overtimeRecords').get();window.rekapLemburData=[];snap.forEach(d=>window.rekapLemburData.push({id:d.id,...d.data()}));renderDetail();}catch(e){console.error('Error loading overtime data:',e);}};\n  const oldSetup=window.setupMenuByRole; window.setupMenuByRole=function(role){const out=typeof oldSetup==='function'?oldSetup(role):undefined;setTimeout(()=>{ensureAdminCenter();ensureDateFilters();},0);return out;};\n  document.addEventListener('DOMContentLoaded',()=>{ensureAdminCenter();ensureDateFilters();setTimeout(renderDetail,500);});\n  document.addEventListener('click',()=>setTimeout(()=>{ensureAdminCenter();ensureDateFilters();},0));\n  window.renderOvertimeDetailV77=renderDetail;\n})();\n</script>\n<!-- ================= END V7.7 PATCH ================= -->\n</body>
-</html>
-<!-- ================= V7.2 GENERAL OVERTIME RESTORE PATCH ================= -->
-<script id="v72GeneralOvertimeRestore">
+
+<!-- ================= V7.9 CLEAN GENERAL + OVERTIME DETAIL FIX ================= -->
+<style>
+/* Admin Control Center disabled temporarily */
+#adminControlFolder { display:none !important; }
+</style>
+<script id="v79GeneralOvertimeCleanFix">
 (function(){
-  const GENERAL_TABS_V72 = ['absen-tabel','propose-leave','my-leave-history','form-rekap-lembur','overtime-detail-admin'];
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const isAdmin = () => String((window.currentUser||{}).role||'').toLowerCase()==='admin';
 
-  function roleOf(){
-    return (typeof normalizeRole==='function')
-      ? normalizeRole((window.currentUser||window.currentUser||{}).role)
-      : String((window.currentUser||{}).role||'user').toLowerCase()==='admin'?'admin':'user';
+  function parseOTDate(v){
+    if(!v) return null;
+    if(v && typeof v.toDate==='function') return v.toDate();
+    if(v instanceof Date) return v;
+    const str=String(v);
+    if(/^\d{4}-\d{2}-\d{2}/.test(str)){ const d=new Date(str); return isNaN(d)?null:d; }
+    const m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+    const d=new Date(str); return isNaN(d)?null:d;
   }
 
-  // GENERAL access: Attendance + Entry Overtime + Overtime Detail + Leave menus.
-  const previousCanAccessV72 = window.canAccessTab;
-  window.canAccessTab = function(tab){
-    if (GENERAL_TABS_V72.includes(tab)) return !!(window.currentUser || (typeof currentUser!=='undefined' && currentUser));
-    return typeof previousCanAccessV72==='function' ? previousCanAccessV72(tab) : false;
-  };
-
-  function restoreGeneralOvertimeMenus(){
-    const formLi = document.getElementById('overtimeFormMenuItem');
-    const detailLi = document.getElementById('overtimeDetailMenuItem');
-    const formLink = formLi && formLi.querySelector('a[data-tab="form-rekap-lembur"]');
-    const detailLink = detailLi && detailLi.querySelector('a[data-tab="overtime-detail-admin"]');
-
-    // Both menus belong to GENERAL and are available to Admin + User.
-    if (formLi) formLi.style.display='flex';
-    if (detailLi) detailLi.style.display='flex';
-    if (formLink){ formLink.style.display='flex'; formLink.style.pointerEvents='auto'; formLink.innerHTML='<i class="fas fa-plus-circle"></i><span>Entry Overtime</span>'; }
-    if (detailLink){ detailLink.style.display='flex'; detailLink.style.pointerEvents='auto'; detailLink.innerHTML='<i class="fas fa-list-alt"></i><span>Overtime Detail</span>'; }
+  function safeHideAdminCenter(){
+    const folder=$('adminControlFolder');
+    if(folder){ folder.style.display='none'; folder.setAttribute('aria-hidden','true'); }
   }
 
-  const previousSetupV72 = window.setupMenuByRole;
-  window.setupMenuByRole = function(role){
-    if (typeof previousSetupV72==='function') previousSetupV72(role);
-    const general=document.getElementById('generalFolder');
-    if(general){
-      general.style.display='block';
-      general.classList.add('expanded');
-      ['absen-tabel','propose-leave','my-leave-history','form-rekap-lembur','overtime-detail-admin'].forEach(tab=>{
-        const a=general.querySelector(`[data-tab="${tab}"]`);
-        if(a){a.style.display='flex';a.style.pointerEvents='auto';a.removeAttribute('aria-disabled');}
-      });
-    }
-    restoreGeneralOvertimeMenus();
-  };
-
-  // Existing loadUserOvertimeData/updateOvertimeDetailTable already enforce:
-  // admin -> all overtime records; user -> employeeEmail === currentUser.email.
-  // Re-run UI correction after login/role setup and sidebar interactions.
-  document.addEventListener('DOMContentLoaded', function(){
-    restoreGeneralOvertimeMenus();
-    setTimeout(restoreGeneralOvertimeMenus, 1200);
-  });
-  document.addEventListener('click', function(){ setTimeout(restoreGeneralOvertimeMenus, 0); });
-})();
-</script>
-<!-- ================= END V7.2 PATCH ================= -->
-
-
-<!-- ================= V7.3 ENTRY OVERTIME + DETAIL SEPARATION PATCH ================= -->
-<script id="v73EntryOvertimeFix">
-(function(){
-  function isAdminV73(){
-    const u = window.currentUser || {};
-    return String(u.role || '').toLowerCase() === 'admin';
-  }
-
-  // Final GENERAL order:
-  // Attendance -> Entry Overtime -> Overtime Detail -> Propose Leave -> My Leave History
-  function fixGeneralOrderV73(){
-    const folder = document.getElementById('generalFolder');
-    if(!folder) return;
-    const ul = folder.querySelector('.sidebar-menu');
-    if(!ul) return;
-    ['absen-tabel','form-rekap-lembur','overtime-detail-admin','propose-leave','my-leave-history'].forEach(tab=>{
-      const a = ul.querySelector(`a[data-tab="${tab}"]`);
-      const li = a && a.closest('li');
-      if(li) ul.appendChild(li);
+  // Null-safe total calculation. This replaces the legacy function that assumes date filter elements exist.
+  window.updateTotalOvertime=function(filteredData){
+    const data=Array.isArray(filteredData) ? filteredData : (Array.isArray(window.rekapLemburData)?window.rekapLemburData:[]);
+    let minutes=0;
+    data.forEach(r=>{
+      const parts=String(r.overtimeDuration||'00:00').split(':');
+      minutes+=(parseInt(parts[0],10)||0)*60+(parseInt(parts[1],10)||0);
     });
+    const text=String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');
+    ['totalOvertimeValue','adminTotalOvertimeValue'].forEach(id=>{const e=$(id);if(e)e.textContent=text;});
+    return text;
+  };
 
-    const formLi = document.getElementById('overtimeFormMenuItem');
-    const detailLi = document.getElementById('overtimeDetailMenuItem');
-    if(formLi){ formLi.style.display='flex'; const a=formLi.querySelector('a'); if(a) a.innerHTML='<i class="fas fa-plus-circle"></i><span>Entry Overtime</span>'; }
-    if(detailLi){ detailLi.style.display='flex'; const a=detailLi.querySelector('a'); if(a) a.innerHTML='<i class="fas fa-list-alt"></i><span>Overtime Detail</span>'; }
+  function ensureDetailFilters(){
+    const panel=$('overtime-detail-admin');
+    if(!panel) return;
+    let host=$('overtimeDetailDateFilterSection');
+    if(!host){
+      host=document.createElement('div');
+      host.id='overtimeDetailDateFilterSection';
+      host.className='filter-section mb-3';
+      host.innerHTML=`
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3">
+            <label class="form-label">From Date</label>
+            <input type="date" class="form-control form-control-sm" id="overtimeDetailStartDate">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label">To Date</label>
+            <input type="date" class="form-control form-control-sm" id="overtimeDetailEndDate">
+          </div>
+          <div class="col-12 col-md-4" id="overtimeDetailEmployeeWrap">
+            <label class="form-label">Employee / User</label>
+            <select class="form-select form-select-sm" id="adminOvertimeEmployeeFilterV79"><option value="all">All Employees</option></select>
+          </div>
+          <div class="col-12 col-md-2">
+            <button type="button" class="btn btn-futuristic btn-sm w-100" id="applyOvertimeDetailFilterV79"><i class="fas fa-filter me-1"></i>Apply Filter</button>
+          </div>
+        </div>`;
+      const first=panel.querySelector('.card, .collapsible, .overtime-controls, .table-responsive, h4, h5');
+      if(first && first.parentNode) first.parentNode.insertBefore(host,first); else panel.prepend(host);
+      ['overtimeDetailStartDate','overtimeDetailEndDate','adminOvertimeEmployeeFilterV79'].forEach(id=>{
+        const e=$(id); if(e) e.addEventListener('change',renderDetailV79);
+      });
+      $('applyOvertimeDetailFilterV79').addEventListener('click',renderDetailV79);
+    }
+    const wrap=$('overtimeDetailEmployeeWrap'); if(wrap) wrap.style.display=isAdmin()?'block':'none';
   }
 
-  // Entry Overtime must contain FORM ONLY. Any legacy embedded detail panel is hidden as a safety net.
-  function enforceEntryOnlyV73(){
-    const embedded = document.getElementById('adminOvertimeDetail');
-    if(embedded) embedded.style.display='none';
+  function fillEmployeeFilter(){
+    const sel=$('adminOvertimeEmployeeFilterV79'); if(!sel || !isAdmin()) return;
+    const current=sel.value||'all';
+    const names=new Set();
+    (window.rekapLemburData||[]).forEach(r=>{if(r.employeeName) names.add(r.employeeName);});
+    (window.absensiData||[]).forEach(r=>{if(r.name) names.add(r.name);});
+    (window.initialEmployees||[]).forEach(r=>{if(r.name) names.add(r.name);});
+    sel.innerHTML='<option value="all">All Employees</option>';
+    [...names].sort().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+    sel.value=[...sel.options].some(o=>o.value===current)?current:'all';
   }
 
-  async function loadUserSharedDetailV73(){
-    if(!window.currentUser) return;
-    const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
-    if(filterWrap) filterWrap.style.display='none';
-
-    const btn = document.querySelector('#overtime-detail-admin .collapsible');
-    if(btn) btn.innerHTML='My Overtime Detail <i class="fas fa-chevron-down"></i>';
-    const desc = document.querySelector('#overtime-detail-admin .collapsible-content p');
-    if(desc) desc.textContent='You can only view your own overtime records.';
-
-    const snap = await db.collection('overtimeRecords')
-      .where('employeeEmail','==',currentUser.email)
-      .get();
-
-    const records=[];
-    snap.forEach(doc=>records.push({id:doc.id,...doc.data()}));
-    records.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-
-    const tbody=document.getElementById('adminOvertimeDetailTableBody');
+  function renderDetailV79(){
+    ensureDetailFilters();
+    const tbody=$('adminOvertimeDetailTableBody');
     if(!tbody) return;
-    tbody.innerHTML='';
-
-    if(!records.length){
-      tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data found</td></tr>';
-      const total=document.getElementById('adminTotalOvertimeValue'); if(total) total.textContent='00:00';
-      return;
-    }
-
-    let no=1,totalMinutes=0;
-    records.forEach(record=>{
-      const duration=String(record.overtimeDuration||'00:00');
-      const dm=duration.match(/^(\d+):(\d+)$/);
-      if(dm) totalMinutes+=(+dm[1])*60+(+dm[2]);
-
-      const rows=(record.tableData&&record.tableData.length)?record.tableData:[{}];
-      rows.forEach((row,index)=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td>${no++}</td>
-          <td>${record.employeeName||''}</td>
-          <td>${index===0?(record.date||''):''}</td>
-          <td>${index===0?(record.startTime||''):''}</td>
-          <td>${index===0?(record.endTime||''):''}</td>
-          <td>${index===0?duration:''}</td>
-          <td>${row.totalProject||''}</td>
-          <td>${row.totalPlant||''}</td>
-          <td>${row.plantNames||''}</td>
-          <td>${row.volume||''}</td>
-          <td>${index===0?(record.taskDescription||''):''}</td>
-          <td>-</td>`;
-        tbody.appendChild(tr);
-      });
-    });
-
-    const total=document.getElementById('adminTotalOvertimeValue');
-    if(total){
-      total.textContent=String(Math.floor(totalMinutes/60)).padStart(2,'0')+':'+String(totalMinutes%60).padStart(2,'0');
-    }
-  }
-
-  function prepareAdminSharedDetailV73(){
-    const filterWrap=document.querySelector('#overtime-detail-admin .overtime-filter');
-    if(filterWrap) filterWrap.style.display='';
-    const btn=document.querySelector('#overtime-detail-admin .collapsible');
-    if(btn) btn.innerHTML='Overtime Detail <i class="fas fa-chevron-down"></i>';
-    const desc=document.querySelector('#overtime-detail-admin .collapsible-content p');
-    if(desc) desc.textContent='Manage and review overtime records for all users.';
-  }
-
-  // After normal navigation has initialized the tab, correct role-specific detail behavior.
-  document.addEventListener('click', function(e){
-    const link=e.target.closest('a[data-tab="overtime-detail-admin"]');
-    if(!link) return;
-    setTimeout(async ()=>{
-      try{
-        if(isAdminV73()){
-          prepareAdminSharedDetailV73();
-          // Normal tab navigation already runs the existing admin initializer.
-        }else{
-          await loadUserSharedDetailV73();
-        }
-      }catch(err){
-        console.error('V7.3 overtime detail error',err);
-        if(typeof showNotification==='function') showNotification('Failed to load overtime detail: '+(err.message||err),'error');
-      }
-    },50);
-  }, true);
-
-  document.addEventListener('DOMContentLoaded', function(){
-    enforceEntryOnlyV73();
-    fixGeneralOrderV73();
-    setTimeout(()=>{enforceEntryOnlyV73();fixGeneralOrderV73();},1200);
-  });
-  document.addEventListener('click', function(){ setTimeout(()=>{enforceEntryOnlyV73();fixGeneralOrderV73();},0); });
-})();
-</script>
-<!-- ================= END V7.3 PATCH ================= -->
-
-
-<!-- ================= V7.4 ADMIN CONTROL CENTER UI ISOLATION PATCH ================= -->
-<script id="v74AdminControlIsolation">
-(function(){
-  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management'];
-  const FILTER_IDS=['filterSectionMain','filterSectionOvertimeOutput','filterSectionAbsenTabel'];
-
-  function hideLegacyForAdmin(){
-    FILTER_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-    document.querySelectorAll('.tab-pane').forEach(p=>{
-      // Keep only the Admin Control Center target visible; legacy panes are isolated.
-      p.classList.remove('show','active');
-      p.style.display='none';
-    });
-    const detail=document.getElementById('overtime-detail-admin');
-    if(detail){detail.classList.remove('show','active');detail.style.display='none';}
-  }
-
-  function restoreNormalUI(tab){
-    document.querySelectorAll('.tab-pane').forEach(p=>p.style.display='');
-    FILTER_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-    if(tab==='entry'){
-      const el=document.getElementById('filterSectionMain');if(el)el.style.display='block';
-    } else if(tab==='output'||tab==='overtime'){
-      const el=document.getElementById('filterSectionOvertimeOutput');if(el)el.style.display='block';
-    } else if(tab==='absen-tabel'){
-      const el=document.getElementById('filterSectionAbsenTabel');if(el)el.style.display='block';
-    }
-  }
-
-  // Existing V7 route runs in capture mode and stops propagation. Mutation/interval safety
-  // guarantees that legacy Overtime Detail and Date Range blocks cannot bleed into admin pages.
-  document.addEventListener('click',function(e){
-    const a=e.target.closest('a[data-tab]');
-    if(!a) return;
-    const tab=a.dataset.tab;
-    if(ADMIN_TABS.includes(tab)){
-      setTimeout(hideLegacyForAdmin,0);
-      setTimeout(hideLegacyForAdmin,80);
-    } else {
-      setTimeout(()=>restoreNormalUI(tab),0);
-    }
-  },true);
-
-  // Admin Overtime Detail remains in GENERAL and admins can delete records.
-  // This wrapper protects the delete action from disappearing after rerenders.
-  function ensureAdminDeleteButtons(){
-    const u=window.currentUser||{};
-    if(String(u.role||'').toLowerCase()!=='admin') return;
-    const pane=document.getElementById('overtime-detail-admin');
-    if(!pane || !pane.classList.contains('active')) return;
-    pane.querySelectorAll('tbody tr').forEach(tr=>{
-      const hasDelete=tr.querySelector('.btn-delete-overtime,[data-v74-delete-overtime]');
-      if(hasDelete) return;
-      const id=tr.dataset.overtimeId;
-      if(!id) return;
-      const td=tr.lastElementChild;
-      if(!td) return;
-      const btn=document.createElement('button');
-      btn.type='button';btn.className='btn-delete-overtime';btn.dataset.v74DeleteOvertime=id;
-      btn.innerHTML='<i class="fas fa-trash"></i>';
-      td.appendChild(btn);
-    });
-  }
-
-  document.addEventListener('click',async function(e){
-    const btn=e.target.closest('[data-v74-delete-overtime]');
-    if(!btn) return;
-    e.preventDefault();
-    const u=window.currentUser||{};
-    if(String(u.role||'').toLowerCase()!=='admin'){
-      if(typeof showNotification==='function')showNotification('Only Admin can delete overtime records','error');
-      return;
-    }
-    if(typeof window.deleteOvertimeDetail==='function'){
-      await window.deleteOvertimeDetail(btn.dataset.v74DeleteOvertime);
-    }
-  });
-
-  // Restore legacy panes only when navigating outside Admin Control Center.
-  document.addEventListener('DOMContentLoaded',()=>{
-    hideLegacyForAdmin();
-    setTimeout(()=>{
-      const active=document.querySelector('.sidebar-menu a.active[data-tab]');
-      if(active && !ADMIN_TABS.includes(active.dataset.tab)) restoreNormalUI(active.dataset.tab);
-    },1200);
-  });
-
-  const observer=new MutationObserver(()=>{
-    const active=document.querySelector('.sidebar-menu a.active[data-tab]');
-    if(active && ADMIN_TABS.includes(active.dataset.tab)) hideLegacyForAdmin();
-    ensureAdminDeleteButtons();
-  });
-  observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
-
-  window.addEventListener('v74EnsureAdminDeleteButtons',ensureAdminDeleteButtons);
-})();
-</script>
-<!-- ================= END V7.4 PATCH ================= -->
-
-
-<!-- ================= V7.8 FINAL ADMIN CONTROL ROUTING FIX ================= -->
-<script id="v78FinalAdminRoutingFix">
-(function(){
-  const ADMIN_TABS=['analytics','online-monitor','activity-score','audit-logs','approval-center','notification-center','reports','role-permissions','system-health','data-management','admin-activity'];
-  const SHELL_MAP={analytics:'analyticsShell','online-monitor':'onlineMonitorShell','activity-score':'activityScoreShell','notification-center':'notificationCenterShell','admin-activity':'adminActivityShell'};
-  const $=id=>document.getElementById(id);
-  const admin=()=>String((window.currentUser||{}).role||'').toLowerCase()==='admin';
-
-  function clearAdminViews(){
-    document.querySelectorAll('.tab-pane').forEach(p=>{p.classList.remove('show','active');p.style.display='none';});
-    ['dashboardShell','analyticsShell','onlineMonitorShell','activityScoreShell','notificationCenterShell','adminActivityShell'].forEach(id=>{
-      const x=$(id); if(x){x.classList.remove('active');x.style.display='none';}
-    });
-  }
-
-  async function runTab(tab){
-    if(!ADMIN_TABS.includes(tab)) return false;
-    if(!admin()){ if(typeof showNotification==='function')showNotification('Admin only','error'); return true; }
-    clearAdminViews();
-    document.querySelectorAll('.sidebar-menu a[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===tab));
-    if(typeof window.currentTab!=='undefined') window.currentTab=tab;
-
-    const shellId=SHELL_MAP[tab];
-    if(shellId){
-      const shell=$(shellId);
-      if(shell){shell.style.display='block';shell.classList.add('active');}
+    let rows=Array.isArray(window.rekapLemburData)?window.rekapLemburData.slice():[];
+    if(!isAdmin()){
+      const email=String((window.currentUser||{}).email||'').trim().toLowerCase();
+      rows=rows.filter(r=>String(r.employeeEmail||'').trim().toLowerCase()===email);
     }else{
-      const pane=$(tab);
-      if(pane){pane.style.display='block';pane.classList.add('show','active');}
+      const f=$('adminOvertimeEmployeeFilterV79');
+      if(f && f.value && f.value!=='all') rows=rows.filter(r=>r.employeeName===f.value);
     }
-
-    try{
-      // Use the application's existing loaders where available.
-      if(tab==='analytics'){
-        if(typeof window.refreshAnalytics==='function') await window.refreshAnalytics();
-        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('analytics');
-      }
-      if(tab==='online-monitor'){
-        if(typeof window.refreshOnlineMonitor==='function') await window.refreshOnlineMonitor();
-        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('online-monitor');
-      }
-      if(tab==='activity-score'){
-        if(typeof window.refreshActivityScore==='function') await window.refreshActivityScore();
-        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('activity-score');
-      }
-      if(tab==='notification-center'){
-        if(typeof window.loadNotificationsV5==='function') await window.loadNotificationsV5();
-        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('notification-center');
-      }
-      if(tab==='admin-activity'){
-        if(typeof window.refreshAdminActivity==='function') await window.refreshAdminActivity();
-        else if(typeof window.showV5AdminPanel==='function') await window.showV5AdminPanel('admin-activity');
-      }
-      if(tab==='audit-logs' && typeof window.refreshAuditLogs==='function') await window.refreshAuditLogs();
-      if(tab==='approval-center' && typeof window.loadApprovalCenter==='function') await window.loadApprovalCenter();
-      if(tab==='system-health' && typeof window.refreshSystemHealth==='function') await window.refreshSystemHealth();
-    }catch(err){console.error('V7.8 Admin Control loader error:',tab,err);}
-    return true;
-  }
-
-  // FINAL capture handler: this runs after all earlier patches and blocks legacy handlers.
-  document.addEventListener('click',function(e){
-    const a=e.target.closest('#adminControlFolder a[data-tab]');
-    if(!a) return;
-    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-    runTab(a.dataset.tab);
-  },true);
-
-  // Repair menu visibility and pointer events after every role setup / DOM mutation.
-  function repairMenu(){
-    const folder=$('adminControlFolder'); if(!folder)return;
-    folder.style.display=admin()?'block':'none';
-    if(!admin())return;
-    folder.classList.add('expanded');
-    folder.querySelectorAll('a[data-tab]').forEach(a=>{
-      a.style.display='flex';a.style.pointerEvents='auto';a.style.opacity='1';a.removeAttribute('disabled');a.removeAttribute('aria-disabled');
-      const li=a.closest('li');if(li){li.style.display='block';li.style.pointerEvents='auto';}
+    const st=$('overtimeDetailStartDate')?.value;
+    const en=$('overtimeDetailEndDate')?.value;
+    if(st){const d=new Date(st);d.setHours(0,0,0,0);rows=rows.filter(r=>{const x=parseOTDate(r.date);return x&&x>=d;});}
+    if(en){const d=new Date(en);d.setHours(23,59,59,999);rows=rows.filter(r=>{const x=parseOTDate(r.date);return x&&x<=d;});}
+    rows.sort((a,b)=>(parseOTDate(b.date)||0)-(parseOTDate(a.date)||0));
+    tbody.innerHTML='';
+    if(!rows.length){ tbody.innerHTML='<tr><td colspan="12" class="text-center">No overtime data available</td></tr>'; window.updateTotalOvertime([]); return; }
+    rows.forEach((r,i)=>{
+      const tr=document.createElement('tr');
+      const td=[i+1,r.employeeName||'',r.date||'',r.startTime||'',r.endTime||'',r.overtimeDuration||'',r.tableData?.totalProject??r.totalProject??'',r.tableData?.totalPlant??r.totalPlant??'',r.tableData?.plantName??r.plantName??'',r.tableData?.volume??r.volume??'',r.taskDescription||''];
+      td.forEach(v=>{const c=document.createElement('td');c.textContent=v;tr.appendChild(c);});
+      const act=document.createElement('td');
+      if(isAdmin() && r.id && typeof window.editOvertimeDetail==='function'){const b=document.createElement('button');b.className='btn btn-sm btn-primary';b.textContent='Edit';b.onclick=()=>window.editOvertimeDetail(r.id);act.appendChild(b);}
+      tr.appendChild(act); tbody.appendChild(tr);
     });
+    window.updateTotalOvertime(rows);
   }
 
-  const priorSetup=window.setupMenuByRole;
-  window.setupMenuByRole=function(role){
-    const r=typeof priorSetup==='function'?priorSetup.apply(this,arguments):undefined;
-    setTimeout(repairMenu,0);setTimeout(repairMenu,300);return r;
+  // Safe loaders: admin gets all records; normal user only gets own records.
+  window.loadAllOvertimeData=async function(){
+    try{
+      let snap;
+      if(isAdmin()) snap=await db.collection('overtimeRecords').get();
+      else {
+        const email=String((window.currentUser||{}).email||'').trim();
+        if(!email){window.rekapLemburData=[];renderDetailV79();return;}
+        snap=await db.collection('overtimeRecords').where('employeeEmail','==',email).get();
+      }
+      window.rekapLemburData=[]; snap.forEach(d=>window.rekapLemburData.push({id:d.id,...d.data()}));
+      fillEmployeeFilter(); renderDetailV79();
+    }catch(e){console.error('Error loading overtime data:',e);}
+  };
+  window.loadUserOvertimeData=window.loadAllOvertimeData;
+  window.updateOvertimeDetailTable=renderDetailV79;
+  window.updateAdminOvertimeDetailTable=renderDetailV79;
+
+  // Keep legacy init from crashing when obsolete elements are missing.
+  const oldInit=window.initOvertimeForm;
+  window.initOvertimeForm=function(){
+    safeHideAdminCenter();
+    try{ if(typeof oldInit==='function') oldInit(); }catch(e){ console.warn('Legacy initOvertimeForm ignored:',e); }
+    const form=$('userOvertimeForm'); if(form && !isAdmin()) form.style.display='block';
+    renderDetailV79();
   };
 
-  document.addEventListener('DOMContentLoaded',()=>{repairMenu();setTimeout(repairMenu,800);});
-  const obs=new MutationObserver(()=>{if(admin())repairMenu();});
-  obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+  const oldSetup=window.setupMenuByRole;
+  window.setupMenuByRole=function(role){
+    const result=typeof oldSetup==='function'?oldSetup.apply(this,arguments):undefined;
+    setTimeout(()=>{safeHideAdminCenter();ensureDetailFilters();fillEmployeeFilter();},0);
+    return result;
+  };
 
-  window.openAdminControlTabV78=runTab;
+  document.addEventListener('click',function(e){
+    const a=e.target.closest('a[data-tab]'); if(!a)return;
+    if(a.dataset.tab==='overtime-detail-admin') setTimeout(async()=>{ensureDetailFilters(); await window.loadAllOvertimeData();},0);
+  },true);
+
+  document.addEventListener('DOMContentLoaded',()=>{safeHideAdminCenter();ensureDetailFilters();setTimeout(fillEmployeeFilter,300);});
+  window.renderOvertimeDetailV79=renderDetailV79;
 })();
 </script>
-<!-- ================= END V7.8 PATCH ================= -->
+<!-- ================= END V7.9 PATCH ================= -->
+</body>
+</html>
