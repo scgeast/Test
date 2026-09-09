@@ -9065,3 +9065,135 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
+<!-- ================= V7.5 ADMIN CONTROL CENTER FREEZE FIX ================= -->
+<script id="v75AdminFreezeFix">
+(function(){
+    const ADMIN_TABS = ['analytics','online-monitor','activity-score','audit-logs',
+                        'approval-center','notification-center','reports',
+                        'role-permissions','system-health','data-management'];
+    
+    const ADMIN_SHELLS = {
+        'analytics': 'analyticsShell',
+        'online-monitor': 'onlineMonitorShell',
+        'activity-score': 'activityScoreShell',
+        'audit-logs': 'audit-logs',
+        'approval-center': 'approval-center',
+        'notification-center': 'notificationCenterShell',
+        'reports': 'reports',
+        'role-permissions': 'role-permissions',
+        'system-health': 'system-health',
+        'data-management': 'data-management'
+    };
+    
+    // PERBAIKAN 1: Override hideAllAdmin - JANGAN sembunyikan panel admin yang aktif
+    const originalHideAllAdmin = window.hideAllAdmin;
+    window.hideAllAdmin = function() {
+        // Panggil fungsi asli
+        if (typeof originalHideAllAdmin === 'function') {
+            try { originalHideAllAdmin(); } catch(e) { console.warn('hideAllAdmin error:', e); }
+        }
+        
+        // PERBAIKAN: Cari tab admin yang sedang aktif dan TAMPILKAN kembali
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const activeTab = activeLink.getAttribute('data-tab');
+            if (ADMIN_TABS.includes(activeTab)) {
+                const shellId = ADMIN_SHELLS[activeTab];
+                if (shellId) {
+                    const shell = document.getElementById(shellId);
+                    if (shell) {
+                        shell.style.display = 'block';
+                        shell.classList.add('show', 'active');
+                    }
+                }
+            }
+        }
+    };
+    
+    // PERBAIKAN 2: Override activatePane - RESET display property
+    const originalActivatePane = window.activatePane;
+    window.activatePane = function(id) {
+        // Panggil fungsi asli
+        if (typeof originalActivatePane === 'function') {
+            try { originalActivatePane(id); } catch(e) { console.warn('activatePane error:', e); }
+        }
+        
+        // PERBAIKAN: Reset display property untuk panel yang di-activate
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'block';
+            element.style.visibility = 'visible';
+            element.style.opacity = '1';
+            element.classList.add('show', 'active');
+        }
+    };
+    
+    // PERBAIKAN 3: Fungsi helper untuk memastikan panel admin visible
+    function ensureAdminPanelVisible(tab) {
+        const shellId = ADMIN_SHELLS[tab];
+        if (!shellId) return;
+        
+        const shell = document.getElementById(shellId);
+        if (shell) {
+            shell.style.display = 'block';
+            shell.style.visibility = 'visible';
+            shell.style.opacity = '1';
+            shell.classList.add('show', 'active');
+        }
+    }
+    
+    // PERBAIKAN 4: Hook ke event click untuk memastikan panel visible
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.sidebar-menu a[data-tab]');
+        if (!link) return;
+        
+        const tab = link.getAttribute('data-tab');
+        if (!ADMIN_TABS.includes(tab)) return;
+        
+        // Delay untuk memastikan route function sudah dijalankan
+        setTimeout(() => {
+            ensureAdminPanelVisible(tab);
+        }, 50);
+        
+        setTimeout(() => {
+            ensureAdminPanelVisible(tab);
+        }, 200);
+    }, true);
+    
+    // PERBAIKAN 5: Override route function
+    const originalRoute = window.route;
+    if (typeof originalRoute === 'function') {
+        window.route = async function(tab) {
+            try {
+                await originalRoute(tab);
+            } catch(e) {
+                console.error('Route error:', e);
+            } finally {
+                ensureAdminPanelVisible(tab);
+            }
+        };
+    }
+    
+    // PERBAIKAN 6: MutationObserver untuk safety net
+    const observer = new MutationObserver(function() {
+        const activeTab = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (!activeTab) return;
+        
+        const tab = activeTab.getAttribute('data-tab');
+        if (!ADMIN_TABS.includes(tab)) return;
+        
+        setTimeout(() => {
+            ensureAdminPanelVisible(tab);
+        }, 10);
+    });
+    
+    observer.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+    
+    console.log('✅ V7.5 Admin Control Center Freeze Fix loaded');
+})();
+</script>
+<!-- ================= END V7.5 FIX ================= -->
