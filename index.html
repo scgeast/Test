@@ -8833,6 +8833,307 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V7.2 PATCH ================= -->
+<!-- ================= V8 COMPREHENSIVE FIX ================= -->
+<script id="v8ComprehensiveFix">
+(function(){
+    'use strict';
+
+    /* ===========================================================
+       FIX 1: ADMIN MENU — Hilangkan Entry Overtime & Propose Leave
+       =========================================================== */
+    function applyMenuFix() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+        const formLi    = document.getElementById('overtimeFormMenuItem');
+        const proposeLi = document.getElementById('proposeLeaveMenuItem');
+        const detailLi  = document.getElementById('overtimeDetailMenuItem');
+        const leaveLi   = document.getElementById('myLeaveHistoryMenuItem');
+
+        if (isAdmin) {
+            // Admin: TIDAK perlu Entry Overtime & Propose Leave
+            if (formLi)    formLi.style.display    = 'none';
+            if (proposeLi) proposeLi.style.display  = 'none';
+            // Admin tetap bisa lihat Overtime Detail & My Leave History
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        } else {
+            // User biasa: tampilkan semua menu General
+            if (formLi)    formLi.style.display    = 'flex';
+            if (proposeLi) proposeLi.style.display  = 'flex';
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        }
+    }
+
+    // Override setupMenuByRole agar fix menu selalu diterapkan
+    const _prevSetupMenu = window.setupMenuByRole;
+    window.setupMenuByRole = function(role) {
+        if (typeof _prevSetupMenu === 'function') {
+            try { _prevSetupMenu(role); } catch(e) { console.warn('setupMenuByRole base error', e); }
+        }
+        setTimeout(applyMenuFix, 0);
+        setTimeout(applyMenuFix, 200);
+    };
+
+    // Safety: terapkan fix menu setiap kali sidebar diklik
+    document.addEventListener('click', function() {
+        setTimeout(applyMenuFix, 50);
+    });
+
+
+    /* ===========================================================
+       FIX 2: USER OVERTIME DETAIL — Tampilkan data sesuai user login
+       =========================================================== */
+    async function loadUserOvertimeDetail() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        if (isAdmin) return; // Admin sudah ditangani oleh fungsi asli
+
+        // Pastikan tab pane terlihat
+        const pane = document.getElementById('overtime-detail-admin');
+        if (pane) {
+            pane.style.display = 'block';
+            pane.style.visibility = 'visible';
+            pane.classList.add('show', 'active');
+        }
+
+        // Sembunyikan filter employee untuk user biasa
+        const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+        if (filterWrap) filterWrap.style.display = 'none';
+
+        // Ubah judul untuk user
+        const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+        if (collapsible) collapsible.innerHTML = 'My Overtime Detail <i class="fas fa-chevron-down"></i>';
+
+        try {
+            const snap = await db.collection('overtimeRecords')
+                .where('employeeEmail', '==', currentUser.email)
+                .get();
+
+            const records = [];
+            snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+            records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+            const tbody = document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Belum ada data overtime untuk akun Anda.</td></tr>';
+                const total = document.getElementById('adminTotalOvertimeValue');
+                if (total) total.textContent = '00:00';
+                return;
+            }
+
+            let no = 1, totalMinutes = 0;
+            records.forEach(record => {
+                const duration = String(record.overtimeDuration || '00:00');
+                const dm = duration.match(/^(\d+):(\d+)$/);
+                if (dm) totalMinutes += (+dm[1]) * 60 + (+dm[2]);
+
+                const rows = (record.tableData && record.tableData.length) ? record.tableData : [{}];
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (no++) + '</td>' +
+                        '<td>' + (record.employeeName || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.date || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.startTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.endTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? duration : '') + '</td>' +
+                        '<td>' + (row.totalProject || '') + '</td>' +
+                        '<td>' + (row.totalPlant || '') + '</td>' +
+                        '<td>' + (row.plantNames || '') + '</td>' +
+                        '<td>' + (row.volume || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.taskDescription || '') : '') + '</td>' +
+                        '<td>-</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+
+            const total = document.getElementById('adminTotalOvertimeValue');
+            if (total) {
+                total.textContent =
+                    String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' +
+                    String(totalMinutes % 60).padStart(2, '0');
+            }
+        } catch (err) {
+            console.error('V8 User Overtime Detail error:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('Gagal memuat data overtime: ' + (err.message || err), 'error');
+            }
+        }
+    }
+
+    // Hook klik menu Overtime Detail
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab="overtime-detail-admin"]');
+        if (!link) return;
+
+        setTimeout(async () => {
+            if (!window.currentUser) return;
+            const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+            if (!isAdmin) {
+                await loadUserOvertimeDetail();
+            } else {
+                // Admin: pastikan filter tampil dan load semua data
+                const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+                if (filterWrap) filterWrap.style.display = 'flex';
+                const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+                if (collapsible) collapsible.innerHTML = 'Overtime Detail <i class="fas fa-chevron-down"></i>';
+                // Panggil fungsi asli jika ada
+                if (typeof window.loadAllOvertimeData === 'function') {
+                    try { await window.loadAllOvertimeData(); } catch(err) { console.warn(err); }
+                }
+            }
+        }, 150);
+    }, true);
+
+
+    /* ===========================================================
+       FIX 3: ADMIN CONTROL CENTER — Pastikan panel bisa dibuka
+       =========================================================== */
+    const ADMIN_CC_TABS = [
+        'analytics', 'online-monitor', 'activity-score',
+        'audit-logs', 'approval-center', 'notification-center',
+        'reports', 'role-permissions', 'system-health', 'data-management'
+    ];
+
+    const ADMIN_SHELL_IDS = {
+        'analytics':         'analyticsShell',
+        'online-monitor':    'onlineMonitorShell',
+        'activity-score':    'activityScoreShell',
+        'notification-center': 'notificationCenterShell',
+        'admin-activity':    'adminActivityShell'
+    };
+
+    // Tab-pane yang merupakan bagian dari Admin Control Center (JANGAN di-hide)
+    const ADMIN_TAB_PANE_IDS = [
+        'audit-logs', 'approval-center', 'reports',
+        'role-permissions', 'system-health', 'data-management'
+    ];
+
+    function ensureAdminPanelVisible(tab) {
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // 1. Tampilkan shell-based panels (Dashboard Analytics, Online Monitor, dll.)
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell) {
+                shell.style.display = 'block';
+                shell.style.visibility = 'visible';
+                shell.style.opacity = '1';
+                shell.classList.add('active');
+            }
+        }
+
+        // 2. Tampilkan tab-pane based panels (Audit Logs, Approval, dll.)
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane) {
+                pane.style.display = 'block';
+                pane.style.visibility = 'visible';
+                pane.style.opacity = '1';
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        // 3. Sembunyikan filter tanggal yang tidak relevan
+        ['filterSectionMain', 'filterSectionOvertimeOutput', 'filterSectionAbsenTabel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // 4. Sembunyikan dashboard shell biasa
+        const dashShell = document.getElementById('dashboardShell');
+        if (dashShell && tab !== 'dashboard') dashShell.classList.remove('active');
+    }
+
+    // Override hideLegacyForAdmin agar TIDAK menyembunyikan panel Admin CC
+    const _origHideLegacy = window.hideLegacyForAdmin;
+    window.hideLegacyForAdmin = function() {
+        if (typeof _origHideLegacy === 'function') {
+            try { _origHideLegacy(); } catch(e) {}
+        }
+        // Segera kembalikan panel admin yang aktif
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const tab = activeLink.getAttribute('data-tab');
+            if (ADMIN_CC_TABS.includes(tab)) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    };
+
+    // Hook klik untuk semua tab Admin CC
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab]');
+        if (!link) return;
+        const tab = link.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Pastikan panel terlihat setelah semua handler lain selesai
+        setTimeout(() => ensureAdminPanelVisible(tab), 30);
+        setTimeout(() => ensureAdminPanelVisible(tab), 100);
+        setTimeout(() => ensureAdminPanelVisible(tab), 250);
+        setTimeout(() => ensureAdminPanelVisible(tab), 500);
+    }, false);
+
+    // MutationObserver: safety net jika panel admin di-hide oleh patch lain
+    const v8Observer = new MutationObserver(function() {
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (!activeLink) return;
+        const tab = activeLink.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Cek apakah panel admin sedang tersembunyi
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell && (shell.style.display === 'none' || !shell.classList.contains('active'))) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane && pane.style.display === 'none') {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    });
+
+    v8Observer.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+
+    /* ===========================================================
+       INITIALIZATION — Terapkan fix saat DOM ready & setelah login
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(applyMenuFix, 500);
+        setTimeout(applyMenuFix, 1500);
+    });
+
+    // Periodic check untuk memastikan menu fix tetap berlaku setelah login
+    let v8CheckCount = 0;
+    const v8CheckInterval = setInterval(function() {
+        if (window.currentUser) {
+            applyMenuFix();
+            v8CheckCount++;
+            if (v8CheckCount > 15) clearInterval(v8CheckInterval);
+        }
+    }, 800);
+
+    console.log('✅ V8 Comprehensive Fix loaded: Admin Menu + User Overtime Detail + Admin CC');
+})();
+</script>
+<!-- ================= END V8 FIX ================= -->
 
 
 <!-- ================= V7.3 ENTRY OVERTIME + DETAIL SEPARATION PATCH ================= -->
@@ -8965,7 +9266,307 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V7.3 PATCH ================= -->
+<!-- ================= V8 COMPREHENSIVE FIX ================= -->
+<script id="v8ComprehensiveFix">
+(function(){
+    'use strict';
 
+    /* ===========================================================
+       FIX 1: ADMIN MENU — Hilangkan Entry Overtime & Propose Leave
+       =========================================================== */
+    function applyMenuFix() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+        const formLi    = document.getElementById('overtimeFormMenuItem');
+        const proposeLi = document.getElementById('proposeLeaveMenuItem');
+        const detailLi  = document.getElementById('overtimeDetailMenuItem');
+        const leaveLi   = document.getElementById('myLeaveHistoryMenuItem');
+
+        if (isAdmin) {
+            // Admin: TIDAK perlu Entry Overtime & Propose Leave
+            if (formLi)    formLi.style.display    = 'none';
+            if (proposeLi) proposeLi.style.display  = 'none';
+            // Admin tetap bisa lihat Overtime Detail & My Leave History
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        } else {
+            // User biasa: tampilkan semua menu General
+            if (formLi)    formLi.style.display    = 'flex';
+            if (proposeLi) proposeLi.style.display  = 'flex';
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        }
+    }
+
+    // Override setupMenuByRole agar fix menu selalu diterapkan
+    const _prevSetupMenu = window.setupMenuByRole;
+    window.setupMenuByRole = function(role) {
+        if (typeof _prevSetupMenu === 'function') {
+            try { _prevSetupMenu(role); } catch(e) { console.warn('setupMenuByRole base error', e); }
+        }
+        setTimeout(applyMenuFix, 0);
+        setTimeout(applyMenuFix, 200);
+    };
+
+    // Safety: terapkan fix menu setiap kali sidebar diklik
+    document.addEventListener('click', function() {
+        setTimeout(applyMenuFix, 50);
+    });
+
+
+    /* ===========================================================
+       FIX 2: USER OVERTIME DETAIL — Tampilkan data sesuai user login
+       =========================================================== */
+    async function loadUserOvertimeDetail() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        if (isAdmin) return; // Admin sudah ditangani oleh fungsi asli
+
+        // Pastikan tab pane terlihat
+        const pane = document.getElementById('overtime-detail-admin');
+        if (pane) {
+            pane.style.display = 'block';
+            pane.style.visibility = 'visible';
+            pane.classList.add('show', 'active');
+        }
+
+        // Sembunyikan filter employee untuk user biasa
+        const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+        if (filterWrap) filterWrap.style.display = 'none';
+
+        // Ubah judul untuk user
+        const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+        if (collapsible) collapsible.innerHTML = 'My Overtime Detail <i class="fas fa-chevron-down"></i>';
+
+        try {
+            const snap = await db.collection('overtimeRecords')
+                .where('employeeEmail', '==', currentUser.email)
+                .get();
+
+            const records = [];
+            snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+            records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+            const tbody = document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Belum ada data overtime untuk akun Anda.</td></tr>';
+                const total = document.getElementById('adminTotalOvertimeValue');
+                if (total) total.textContent = '00:00';
+                return;
+            }
+
+            let no = 1, totalMinutes = 0;
+            records.forEach(record => {
+                const duration = String(record.overtimeDuration || '00:00');
+                const dm = duration.match(/^(\d+):(\d+)$/);
+                if (dm) totalMinutes += (+dm[1]) * 60 + (+dm[2]);
+
+                const rows = (record.tableData && record.tableData.length) ? record.tableData : [{}];
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (no++) + '</td>' +
+                        '<td>' + (record.employeeName || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.date || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.startTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.endTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? duration : '') + '</td>' +
+                        '<td>' + (row.totalProject || '') + '</td>' +
+                        '<td>' + (row.totalPlant || '') + '</td>' +
+                        '<td>' + (row.plantNames || '') + '</td>' +
+                        '<td>' + (row.volume || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.taskDescription || '') : '') + '</td>' +
+                        '<td>-</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+
+            const total = document.getElementById('adminTotalOvertimeValue');
+            if (total) {
+                total.textContent =
+                    String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' +
+                    String(totalMinutes % 60).padStart(2, '0');
+            }
+        } catch (err) {
+            console.error('V8 User Overtime Detail error:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('Gagal memuat data overtime: ' + (err.message || err), 'error');
+            }
+        }
+    }
+
+    // Hook klik menu Overtime Detail
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab="overtime-detail-admin"]');
+        if (!link) return;
+
+        setTimeout(async () => {
+            if (!window.currentUser) return;
+            const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+            if (!isAdmin) {
+                await loadUserOvertimeDetail();
+            } else {
+                // Admin: pastikan filter tampil dan load semua data
+                const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+                if (filterWrap) filterWrap.style.display = 'flex';
+                const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+                if (collapsible) collapsible.innerHTML = 'Overtime Detail <i class="fas fa-chevron-down"></i>';
+                // Panggil fungsi asli jika ada
+                if (typeof window.loadAllOvertimeData === 'function') {
+                    try { await window.loadAllOvertimeData(); } catch(err) { console.warn(err); }
+                }
+            }
+        }, 150);
+    }, true);
+
+
+    /* ===========================================================
+       FIX 3: ADMIN CONTROL CENTER — Pastikan panel bisa dibuka
+       =========================================================== */
+    const ADMIN_CC_TABS = [
+        'analytics', 'online-monitor', 'activity-score',
+        'audit-logs', 'approval-center', 'notification-center',
+        'reports', 'role-permissions', 'system-health', 'data-management'
+    ];
+
+    const ADMIN_SHELL_IDS = {
+        'analytics':         'analyticsShell',
+        'online-monitor':    'onlineMonitorShell',
+        'activity-score':    'activityScoreShell',
+        'notification-center': 'notificationCenterShell',
+        'admin-activity':    'adminActivityShell'
+    };
+
+    // Tab-pane yang merupakan bagian dari Admin Control Center (JANGAN di-hide)
+    const ADMIN_TAB_PANE_IDS = [
+        'audit-logs', 'approval-center', 'reports',
+        'role-permissions', 'system-health', 'data-management'
+    ];
+
+    function ensureAdminPanelVisible(tab) {
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // 1. Tampilkan shell-based panels (Dashboard Analytics, Online Monitor, dll.)
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell) {
+                shell.style.display = 'block';
+                shell.style.visibility = 'visible';
+                shell.style.opacity = '1';
+                shell.classList.add('active');
+            }
+        }
+
+        // 2. Tampilkan tab-pane based panels (Audit Logs, Approval, dll.)
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane) {
+                pane.style.display = 'block';
+                pane.style.visibility = 'visible';
+                pane.style.opacity = '1';
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        // 3. Sembunyikan filter tanggal yang tidak relevan
+        ['filterSectionMain', 'filterSectionOvertimeOutput', 'filterSectionAbsenTabel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // 4. Sembunyikan dashboard shell biasa
+        const dashShell = document.getElementById('dashboardShell');
+        if (dashShell && tab !== 'dashboard') dashShell.classList.remove('active');
+    }
+
+    // Override hideLegacyForAdmin agar TIDAK menyembunyikan panel Admin CC
+    const _origHideLegacy = window.hideLegacyForAdmin;
+    window.hideLegacyForAdmin = function() {
+        if (typeof _origHideLegacy === 'function') {
+            try { _origHideLegacy(); } catch(e) {}
+        }
+        // Segera kembalikan panel admin yang aktif
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const tab = activeLink.getAttribute('data-tab');
+            if (ADMIN_CC_TABS.includes(tab)) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    };
+
+    // Hook klik untuk semua tab Admin CC
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab]');
+        if (!link) return;
+        const tab = link.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Pastikan panel terlihat setelah semua handler lain selesai
+        setTimeout(() => ensureAdminPanelVisible(tab), 30);
+        setTimeout(() => ensureAdminPanelVisible(tab), 100);
+        setTimeout(() => ensureAdminPanelVisible(tab), 250);
+        setTimeout(() => ensureAdminPanelVisible(tab), 500);
+    }, false);
+
+    // MutationObserver: safety net jika panel admin di-hide oleh patch lain
+    const v8Observer = new MutationObserver(function() {
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (!activeLink) return;
+        const tab = activeLink.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Cek apakah panel admin sedang tersembunyi
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell && (shell.style.display === 'none' || !shell.classList.contains('active'))) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane && pane.style.display === 'none') {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    });
+
+    v8Observer.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+
+    /* ===========================================================
+       INITIALIZATION — Terapkan fix saat DOM ready & setelah login
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(applyMenuFix, 500);
+        setTimeout(applyMenuFix, 1500);
+    });
+
+    // Periodic check untuk memastikan menu fix tetap berlaku setelah login
+    let v8CheckCount = 0;
+    const v8CheckInterval = setInterval(function() {
+        if (window.currentUser) {
+            applyMenuFix();
+            v8CheckCount++;
+            if (v8CheckCount > 15) clearInterval(v8CheckInterval);
+        }
+    }, 800);
+
+    console.log('✅ V8 Comprehensive Fix loaded: Admin Menu + User Overtime Detail + Admin CC');
+})();
+</script>
+<!-- ================= END V8 FIX ================= -->
 
 <!-- ================= V7.4 ADMIN CONTROL CENTER UI ISOLATION PATCH ================= -->
 <script id="v74AdminControlIsolation">
@@ -9065,6 +9666,307 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V7.4 PATCH ================= -->
+<!-- ================= V8 COMPREHENSIVE FIX ================= -->
+<script id="v8ComprehensiveFix">
+(function(){
+    'use strict';
+
+    /* ===========================================================
+       FIX 1: ADMIN MENU — Hilangkan Entry Overtime & Propose Leave
+       =========================================================== */
+    function applyMenuFix() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+        const formLi    = document.getElementById('overtimeFormMenuItem');
+        const proposeLi = document.getElementById('proposeLeaveMenuItem');
+        const detailLi  = document.getElementById('overtimeDetailMenuItem');
+        const leaveLi   = document.getElementById('myLeaveHistoryMenuItem');
+
+        if (isAdmin) {
+            // Admin: TIDAK perlu Entry Overtime & Propose Leave
+            if (formLi)    formLi.style.display    = 'none';
+            if (proposeLi) proposeLi.style.display  = 'none';
+            // Admin tetap bisa lihat Overtime Detail & My Leave History
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        } else {
+            // User biasa: tampilkan semua menu General
+            if (formLi)    formLi.style.display    = 'flex';
+            if (proposeLi) proposeLi.style.display  = 'flex';
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        }
+    }
+
+    // Override setupMenuByRole agar fix menu selalu diterapkan
+    const _prevSetupMenu = window.setupMenuByRole;
+    window.setupMenuByRole = function(role) {
+        if (typeof _prevSetupMenu === 'function') {
+            try { _prevSetupMenu(role); } catch(e) { console.warn('setupMenuByRole base error', e); }
+        }
+        setTimeout(applyMenuFix, 0);
+        setTimeout(applyMenuFix, 200);
+    };
+
+    // Safety: terapkan fix menu setiap kali sidebar diklik
+    document.addEventListener('click', function() {
+        setTimeout(applyMenuFix, 50);
+    });
+
+
+    /* ===========================================================
+       FIX 2: USER OVERTIME DETAIL — Tampilkan data sesuai user login
+       =========================================================== */
+    async function loadUserOvertimeDetail() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        if (isAdmin) return; // Admin sudah ditangani oleh fungsi asli
+
+        // Pastikan tab pane terlihat
+        const pane = document.getElementById('overtime-detail-admin');
+        if (pane) {
+            pane.style.display = 'block';
+            pane.style.visibility = 'visible';
+            pane.classList.add('show', 'active');
+        }
+
+        // Sembunyikan filter employee untuk user biasa
+        const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+        if (filterWrap) filterWrap.style.display = 'none';
+
+        // Ubah judul untuk user
+        const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+        if (collapsible) collapsible.innerHTML = 'My Overtime Detail <i class="fas fa-chevron-down"></i>';
+
+        try {
+            const snap = await db.collection('overtimeRecords')
+                .where('employeeEmail', '==', currentUser.email)
+                .get();
+
+            const records = [];
+            snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+            records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+            const tbody = document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Belum ada data overtime untuk akun Anda.</td></tr>';
+                const total = document.getElementById('adminTotalOvertimeValue');
+                if (total) total.textContent = '00:00';
+                return;
+            }
+
+            let no = 1, totalMinutes = 0;
+            records.forEach(record => {
+                const duration = String(record.overtimeDuration || '00:00');
+                const dm = duration.match(/^(\d+):(\d+)$/);
+                if (dm) totalMinutes += (+dm[1]) * 60 + (+dm[2]);
+
+                const rows = (record.tableData && record.tableData.length) ? record.tableData : [{}];
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (no++) + '</td>' +
+                        '<td>' + (record.employeeName || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.date || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.startTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.endTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? duration : '') + '</td>' +
+                        '<td>' + (row.totalProject || '') + '</td>' +
+                        '<td>' + (row.totalPlant || '') + '</td>' +
+                        '<td>' + (row.plantNames || '') + '</td>' +
+                        '<td>' + (row.volume || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.taskDescription || '') : '') + '</td>' +
+                        '<td>-</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+
+            const total = document.getElementById('adminTotalOvertimeValue');
+            if (total) {
+                total.textContent =
+                    String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' +
+                    String(totalMinutes % 60).padStart(2, '0');
+            }
+        } catch (err) {
+            console.error('V8 User Overtime Detail error:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('Gagal memuat data overtime: ' + (err.message || err), 'error');
+            }
+        }
+    }
+
+    // Hook klik menu Overtime Detail
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab="overtime-detail-admin"]');
+        if (!link) return;
+
+        setTimeout(async () => {
+            if (!window.currentUser) return;
+            const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+            if (!isAdmin) {
+                await loadUserOvertimeDetail();
+            } else {
+                // Admin: pastikan filter tampil dan load semua data
+                const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+                if (filterWrap) filterWrap.style.display = 'flex';
+                const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+                if (collapsible) collapsible.innerHTML = 'Overtime Detail <i class="fas fa-chevron-down"></i>';
+                // Panggil fungsi asli jika ada
+                if (typeof window.loadAllOvertimeData === 'function') {
+                    try { await window.loadAllOvertimeData(); } catch(err) { console.warn(err); }
+                }
+            }
+        }, 150);
+    }, true);
+
+
+    /* ===========================================================
+       FIX 3: ADMIN CONTROL CENTER — Pastikan panel bisa dibuka
+       =========================================================== */
+    const ADMIN_CC_TABS = [
+        'analytics', 'online-monitor', 'activity-score',
+        'audit-logs', 'approval-center', 'notification-center',
+        'reports', 'role-permissions', 'system-health', 'data-management'
+    ];
+
+    const ADMIN_SHELL_IDS = {
+        'analytics':         'analyticsShell',
+        'online-monitor':    'onlineMonitorShell',
+        'activity-score':    'activityScoreShell',
+        'notification-center': 'notificationCenterShell',
+        'admin-activity':    'adminActivityShell'
+    };
+
+    // Tab-pane yang merupakan bagian dari Admin Control Center (JANGAN di-hide)
+    const ADMIN_TAB_PANE_IDS = [
+        'audit-logs', 'approval-center', 'reports',
+        'role-permissions', 'system-health', 'data-management'
+    ];
+
+    function ensureAdminPanelVisible(tab) {
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // 1. Tampilkan shell-based panels (Dashboard Analytics, Online Monitor, dll.)
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell) {
+                shell.style.display = 'block';
+                shell.style.visibility = 'visible';
+                shell.style.opacity = '1';
+                shell.classList.add('active');
+            }
+        }
+
+        // 2. Tampilkan tab-pane based panels (Audit Logs, Approval, dll.)
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane) {
+                pane.style.display = 'block';
+                pane.style.visibility = 'visible';
+                pane.style.opacity = '1';
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        // 3. Sembunyikan filter tanggal yang tidak relevan
+        ['filterSectionMain', 'filterSectionOvertimeOutput', 'filterSectionAbsenTabel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // 4. Sembunyikan dashboard shell biasa
+        const dashShell = document.getElementById('dashboardShell');
+        if (dashShell && tab !== 'dashboard') dashShell.classList.remove('active');
+    }
+
+    // Override hideLegacyForAdmin agar TIDAK menyembunyikan panel Admin CC
+    const _origHideLegacy = window.hideLegacyForAdmin;
+    window.hideLegacyForAdmin = function() {
+        if (typeof _origHideLegacy === 'function') {
+            try { _origHideLegacy(); } catch(e) {}
+        }
+        // Segera kembalikan panel admin yang aktif
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const tab = activeLink.getAttribute('data-tab');
+            if (ADMIN_CC_TABS.includes(tab)) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    };
+
+    // Hook klik untuk semua tab Admin CC
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab]');
+        if (!link) return;
+        const tab = link.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Pastikan panel terlihat setelah semua handler lain selesai
+        setTimeout(() => ensureAdminPanelVisible(tab), 30);
+        setTimeout(() => ensureAdminPanelVisible(tab), 100);
+        setTimeout(() => ensureAdminPanelVisible(tab), 250);
+        setTimeout(() => ensureAdminPanelVisible(tab), 500);
+    }, false);
+
+    // MutationObserver: safety net jika panel admin di-hide oleh patch lain
+    const v8Observer = new MutationObserver(function() {
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (!activeLink) return;
+        const tab = activeLink.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Cek apakah panel admin sedang tersembunyi
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell && (shell.style.display === 'none' || !shell.classList.contains('active'))) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane && pane.style.display === 'none') {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    });
+
+    v8Observer.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+
+    /* ===========================================================
+       INITIALIZATION — Terapkan fix saat DOM ready & setelah login
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(applyMenuFix, 500);
+        setTimeout(applyMenuFix, 1500);
+    });
+
+    // Periodic check untuk memastikan menu fix tetap berlaku setelah login
+    let v8CheckCount = 0;
+    const v8CheckInterval = setInterval(function() {
+        if (window.currentUser) {
+            applyMenuFix();
+            v8CheckCount++;
+            if (v8CheckCount > 15) clearInterval(v8CheckInterval);
+        }
+    }, 800);
+
+    console.log('✅ V8 Comprehensive Fix loaded: Admin Menu + User Overtime Detail + Admin CC');
+})();
+</script>
+<!-- ================= END V8 FIX ================= -->
 <!-- ================= V7.5 ADMIN CONTROL CENTER FREEZE FIX ================= -->
 <script id="v75AdminFreezeFix">
 (function(){
@@ -9197,3 +10099,304 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V7.5 FIX ================= -->
+<!-- ================= V8 COMPREHENSIVE FIX ================= -->
+<script id="v8ComprehensiveFix">
+(function(){
+    'use strict';
+
+    /* ===========================================================
+       FIX 1: ADMIN MENU — Hilangkan Entry Overtime & Propose Leave
+       =========================================================== */
+    function applyMenuFix() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+        const formLi    = document.getElementById('overtimeFormMenuItem');
+        const proposeLi = document.getElementById('proposeLeaveMenuItem');
+        const detailLi  = document.getElementById('overtimeDetailMenuItem');
+        const leaveLi   = document.getElementById('myLeaveHistoryMenuItem');
+
+        if (isAdmin) {
+            // Admin: TIDAK perlu Entry Overtime & Propose Leave
+            if (formLi)    formLi.style.display    = 'none';
+            if (proposeLi) proposeLi.style.display  = 'none';
+            // Admin tetap bisa lihat Overtime Detail & My Leave History
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        } else {
+            // User biasa: tampilkan semua menu General
+            if (formLi)    formLi.style.display    = 'flex';
+            if (proposeLi) proposeLi.style.display  = 'flex';
+            if (detailLi)  detailLi.style.display   = 'flex';
+            if (leaveLi)   leaveLi.style.display    = 'flex';
+        }
+    }
+
+    // Override setupMenuByRole agar fix menu selalu diterapkan
+    const _prevSetupMenu = window.setupMenuByRole;
+    window.setupMenuByRole = function(role) {
+        if (typeof _prevSetupMenu === 'function') {
+            try { _prevSetupMenu(role); } catch(e) { console.warn('setupMenuByRole base error', e); }
+        }
+        setTimeout(applyMenuFix, 0);
+        setTimeout(applyMenuFix, 200);
+    };
+
+    // Safety: terapkan fix menu setiap kali sidebar diklik
+    document.addEventListener('click', function() {
+        setTimeout(applyMenuFix, 50);
+    });
+
+
+    /* ===========================================================
+       FIX 2: USER OVERTIME DETAIL — Tampilkan data sesuai user login
+       =========================================================== */
+    async function loadUserOvertimeDetail() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        if (isAdmin) return; // Admin sudah ditangani oleh fungsi asli
+
+        // Pastikan tab pane terlihat
+        const pane = document.getElementById('overtime-detail-admin');
+        if (pane) {
+            pane.style.display = 'block';
+            pane.style.visibility = 'visible';
+            pane.classList.add('show', 'active');
+        }
+
+        // Sembunyikan filter employee untuk user biasa
+        const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+        if (filterWrap) filterWrap.style.display = 'none';
+
+        // Ubah judul untuk user
+        const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+        if (collapsible) collapsible.innerHTML = 'My Overtime Detail <i class="fas fa-chevron-down"></i>';
+
+        try {
+            const snap = await db.collection('overtimeRecords')
+                .where('employeeEmail', '==', currentUser.email)
+                .get();
+
+            const records = [];
+            snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+            records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+            const tbody = document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Belum ada data overtime untuk akun Anda.</td></tr>';
+                const total = document.getElementById('adminTotalOvertimeValue');
+                if (total) total.textContent = '00:00';
+                return;
+            }
+
+            let no = 1, totalMinutes = 0;
+            records.forEach(record => {
+                const duration = String(record.overtimeDuration || '00:00');
+                const dm = duration.match(/^(\d+):(\d+)$/);
+                if (dm) totalMinutes += (+dm[1]) * 60 + (+dm[2]);
+
+                const rows = (record.tableData && record.tableData.length) ? record.tableData : [{}];
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (no++) + '</td>' +
+                        '<td>' + (record.employeeName || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.date || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.startTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.endTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? duration : '') + '</td>' +
+                        '<td>' + (row.totalProject || '') + '</td>' +
+                        '<td>' + (row.totalPlant || '') + '</td>' +
+                        '<td>' + (row.plantNames || '') + '</td>' +
+                        '<td>' + (row.volume || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.taskDescription || '') : '') + '</td>' +
+                        '<td>-</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+
+            const total = document.getElementById('adminTotalOvertimeValue');
+            if (total) {
+                total.textContent =
+                    String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' +
+                    String(totalMinutes % 60).padStart(2, '0');
+            }
+        } catch (err) {
+            console.error('V8 User Overtime Detail error:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('Gagal memuat data overtime: ' + (err.message || err), 'error');
+            }
+        }
+    }
+
+    // Hook klik menu Overtime Detail
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab="overtime-detail-admin"]');
+        if (!link) return;
+
+        setTimeout(async () => {
+            if (!window.currentUser) return;
+            const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+
+            if (!isAdmin) {
+                await loadUserOvertimeDetail();
+            } else {
+                // Admin: pastikan filter tampil dan load semua data
+                const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+                if (filterWrap) filterWrap.style.display = 'flex';
+                const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+                if (collapsible) collapsible.innerHTML = 'Overtime Detail <i class="fas fa-chevron-down"></i>';
+                // Panggil fungsi asli jika ada
+                if (typeof window.loadAllOvertimeData === 'function') {
+                    try { await window.loadAllOvertimeData(); } catch(err) { console.warn(err); }
+                }
+            }
+        }, 150);
+    }, true);
+
+
+    /* ===========================================================
+       FIX 3: ADMIN CONTROL CENTER — Pastikan panel bisa dibuka
+       =========================================================== */
+    const ADMIN_CC_TABS = [
+        'analytics', 'online-monitor', 'activity-score',
+        'audit-logs', 'approval-center', 'notification-center',
+        'reports', 'role-permissions', 'system-health', 'data-management'
+    ];
+
+    const ADMIN_SHELL_IDS = {
+        'analytics':         'analyticsShell',
+        'online-monitor':    'onlineMonitorShell',
+        'activity-score':    'activityScoreShell',
+        'notification-center': 'notificationCenterShell',
+        'admin-activity':    'adminActivityShell'
+    };
+
+    // Tab-pane yang merupakan bagian dari Admin Control Center (JANGAN di-hide)
+    const ADMIN_TAB_PANE_IDS = [
+        'audit-logs', 'approval-center', 'reports',
+        'role-permissions', 'system-health', 'data-management'
+    ];
+
+    function ensureAdminPanelVisible(tab) {
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // 1. Tampilkan shell-based panels (Dashboard Analytics, Online Monitor, dll.)
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell) {
+                shell.style.display = 'block';
+                shell.style.visibility = 'visible';
+                shell.style.opacity = '1';
+                shell.classList.add('active');
+            }
+        }
+
+        // 2. Tampilkan tab-pane based panels (Audit Logs, Approval, dll.)
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane) {
+                pane.style.display = 'block';
+                pane.style.visibility = 'visible';
+                pane.style.opacity = '1';
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        // 3. Sembunyikan filter tanggal yang tidak relevan
+        ['filterSectionMain', 'filterSectionOvertimeOutput', 'filterSectionAbsenTabel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // 4. Sembunyikan dashboard shell biasa
+        const dashShell = document.getElementById('dashboardShell');
+        if (dashShell && tab !== 'dashboard') dashShell.classList.remove('active');
+    }
+
+    // Override hideLegacyForAdmin agar TIDAK menyembunyikan panel Admin CC
+    const _origHideLegacy = window.hideLegacyForAdmin;
+    window.hideLegacyForAdmin = function() {
+        if (typeof _origHideLegacy === 'function') {
+            try { _origHideLegacy(); } catch(e) {}
+        }
+        // Segera kembalikan panel admin yang aktif
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const tab = activeLink.getAttribute('data-tab');
+            if (ADMIN_CC_TABS.includes(tab)) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    };
+
+    // Hook klik untuk semua tab Admin CC
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab]');
+        if (!link) return;
+        const tab = link.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Pastikan panel terlihat setelah semua handler lain selesai
+        setTimeout(() => ensureAdminPanelVisible(tab), 30);
+        setTimeout(() => ensureAdminPanelVisible(tab), 100);
+        setTimeout(() => ensureAdminPanelVisible(tab), 250);
+        setTimeout(() => ensureAdminPanelVisible(tab), 500);
+    }, false);
+
+    // MutationObserver: safety net jika panel admin di-hide oleh patch lain
+    const v8Observer = new MutationObserver(function() {
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (!activeLink) return;
+        const tab = activeLink.getAttribute('data-tab');
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // Cek apakah panel admin sedang tersembunyi
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell && (shell.style.display === 'none' || !shell.classList.contains('active'))) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane && pane.style.display === 'none') {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    });
+
+    v8Observer.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+
+    /* ===========================================================
+       INITIALIZATION — Terapkan fix saat DOM ready & setelah login
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(applyMenuFix, 500);
+        setTimeout(applyMenuFix, 1500);
+    });
+
+    // Periodic check untuk memastikan menu fix tetap berlaku setelah login
+    let v8CheckCount = 0;
+    const v8CheckInterval = setInterval(function() {
+        if (window.currentUser) {
+            applyMenuFix();
+            v8CheckCount++;
+            if (v8CheckCount > 15) clearInterval(v8CheckInterval);
+        }
+    }, 800);
+
+    console.log('✅ V8 Comprehensive Fix loaded: Admin Menu + User Overtime Detail + Admin CC');
+})();
+</script>
+<!-- ================= END V8 FIX ================= -->
