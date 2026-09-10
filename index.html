@@ -10400,3 +10400,294 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V8 FIX ================= -->
+<!-- ================= V9 FINAL COMPREHENSIVE FIX ================= -->
+<script id="v9FinalFix">
+(function(){
+    'use strict';
+
+    console.log('🚀 V9 Final Comprehensive Fix starting...');
+
+    /* ===========================================================
+       FIX 1: NONAKTIFKAN MUTATION OBSERVER DARI V7.4
+       =========================================================== */
+    // Disconnect semua MutationObserver yang ada
+    const existingObservers = [];
+    const originalObserve = MutationObserver.prototype.observe;
+    MutationObserver.prototype.observe = function(target, options) {
+        const observer = this;
+        existingObservers.push(observer);
+        return originalObserve.call(this, target, options);
+    };
+
+    // Disconnect semua observer setelah 2 detik
+    setTimeout(() => {
+        existingObservers.forEach(obs => {
+            try { obs.disconnect(); } catch(e) {}
+        });
+        console.log('✅ V9: Disconnected', existingObservers.length, 'MutationObservers');
+    }, 2000);
+
+
+    /* ===========================================================
+       FIX 2: OVERRIDE FUNGSI MENU RESTORE DARI V7.2 & V7.3
+       =========================================================== */
+    function applyCorrectMenuVisibility() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        
+        const formLi = document.getElementById('overtimeFormMenuItem');
+        const proposeLi = document.getElementById('proposeLeaveMenuItem');
+        const detailLi = document.getElementById('overtimeDetailMenuItem');
+        const leaveLi = document.getElementById('myLeaveHistoryMenuItem');
+
+        if (isAdmin) {
+            // ADMIN: TIDAK perlu Entry Overtime & Propose Leave
+            if (formLi) formLi.style.display = 'none';
+            if (proposeLi) proposeLi.style.display = 'none';
+            // Admin tetap bisa lihat Overtime Detail & My Leave History
+            if (detailLi) detailLi.style.display = 'flex';
+            if (leaveLi) leaveLi.style.display = 'flex';
+        } else {
+            // USER: tampilkan semua menu General
+            if (formLi) formLi.style.display = 'flex';
+            if (proposeLi) proposeLi.style.display = 'flex';
+            if (detailLi) detailLi.style.display = 'flex';
+            if (leaveLi) leaveLi.style.display = 'flex';
+        }
+    }
+
+    // Override setupMenuByRole
+    const _prevSetup = window.setupMenuByRole;
+    window.setupMenuByRole = function(role) {
+        if (typeof _prevSetup === 'function') {
+            try { _prevSetup(role); } catch(e) {}
+        }
+        setTimeout(applyCorrectMenuVisibility, 100);
+        setTimeout(applyCorrectMenuVisibility, 500);
+        setTimeout(applyCorrectMenuVisibility, 1500);
+    };
+
+
+    /* ===========================================================
+       FIX 3: USER OVERTIME DETAIL - LOAD DATA DENGAN BENAR
+       =========================================================== */
+    async function loadUserOvertimeCorrectly() {
+        if (!window.currentUser) return;
+        const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+        if (isAdmin) return;
+
+        // Pastikan tab pane terlihat
+        const pane = document.getElementById('overtime-detail-admin');
+        if (pane) {
+            pane.style.display = 'block';
+            pane.style.visibility = 'visible';
+            pane.style.opacity = '1';
+            pane.classList.add('show', 'active');
+        }
+
+        // Sembunyikan filter untuk user
+        const filterWrap = document.querySelector('#overtime-detail-admin .overtime-filter');
+        if (filterWrap) filterWrap.style.display = 'none';
+
+        // Ubah judul
+        const collapsible = document.querySelector('#overtime-detail-admin .collapsible');
+        if (collapsible) collapsible.innerHTML = 'My Overtime Detail <i class="fas fa-chevron-down"></i>';
+
+        try {
+            console.log('📊 V9: Loading overtime for user:', currentUser.email);
+            
+            const snap = await db.collection('overtimeRecords')
+                .where('employeeEmail', '==', currentUser.email)
+                .get();
+
+            const records = [];
+            snap.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+            
+            console.log('📊 V9: Found', records.length, 'overtime records');
+            
+            records.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+            const tbody = document.getElementById('adminOvertimeDetailTableBody');
+            if (!tbody) {
+                console.error('❌ V9: adminOvertimeDetailTableBody not found');
+                return;
+            }
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">Belum ada data overtime untuk akun Anda.</td></tr>';
+                const total = document.getElementById('adminTotalOvertimeValue');
+                if (total) total.textContent = '00:00';
+                return;
+            }
+
+            let no = 1, totalMinutes = 0;
+            records.forEach(record => {
+                const duration = String(record.overtimeDuration || '00:00');
+                const dm = duration.match(/^(\d+):(\d+)$/);
+                if (dm) totalMinutes += (+dm[1]) * 60 + (+dm[2]);
+
+                const rows = (record.tableData && record.tableData.length) ? record.tableData : [{}];
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (no++) + '</td>' +
+                        '<td>' + (record.employeeName || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.date || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.startTime || '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.endTime || '') : '') : '') + '</td>' +
+                        '<td>' + (index === 0 ? duration : '') + '</td>' +
+                        '<td>' + (row.totalProject || '') + '</td>' +
+                        '<td>' + (row.totalPlant || '') + '</td>' +
+                        '<td>' + (row.plantNames || '') + '</td>' +
+                        '<td>' + (row.volume || '') + '</td>' +
+                        '<td>' + (index === 0 ? (record.taskDescription || '') : '') + '</td>' +
+                        '<td>-</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+
+            const total = document.getElementById('adminTotalOvertimeValue');
+            if (total) {
+                total.textContent =
+                    String(Math.floor(totalMinutes / 60)).padStart(2, '0') + ':' +
+                    String(totalMinutes % 60).padStart(2, '0');
+            }
+            
+            console.log('✅ V9: User overtime detail loaded successfully');
+        } catch (err) {
+            console.error('❌ V9 User Overtime Detail error:', err);
+            if (typeof showNotification === 'function') {
+                showNotification('Gagal memuat data overtime: ' + (err.message || err), 'error');
+            }
+        }
+    }
+
+
+    /* ===========================================================
+       FIX 4: ADMIN CONTROL CENTER - PASTIKAN PANEL TERBUKA
+       =========================================================== */
+    const ADMIN_CC_TABS = [
+        'analytics', 'online-monitor', 'activity-score',
+        'audit-logs', 'approval-center', 'notification-center',
+        'reports', 'role-permissions', 'system-health', 'data-management'
+    ];
+
+    const ADMIN_SHELL_IDS = {
+        'analytics': 'analyticsShell',
+        'online-monitor': 'onlineMonitorShell',
+        'activity-score': 'activityScoreShell',
+        'notification-center': 'notificationCenterShell',
+        'admin-activity': 'adminActivityShell'
+    };
+
+    const ADMIN_TAB_PANE_IDS = [
+        'audit-logs', 'approval-center', 'reports',
+        'role-permissions', 'system-health', 'data-management'
+    ];
+
+    function ensureAdminPanelVisible(tab) {
+        if (!ADMIN_CC_TABS.includes(tab)) return;
+
+        // 1. Tampilkan shell-based panels
+        const shellId = ADMIN_SHELL_IDS[tab];
+        if (shellId) {
+            const shell = document.getElementById(shellId);
+            if (shell) {
+                shell.style.display = 'block';
+                shell.style.visibility = 'visible';
+                shell.style.opacity = '1';
+                shell.classList.add('active');
+            }
+        }
+
+        // 2. Tampilkan tab-pane based panels
+        if (ADMIN_TAB_PANE_IDS.includes(tab)) {
+            const pane = document.getElementById(tab);
+            if (pane) {
+                pane.style.display = 'block';
+                pane.style.visibility = 'visible';
+                pane.style.opacity = '1';
+                pane.classList.add('show', 'active');
+            }
+        }
+
+        // 3. Sembunyikan filter yang tidak relevan
+        ['filterSectionMain', 'filterSectionOvertimeOutput', 'filterSectionAbsenTabel'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+
+    // Override hideLegacyForAdmin
+    const _origHideLegacy = window.hideLegacyForAdmin;
+    window.hideLegacyForAdmin = function() {
+        if (typeof _origHideLegacy === 'function') {
+            try { _origHideLegacy(); } catch(e) {}
+        }
+        // Segera kembalikan panel admin yang aktif
+        const activeLink = document.querySelector('.sidebar-menu a.active[data-tab]');
+        if (activeLink) {
+            const tab = activeLink.getAttribute('data-tab');
+            if (ADMIN_CC_TABS.includes(tab)) {
+                ensureAdminPanelVisible(tab);
+            }
+        }
+    };
+
+
+    /* ===========================================================
+       FIX 5: EVENT LISTENERS
+       =========================================================== */
+    // Hook klik menu
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-tab]');
+        if (!link) return;
+        const tab = link.getAttribute('data-tab');
+
+        // Menu fix
+        setTimeout(applyCorrectMenuVisibility, 50);
+
+        // User Overtime Detail
+        if (tab === 'overtime-detail-admin') {
+            setTimeout(async () => {
+                if (!window.currentUser) return;
+                const isAdmin = String(window.currentUser.role || '').toLowerCase() === 'admin';
+                if (!isAdmin) {
+                    await loadUserOvertimeCorrectly();
+                }
+            }, 200);
+        }
+
+        // Admin Control Center
+        if (ADMIN_CC_TABS.includes(tab)) {
+            setTimeout(() => ensureAdminPanelVisible(tab), 100);
+            setTimeout(() => ensureAdminPanelVisible(tab), 300);
+            setTimeout(() => ensureAdminPanelVisible(tab), 600);
+        }
+    }, false);
+
+
+    /* ===========================================================
+       INITIALIZATION
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(applyCorrectMenuVisibility, 500);
+        setTimeout(applyCorrectMenuVisibility, 1500);
+        setTimeout(applyCorrectMenuVisibility, 3000);
+    });
+
+    // Periodic check
+    let v9CheckCount = 0;
+    const v9CheckInterval = setInterval(function() {
+        if (window.currentUser) {
+            applyCorrectMenuVisibility();
+            v9CheckCount++;
+            if (v9CheckCount > 20) clearInterval(v9CheckInterval);
+        }
+    }, 1000);
+
+    console.log('✅ V9 Final Comprehensive Fix loaded successfully');
+})();
+</script>
+<!-- ================= END V9 FIX ================= -->
