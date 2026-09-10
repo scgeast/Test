@@ -10691,3 +10691,130 @@ function updateTotalOvertime(filteredData = null) {
 })();
 </script>
 <!-- ================= END V9 FIX ================= -->
+<!-- ================= V10 OVERTIME DETAIL TABLE ID FIX ================= -->
+<script id="v10OvertimeDetailFix">
+(function(){
+    'use strict';
+    
+    console.log('🔧 V10: Fixing overtimeDetailTableBody ID mismatch...');
+    
+    // Override fungsi updateOvertimeDetailTable yang bermasalah
+    window.updateOvertimeDetailTable = function() {
+        // PERBAIKAN: Gunakan ID yang benar
+        const tbody = document.getElementById('adminOvertimeDetailTableBody');
+        if (!tbody) {
+            console.warn('V10: adminOvertimeDetailTableBody not found');
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        // Filter data berdasarkan date range
+        const startDate = document.getElementById('startDateOvertimeOutput')?.valueAsDate;
+        const endDate = document.getElementById('endDateOvertimeOutput')?.valueAsDate;
+        
+        // Filter yang lebih ketat berdasarkan user
+        let filteredData = window.rekapLemburData || [];
+        
+        if (window.currentUser && window.currentUser.role === 'admin') {
+            const employeeFilter = document.getElementById('adminOvertimeEmployeeFilter')?.value || 'all';
+            if (employeeFilter !== 'all') {
+                filteredData = filteredData.filter(record => record.employeeName === employeeFilter);
+            }
+        } else if (window.currentUser) {
+            // User biasa: hanya tampilkan data miliknya sendiri
+            filteredData = filteredData.filter(record => 
+                record.employeeEmail === window.currentUser.email
+            );
+        }
+        
+        // Filter berdasarkan date range
+        if (startDate && endDate) {
+            filteredData = filteredData.filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate >= startDate && recordDate <= endDate;
+            });
+        }
+        
+        if (filteredData.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="12" class="text-center">No overtime data found</td>`;
+            tbody.appendChild(row);
+            return;
+        }
+        
+        let rowNumber = 1;
+        filteredData.forEach(record => {
+            if (record.tableData && record.tableData.length > 0) {
+                record.tableData.forEach((tableRow, index) => {
+                    const row = document.createElement('tr');
+                    if (window.currentUser && window.currentUser.role === 'user') {
+                        row.classList.add('user-overtime-detail');
+                    }
+                    row.innerHTML = `
+                        <td>${rowNumber++}</td>
+                        <td>${record.employeeName || ''}</td>
+                        <td>${index === 0 ? (record.date || '') : ''}</td>
+                        <td>${index === 0 ? (record.startTime || '') : ''}</td>
+                        <td>${index === 0 ? (record.endTime || '') : ''}</td>
+                        <td>${index === 0 ? (record.overtimeDuration || '') : ''}</td>
+                        <td>${tableRow.totalProject || ''}</td>
+                        <td>${tableRow.totalPlant || ''}</td>
+                        <td>${tableRow.plantNames || ''}</td>
+                        <td>${tableRow.volume || ''}</td>
+                        <td>${index === 0 ? (record.taskDescription || '') : ''}</td>
+                        <td class="overtime-action-buttons">
+                            ${window.currentUser && window.currentUser.role === 'admin' ? `
+                                <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                if (window.currentUser && window.currentUser.role === 'user') {
+                    row.classList.add('user-overtime-detail');
+                }
+                row.innerHTML = `
+                    <td>${rowNumber++}</td>
+                    <td>${record.employeeName || ''}</td>
+                    <td>${record.date || ''}</td>
+                    <td>${record.startTime || ''}</td>
+                    <td>${record.endTime || ''}</td>
+                    <td>${record.overtimeDuration || ''}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>${record.taskDescription || ''}</td>
+                    <td class="overtime-action-buttons">
+                        ${window.currentUser && window.currentUser.role === 'admin' ? `
+                            <button class="btn-edit-overtime" onclick="editOvertimeDetail('${record.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-delete-overtime" onclick="deleteOvertimeDetail('${record.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        });
+        
+        // Update total overtime
+        if (typeof updateTotalOvertime === 'function') {
+            updateTotalOvertime(filteredData);
+        }
+    };
+    
+    console.log('✅ V10: Overtime detail table ID fix applied');
+})();
+</script>
+<!-- ================= END V10 FIX ================= -->
