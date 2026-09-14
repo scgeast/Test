@@ -8802,6 +8802,96 @@ return result;
 </script>
 
 
+
+<!-- FINAL SIDEBAR TOGGLE FIX -->
+<style id="finalSidebarToggleFix">
+@media (max-width: 991.98px) {
+  #mobileMenuToggle {
+    display:flex !important;
+    position:fixed !important;
+    z-index:2147483000 !important;
+    pointer-events:auto !important;
+    touch-action:manipulation !important;
+  }
+  #sidebar.mobile-open { transform:translate3d(0,0,0) !important; visibility:visible !important; }
+  #sidebar:not(.mobile-open) { transform:translate3d(-110%,0,0) !important; }
+  #sidebarBackdrop.mobile-open { display:block !important; z-index:2147482998 !important; }
+  #sidebar { z-index:2147482999 !important; }
+}
+@media (min-width: 992px) {
+  #sidebar #sidebarToggle {
+    pointer-events:auto !important;
+    z-index:2147483000 !important;
+  }
+}
+</style>
+<script id="finalSidebarToggleFixScript">
+(function(){
+  'use strict';
+  function els(){
+    return {
+      sidebar:document.getElementById('sidebar'),
+      mobile:document.getElementById('mobileMenuToggle'),
+      backdrop:document.getElementById('sidebarBackdrop'),
+      desktop:document.getElementById('sidebarToggle'),
+      main:document.getElementById('mainContent'),
+      pass:document.getElementById('userPasswordSection')
+    };
+  }
+  function mobile(){ return window.innerWidth < 992; }
+  function setDesktop(open){
+    var e=els(); if(!e.sidebar) return;
+    e.sidebar.classList.toggle('expanded',!!open);
+    if(e.main) e.main.classList.toggle('expanded',!!open);
+    document.body.classList.toggle('header-expanded',!!open);
+    if(e.pass) e.pass.classList.toggle('expanded',!!open);
+    if(e.desktop) e.desktop.setAttribute('aria-expanded',open?'true':'false');
+  }
+  function setMobile(open){
+    var e=els(); if(!e.sidebar) return;
+    e.sidebar.classList.toggle('mobile-open',!!open);
+    if(e.backdrop) e.backdrop.classList.toggle('mobile-open',!!open);
+    if(e.mobile) e.mobile.setAttribute('aria-expanded',open?'true':'false');
+  }
+  function bind(){
+    var e=els();
+    if(e.mobile){
+      e.mobile.type='button';
+      e.mobile.setAttribute('aria-expanded','false');
+      e.mobile.setAttribute('aria-label','Buka menu');
+    }
+    if(e.desktop){
+      e.desktop.type='button';
+      e.desktop.setAttribute('aria-expanded',e.sidebar&&e.sidebar.classList.contains('expanded')?'true':'false');
+    }
+  }
+  /* Capture phase makes this reliable even if older handlers call stopPropagation(). */
+  document.addEventListener('click',function(ev){
+    var t=ev.target && ev.target.closest ? ev.target.closest('#mobileMenuToggle, #sidebarToggle, #sidebarBackdrop') : null;
+    if(!t) return;
+    var e=els();
+    if(t.id==='mobileMenuToggle'){
+      ev.preventDefault(); ev.stopPropagation();
+      if(mobile()) setMobile(!(e.sidebar && e.sidebar.classList.contains('mobile-open')));
+    } else if(t.id==='sidebarToggle'){
+      ev.preventDefault(); ev.stopPropagation();
+      if(!mobile()) setDesktop(!(e.sidebar && e.sidebar.classList.contains('expanded')));
+    } else if(t.id==='sidebarBackdrop'){
+      ev.preventDefault(); ev.stopPropagation(); setMobile(false);
+    }
+  },true);
+  document.addEventListener('keydown',function(ev){
+    if(ev.key==='Escape'){
+      if(mobile()) setMobile(false);
+    }
+  },true);
+  window.addEventListener('resize',function(){
+    if(!mobile()) setMobile(false);
+  },{passive:true});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+})();
+</script>
+
 <script id="android-pwa-register">
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', function () {
