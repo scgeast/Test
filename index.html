@@ -8803,6 +8803,50 @@ return result;
 
 
 
+<!-- LOGIN STATE: keep sidebar controls completely hidden until successful login -->
+<style id="loginSidebarVisibilityFix">
+  /* The hamburger must NEVER appear on the login screen. */
+  body.login-screen #mobileMenuToggle,
+  body.login-screen #sidebarBackdrop,
+  body.login-screen #sidebar,
+  #mobileMenuToggle.login-hidden,
+  #sidebarBackdrop.login-hidden { display:none !important; }
+</style>
+<script id="loginSidebarVisibilityFixScript">
+(function(){
+  'use strict';
+  function syncLoginSidebar(){
+    var login=document.getElementById('loginContainer');
+    var mobile=document.getElementById('mobileMenuToggle');
+    var backdrop=document.getElementById('sidebarBackdrop');
+    var sidebar=document.getElementById('sidebar');
+    if(!login) return;
+    /* Login is considered active whenever the login container is visible. */
+    var cs=window.getComputedStyle(login);
+    var loginVisible=cs.display !== 'none' && cs.visibility !== 'hidden' && login.getAttribute('aria-hidden') !== 'true';
+    document.body.classList.toggle('login-screen', loginVisible);
+    if(mobile) mobile.classList.toggle('login-hidden', loginVisible);
+    if(backdrop) backdrop.classList.toggle('login-hidden', loginVisible);
+    if(loginVisible){
+      if(sidebar) sidebar.classList.remove('mobile-open','expanded');
+      if(backdrop) backdrop.classList.remove('mobile-open');
+    }
+  }
+  function init(){
+    syncLoginSidebar();
+    var login=document.getElementById('loginContainer');
+    if(login){
+      new MutationObserver(syncLoginSidebar).observe(login,{attributes:true,attributeFilter:['style','class','aria-hidden']});
+    }
+    window.addEventListener('resize',syncLoginSidebar,{passive:true});
+    /* Also sync after Firebase login/logout handlers update the DOM. */
+    setInterval(syncLoginSidebar,1000);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
+</script>
+
 <!-- FINAL SIDEBAR TOGGLE FIX -->
 <style id="finalSidebarToggleFix">
 @media (max-width: 991.98px) {
