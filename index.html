@@ -1407,6 +1407,15 @@ function renderAnalytics(){
 
     /* ===================== MORE / UTILITIES ===================== */
 var moreWorkspace=document.getElementById('moreWorkspace');
+
+var modal=document.getElementById('modal');
+var formTx=document.getElementById('formTx');
+var fType=document.getElementById('fType'),fEditId=document.getElementById('fEditId');
+var fAmount=document.getElementById('fAmount'),fCat=document.getElementById('fCat');
+var fDate=document.getElementById('fDate'),fTime=document.getElementById('fTime');
+var fNote=document.getElementById('fNote');
+var tBtnIn=document.getElementById('tBtnIn'),tBtnOut=document.getElementById('tBtnOut');
+    
 var DEFAULT_ACCOUNTS=[{id:'cash',name:'Cash',icon:'fa-money-bill-wave'},{id:'bank',name:'Bank',icon:'fa-building-columns'},{id:'ewallet',name:'E-Wallet',icon:'fa-mobile-screen-button'}];
 
 function accountsStorageKey(){return 'duitku_accounts_'+(selectedOwnerUid||'default');}
@@ -1729,15 +1738,6 @@ document.addEventListener('click',function(e){
     var btn=e.target.closest('.more-open');
     if(btn){var view=btn.getAttribute('data-view');if(view)openMoreView(view);}
 });
-
-/* ===================== MODAL ===================== */
-var modal=document.getElementById('modal');
-var formTx=document.getElementById('formTx');
-var fType=document.getElementById('fType'),fEditId=document.getElementById('fEditId');
-var fAmount=document.getElementById('fAmount'),fCat=document.getElementById('fCat');
-var fDate=document.getElementById('fDate'),fTime=document.getElementById('fTime');
-var fNote=document.getElementById('fNote');
-var tBtnIn=document.getElementById('tBtnIn'),tBtnOut=document.getElementById('tBtnOut');
 
 function openModal(editTx){
     modal.classList.add('show');
