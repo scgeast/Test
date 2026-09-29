@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AKM System</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏗️</text></svg>">
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
@@ -22,11 +23,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;color:#333;font
 .sidebar .menu-item.active{background:#34495e;border-left-color:#e74c3c}
 .sidebar .menu-group{padding:10px 18px 4px;font-size:10px;color:#95a5a6;text-transform:uppercase}
 .main{flex:1;padding:16px 20px;overflow-x:auto}
-.card{background:#fff;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px}
+.card{background:#fff;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px;overflow:hidden}
 .card-header{padding:10px 16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
 .card-header h3{font-size:14px;color:#333}
 .card-body{padding:16px}
-.red-bar{background:#e74c3c;color:#fff;padding:8px 16px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600}
+.red-bar{background:#e74c3c;color:#fff;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600}
 .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
 .form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .form-group label{font-size:11px;color:#666;font-weight:600}
@@ -62,8 +63,8 @@ table tbody tr:hover{background:#fffbfb}
 .kpi-card .kpi-value{font-size:20px;font-weight:bold;color:#2c3e50}
 .kpi-card .kpi-sub{font-size:10px;color:#27ae60;margin-top:4px}
 .modal-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:9999;padding:20px}
-.modal{background:#fff;border-radius:8px;width:480px;max-width:100%;max-height:90vh;overflow-y:auto}
-.modal-header{padding:12px 20px;background:#e74c3c;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0}
+.modal{background:#fff;border-radius:8px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto}
+.modal-header{padding:12px 20px;background:#e74c3c;color:#fff;display:flex;justify-content:space-between;align-items:center}
 .modal-header h3{font-size:14px}
 .modal-header .close{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1}
 .modal-body{padding:16px 20px}
@@ -82,32 +83,32 @@ table tbody tr:hover{background:#fffbfb}
 <body>
 <div id="root"></div>
 <script>
-/* ========== REACT HELPERS ========== */
 const {useState,useEffect,useMemo,createContext,useContext} = React;
 const h = React.createElement;
 const F = React.Fragment;
 
-/* ========== DB LOCALSTORAGE ========== */
+/* ========== DB ========== */
 const MEM = {};
 const DB = {
-  get(key, def=[]) {
-    try { const v = localStorage.getItem('akm_'+key); if (v!==null) return JSON.parse(v); }
-    catch(e){}
+  get: function(key, def){
+    if(def===undefined) def=[];
+    try { const v = localStorage.getItem('akm_'+key); if (v!==null) return JSON.parse(v); } catch(e){}
     return MEM[key]!==undefined ? MEM[key] : def;
   },
-  set(key, val) {
+  set: function(key, val){
     MEM[key] = val;
     try { localStorage.setItem('akm_'+key, JSON.stringify(val)); } catch(e){}
   },
-  nextId(key) {
+  nextId: function(key){
     const arr = DB.get(key);
-    return arr.length ? Math.max.apply(null, arr.map(x=>x.id))+1 : 1;
+    return arr.length ? Math.max.apply(null, arr.map(function(x){return x.id;}))+1 : 1;
   }
 };
 
-/* ========== SEED DATA ========== */
-function seed() {
-  if (DB.get('seeded')) return;
+/* ========== SEED (FIXED) ========== */
+function seed(){
+  if (DB.get('seeded', false) === true) return;
+  console.log('Seed: membuat data awal...');
   DB.set('users', [
     {id:1,user_id:'OWN001',nama:'Owner AKM',email:'owner@akm.com',password:'admin123',role:'owner',aktif:true},
     {id:2,user_id:'ADM001',nama:'Sari Admin',email:'sari@akm.com',password:'admin123',role:'admin',plant_default:'J4MG',aktif:true},
@@ -149,42 +150,37 @@ function seed() {
   ]);
   DB.set('order_request', []);
   DB.set('seeded', true);
+  console.log('Seed: selesai. Total users: '+DB.get('users').length);
 }
 
 /* ========== HELPERS ========== */
 function fmtRp(n){ return 'Rp '+(n||0).toLocaleString('id-ID'); }
-function fmtDate(s){
-  if(!s) return '-';
-  try { return new Date(s).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
-  catch(e){ return s; }
-}
+function fmtDate(s){ if(!s) return '-'; try { return new Date(s).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return s; } }
 function monthName(m){ return ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][m]; }
 function genKode(prefix, arr){ return prefix+'-'+new Date().getFullYear()+'-'+String(arr.length+1).padStart(4,'0'); }
 
-/* ========== AUTH CONTEXT ========== */
 const AuthContext = createContext(null);
-const useAuth = () => useContext(AuthContext);
+const useAuth = function(){ return useContext(AuthContext); };
 
 /* ========== APP ========== */
 function App(){
-  seed();
+  useEffect(function(){ seed(); }, []);
   const [user, setUser] = useState(function(){
-    try { const u = localStorage.getItem('akm_current_user'); return u ? JSON.parse(u) : null; }
-    catch(e){ return null; }
+    try { const u = localStorage.getItem('akm_current_user'); return u ? JSON.parse(u) : null; } catch(e){ return null; }
   });
   const [page, setPage] = useState('dashboard');
   const [toast, setToast] = useState(null);
   const [filter, setFilter] = useState({month:new Date().getMonth()+1, year:new Date().getFullYear()});
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const refresh = () => setRefreshKey(k=>k+1);
-  const showToast = (msg,type) => setToast({msg:msg, type:type||'success'});
-  const login = (u) => {
+  const refresh = function(){ setRefreshKey(function(k){return k+1;}); };
+  const showToast = function(msg,type){ setToast({msg:msg, type:type||'success'}); };
+  const login = function(u){
     setUser(u);
     try { localStorage.setItem('akm_current_user', JSON.stringify(u)); } catch(e){}
     setPage(u.role==='customer' ? 'customer-dash' : 'dashboard');
   };
-  const logout = () => {
+  const logout = function(){
     setUser(null);
     try { localStorage.removeItem('akm_current_user'); } catch(e){}
     setPage('dashboard');
@@ -226,7 +222,6 @@ function App(){
   );
 }
 
-/* ========== TOAST ========== */
 function Toast(props){
   useEffect(function(){
     const t = setTimeout(props.onClose, 2500);
@@ -235,7 +230,6 @@ function Toast(props){
   return h('div',{className:'toast '+(props.type==='error'?'error':'')}, props.msg);
 }
 
-/* ========== LOGIN ========== */
 function LoginPage(props){
   const [email, setEmail] = useState('owner@akm.com');
   const [password, setPassword] = useState('admin123');
@@ -244,6 +238,7 @@ function LoginPage(props){
   const submit = function(e){
     e.preventDefault();
     const users = DB.get('users');
+    console.log('Login attempt:', email, '| Total users:', users.length);
     const u = users.find(function(x){ return x.email===email && x.password===password && x.aktif; });
     if(u) props.onLogin(u);
     else setError('Email/password salah');
@@ -274,63 +269,27 @@ function LoginPage(props){
   );
 }
 
-/* ========== SIDEBAR ========== */
 function Sidebar(props){
   const menus = {
-    owner: [
-      {group:'MAIN'},
-      {id:'dashboard', icon:'🏠', label:'Dashboard'},
-      {id:'order', icon:'📦', label:'Order'},
-      {group:'MASTER'},
-      {id:'users', icon:'👤', label:'Kelola User'},
-      {id:'customer', icon:'🏢', label:'Customer'},
-      {id:'truck', icon:'🚛', label:'Truck'},
-      {id:'mutu', icon:'🧪', label:'Mutu Beton'}
-    ],
-    admin: [
-      {group:'MAIN'},
-      {id:'dashboard', icon:'🏠', label:'Dashboard'},
-      {id:'order', icon:'📦', label:'Order'},
-      {id:'prospek', icon:'📋', label:'Prospek'},
-      {group:'MASTER'},
-      {id:'customer', icon:'🏢', label:'Customer'},
-      {id:'truck', icon:'🚛', label:'Truck'},
-      {id:'mutu', icon:'🧪', label:'Mutu Beton'}
-    ],
-    sales: [
-      {group:'MAIN'},
-      {id:'dashboard', icon:'🏠', label:'Dashboard'},
-      {id:'prospek', icon:'📋', label:'Prospek'},
-      {id:'order', icon:'📦', label:'Order'},
-      {group:'MASTER'},
-      {id:'customer', icon:'🏢', label:'Customer'}
-    ],
-    customer: [
-      {group:'PORTAL'},
-      {id:'customer-dash', icon:'🏠', label:'Dashboard'},
-      {id:'customer-orders', icon:'📦', label:'Order Saya'},
-      {id:'customer-new', icon:'➕', label:'Buat Order'}
-    ]
+    owner: [{group:'MAIN'},{id:'dashboard',icon:'🏠',label:'Dashboard'},{id:'order',icon:'📦',label:'Order'},{group:'MASTER'},{id:'users',icon:'👤',label:'Kelola User'},{id:'customer',icon:'🏢',label:'Customer'},{id:'truck',icon:'🚛',label:'Truck'},{id:'mutu',icon:'🧪',label:'Mutu Beton'}],
+    admin: [{group:'MAIN'},{id:'dashboard',icon:'🏠',label:'Dashboard'},{id:'order',icon:'📦',label:'Order'},{id:'prospek',icon:'📋',label:'Prospek'},{group:'MASTER'},{id:'customer',icon:'🏢',label:'Customer'},{id:'truck',icon:'🚛',label:'Truck'},{id:'mutu',icon:'🧪',label:'Mutu Beton'}],
+    sales: [{group:'MAIN'},{id:'dashboard',icon:'🏠',label:'Dashboard'},{id:'prospek',icon:'📋',label:'Prospek'},{id:'order',icon:'📦',label:'Order'},{group:'MASTER'},{id:'customer',icon:'🏢',label:'Customer'}],
+    customer: [{group:'PORTAL'},{id:'customer-dash',icon:'🏠',label:'Dashboard'},{id:'customer-orders',icon:'📦',label:'Order Saya'},{id:'customer-new',icon:'➕',label:'Buat Order'}]
   };
   const items = menus[props.role] || [];
   return h('div',{className:'sidebar'},
     items.map(function(m,i){
       if(m.group) return h('div',{key:i, className:'menu-group'}, m.group);
-      return h('div',{
-        key:i,
-        className:'menu-item '+(props.page===m.id?'active':''),
-        onClick:function(){props.setPage(m.id);}
-      },
-        h('span',null,m.icon),
-        h('span',null,m.label)
+      return h('div',{key:i, className:'menu-item '+(props.page===m.id?'active':''), onClick:function(){props.setPage(m.id);}},
+        h('span',null,m.icon), h('span',null,m.label)
       );
     })
   );
 }
 
-/* ========== FILTER BAR ========== */
 function FilterBar(){
-  const {filter, setFilter} = useAuth();
+  const ctx = useAuth();
+  const filter = ctx.filter, setFilter = ctx.setFilter;
   return h('div',{className:'card'},
     h('div',{className:'red-bar'}, h('span',null,'📅 Periode: '+monthName(filter.month)+' '+filter.year)),
     h('div',{className:'card-body', style:{padding:12}},
@@ -346,7 +305,6 @@ function FilterBar(){
   );
 }
 
-/* ========== KPI ========== */
 function KPI(props){
   return h('div',{className:'kpi-card'},
     h('div',{className:'kpi-label'}, props.label),
@@ -355,7 +313,6 @@ function KPI(props){
   );
 }
 
-/* ========== DASHBOARD ========== */
 function Dashboard(){
   const ctx = useAuth();
   const user = ctx.user, filter = ctx.filter, refreshKey = ctx.refreshKey;
@@ -433,10 +390,7 @@ function Dashboard(){
         h('div',{className:'red-bar'},'🏆 Top 10 Customer'),
         h('div',{className:'card-body', style:{padding:0}},
           h('table',null,
-            h('thead',null, h('tr',null,
-              h('th',null,'#'), h('th',null,'Customer'), h('th',null,'Kota'),
-              h('th',null,'Order'), h('th',null,'Volume')
-            )),
+            h('thead',null, h('tr',null, h('th',null,'#'), h('th',null,'Customer'), h('th',null,'Kota'), h('th',null,'Order'), h('th',null,'Volume'))),
             h('tbody',null,
               topCustomers.map(function(c,i){
                 return h('tr',{key:c.id},
@@ -494,7 +448,6 @@ function Dashboard(){
   );
 }
 
-/* ========== PROSPEK PAGE ========== */
 function ProspekPage(){
   const ctx = useAuth();
   const user = ctx.user, showToast = ctx.showToast, refresh = ctx.refresh;
@@ -545,37 +498,39 @@ function ProspekPage(){
         h('button',{className:'btn btn-create', onClick:function(){setShowForm(true);}},'+ Tambah Prospek')
       ),
       h('div',{className:'card-body', style:{padding:0}},
-        h('table',null,
-          h('thead',null, h('tr',null,
-            h('th',null,'Kode'), h('th',null,'Nama Project'), h('th',null,'Alamat'),
-            h('th',null,'Visit'), h('th',null,'Kompetitor'), h('th',null,'Sales'),
-            h('th',null,'Status'), h('th',null,'Aksi')
-          )),
-          h('tbody',null,
-            prospek.map(function(p){
-              const sales = DB.get('users').find(function(u){return u.id===p.assigned_sales_id;});
-              return h('tr',{key:p.id},
-                h('td',null,p.kode_prospek),
-                h('td',null, h('b',null,p.nama_project)),
-                h('td',null,p.alamat),
-                h('td',{style:{textAlign:'center'}},
-                  p.visit_status==='done'
-                    ? h('span',{className:'badge badge-success'},'✅ Done')
-                    : h('span',{className:'badge badge-warning'},'Belum')
-                ),
-                h('td',null,p.kompetitor||'-'),
-                h('td',null, sales?sales.nama:'-'),
-                h('td',null, h('span',{className:'badge badge-'+(p.status==='order'?'success':'info')}, p.status)),
-                h('td',null,
-                  p.visit_status!=='done' && h('button',{
-                    className:'btn btn-primary',
-                    style:{fontSize:10,padding:'4px 8px'},
-                    onClick:function(){visitDone(p.id);}
-                  },'✅ Done Visit')
-                )
-              );
-            }),
-            !prospek.length && h('tr',null, h('td',{colSpan:8, style:{textAlign:'center',padding:20,color:'#999'}},'Belum ada prospek'))
+        h('div',{className:'table-wrap'},
+          h('table',null,
+            h('thead',null, h('tr',null,
+              h('th',null,'Kode'), h('th',null,'Nama Project'), h('th',null,'Alamat'),
+              h('th',null,'Visit'), h('th',null,'Kompetitor'), h('th',null,'Sales'),
+              h('th',null,'Status'), h('th',null,'Aksi')
+            )),
+            h('tbody',null,
+              prospek.map(function(p){
+                const sales = DB.get('users').find(function(u){return u.id===p.assigned_sales_id;});
+                return h('tr',{key:p.id},
+                  h('td',null,p.kode_prospek),
+                  h('td',null, h('b',null,p.nama_project)),
+                  h('td',null,p.alamat),
+                  h('td',{style:{textAlign:'center'}},
+                    p.visit_status==='done'
+                      ? h('span',{className:'badge badge-success'},'✅ Done')
+                      : h('span',{className:'badge badge-warning'},'Belum')
+                  ),
+                  h('td',null,p.kompetitor||'-'),
+                  h('td',null, sales?sales.nama:'-'),
+                  h('td',null, h('span',{className:'badge badge-'+(p.status==='order'?'success':'info')}, p.status)),
+                  h('td',null,
+                    p.visit_status!=='done' && h('button',{
+                      className:'btn btn-primary',
+                      style:{fontSize:10,padding:'4px 8px'},
+                      onClick:function(){visitDone(p.id);}
+                    },'✅ Done Visit')
+                  )
+                );
+              }),
+              !prospek.length && h('tr',null, h('td',{colSpan:8, style:{textAlign:'center',padding:20,color:'#999'}},'Belum ada prospek'))
+            )
           )
         )
       )
@@ -589,28 +544,28 @@ function ProspekPage(){
         h('div',{className:'modal-body'},
           h('div',{className:'form-group'},
             h('label',null,'Nama Project *'),
-            h('input',{value:form.nama_project, onChange:function(e){setForm({...form, nama_project:e.target.value});}})
+            h('input',{value:form.nama_project, onChange:function(e){setForm(Object.assign({}, form, {nama_project:e.target.value}));}})
           ),
           h('div',{className:'form-group'},
             h('label',null,'Alamat *'),
-            h('input',{value:form.alamat, onChange:function(e){setForm({...form, alamat:e.target.value});}})
+            h('input',{value:form.alamat, onChange:function(e){setForm(Object.assign({}, form, {alamat:e.target.value}));}})
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Visit Status'),
-              h('select',{value:form.visit_status, onChange:function(e){setForm({...form, visit_status:e.target.value});}},
+              h('select',{value:form.visit_status, onChange:function(e){setForm(Object.assign({}, form, {visit_status:e.target.value}));}},
                 h('option',{value:'belum'},'Belum'),
                 h('option',{value:'done'},'Sudah')
               )
             ),
             h('div',{className:'form-group'},
               h('label',null,'Kompetitor'),
-              h('input',{value:form.kompetitor, onChange:function(e){setForm({...form, kompetitor:e.target.value});}})
+              h('input',{value:form.kompetitor, onChange:function(e){setForm(Object.assign({}, form, {kompetitor:e.target.value}));}})
             )
           ),
           h('div',{className:'form-group'},
             h('label',null,'Sales Recommendation *'),
-            h('select',{value:form.assigned_sales_id, onChange:function(e){setForm({...form, assigned_sales_id:e.target.value});}},
+            h('select',{value:form.assigned_sales_id, onChange:function(e){setForm(Object.assign({}, form, {assigned_sales_id:e.target.value}));}},
               salesList.map(function(u){return h('option',{key:u.id, value:u.id}, u.nama+' ('+u.user_id+')');})
             )
           )
@@ -624,7 +579,6 @@ function ProspekPage(){
   );
 }
 
-/* ========== ORDER PAGE ========== */
 function OrderPage(){
   const ctx = useAuth();
   const user = ctx.user, refresh = ctx.refresh, refreshKey = ctx.refreshKey;
@@ -665,85 +619,94 @@ function OrderPage(){
                 const rowSpan = Math.max(trips.length,1);
                 const rows = [];
 
-                // Header row (order info)
-                rows.push(h('tr',{key:'head-'+o.id},
-                  h('td',{rowSpan:rowSpan}, h('b',null, o.kode_order.split('-').pop())),
-                  h('td',{rowSpan:rowSpan}, h('span',{className:'badge badge-'+statusBadge}, o.status)),
-                  h('td',{rowSpan:rowSpan},
-                    h('b',null, cust?cust.nama_perusahaan:'-'), h('br'),
-                    h('span',{style:{fontSize:10,color:'#666'}}, o.plant+' | Sales: '+(sales?sales.nama:'-'))
-                  ),
-                  h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, o.mutu),
-                  h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, o.rencana_tgl_cor),
-                  h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, h('b',null,o.volume)+' / '+terkirim),
-                  h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, remain),
-                  h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, trips.length),
-                  trips.length===0
-                    ? h(F, null,
-                        h('td',{style:{textAlign:'center',color:'#999'}},'—'),
-                        h('td',{className:'qty-cell'},
-                          canEdit && h('button',{className:'btn-plus-mini empty', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
+                if(trips.length===0){
+                  rows.push(h('tr',{key:'o-'+o.id},
+                    h('td',null, h('b',null, o.kode_order.split('-').pop())),
+                    h('td',null, h('span',{className:'badge badge-'+statusBadge}, o.status)),
+                    h('td',null,
+                      h('b',null, cust?cust.nama_perusahaan:'-'), h('br'),
+                      h('span',{style:{fontSize:10,color:'#666'}}, o.plant+' | Sales: '+(sales?sales.nama:'-'))
+                    ),
+                    h('td',{style:{textAlign:'center'}}, o.mutu),
+                    h('td',{style:{textAlign:'center'}}, o.rencana_tgl_cor),
+                    h('td',{style:{textAlign:'center'}}, h('b',null,o.volume)+' / '+terkirim),
+                    h('td',{style:{textAlign:'center'}}, remain),
+                    h('td',{style:{textAlign:'center'}}, trips.length),
+                    h('td',{style:{textAlign:'center',color:'#999'}},'—'),
+                    h('td',{className:'qty-cell'},
+                      canEdit && h('button',{className:'btn-plus-mini empty', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
+                    ),
+                    h('td',null, h('span',{className:'badge badge-secondary'},'Belum mulai')),
+                    h('td',{style:{textAlign:'center'}},'—')
+                  ));
+                } else {
+                  trips.forEach(function(t, idx){
+                    if(idx===0){
+                      rows.push(h('tr',{key:'o-'+o.id+'-t0'},
+                        h('td',{rowSpan:rowSpan}, h('b',null, o.kode_order.split('-').pop())),
+                        h('td',{rowSpan:rowSpan}, h('span',{className:'badge badge-'+statusBadge}, o.status)),
+                        h('td',{rowSpan:rowSpan},
+                          h('b',null, cust?cust.nama_perusahaan:'-'), h('br'),
+                          h('span',{style:{fontSize:10,color:'#666'}}, o.plant+' | Sales: '+(sales?sales.nama:'-'))
                         ),
-                        h('td',null, h('span',{className:'badge badge-secondary'},'Belum mulai')),
-                        h('td',{style:{textAlign:'center'}},'—')
-                      )
-                    : h(F, null,
-                        h('td',null, trips[0].no_truck),
+                        h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, o.mutu),
+                        h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, o.rencana_tgl_cor),
+                        h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, h('b',null,o.volume)+' / '+terkirim),
+                        h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, remain),
+                        h('td',{rowSpan:rowSpan, style:{textAlign:'center'}}, trips.length),
+                        h('td',null, t.no_truck),
                         h('td',{className:'qty-cell'},
-                          trips[0].qty,
+                          t.qty,
                           canEdit && h('button',{className:'btn-plus-mini', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
                         ),
                         h('td',null,
                           h('div',{
                             className:'status-cell',
-                            onClick:function(){ canEdit && setModal({type:'update', p:trips[0], order:o}); }
+                            onClick:function(){ if(canEdit) setModal({type:'update', p:t, order:o}); }
                           },
-                            h('span',{className:'badge badge-'+(trips[0].status==='arrived'?'success':trips[0].status==='cancel'?'danger':'info')},
-                              trips[0].status==='arrived'?'✅ Tiba':trips[0].status==='cancel'?'❌ Batal':'🚛 Jalan'
+                            h('span',{className:'badge badge-'+(t.status==='arrived'?'success':t.status==='cancel'?'danger':'info')},
+                              t.status==='arrived'?'✅ Tiba':t.status==='cancel'?'❌ Batal':'🚛 Jalan'
                             ),
                             h('div',{style:{fontSize:10,color:'#666',marginTop:2}},
-                              (trips[0].jam_berangkat||'').slice(11,16)+' → '+((trips[0].jam_tiba||'-').slice(11,16)||'-')
+                              (t.jam_berangkat||'').slice(11,16)+' → '+((t.jam_tiba||'-')||'-').slice(11,16)
                             )
                           )
                         ),
-                        h('td',{style:{fontSize:10,textAlign:'center'}}, (trips[0].jam_berangkat||'').slice(11,16))
-                      )
-                ));
-
-                // Additional trip rows
-                trips.slice(1).forEach(function(t){
-                  rows.push(h('tr',{key:'t-'+t.id},
-                    h('td',null, t.no_truck),
-                    h('td',{className:'qty-cell'},
-                      t.qty,
-                      canEdit && h('button',{className:'btn-plus-mini', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
-                    ),
-                    h('td',null,
-                      h('div',{
-                        className:'status-cell',
-                        onClick:function(){ canEdit && setModal({type:'update', p:t, order:o}); }
-                      },
-                        h('span',{className:'badge badge-'+(t.status==='arrived'?'success':t.status==='cancel'?'danger':'info')},
-                          t.status==='arrived'?'✅ Tiba':t.status==='cancel'?'❌ Batal':'🚛 Jalan'
+                        h('td',{style:{fontSize:10,textAlign:'center'}}, (t.jam_berangkat||'').slice(11,16))
+                      ));
+                    } else {
+                      rows.push(h('tr',{key:'t-'+t.id},
+                        h('td',null, t.no_truck),
+                        h('td',{className:'qty-cell'},
+                          t.qty,
+                          canEdit && h('button',{className:'btn-plus-mini', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
                         ),
-                        h('div',{style:{fontSize:10,color:'#666',marginTop:2}},
-                          (t.jam_berangkat||'').slice(11,16)+' → '+((t.jam_tiba||'-').slice(11,16)||'-')
-                        )
+                        h('td',null,
+                          h('div',{
+                            className:'status-cell',
+                            onClick:function(){ if(canEdit) setModal({type:'update', p:t, order:o}); }
+                          },
+                            h('span',{className:'badge badge-'+(t.status==='arrived'?'success':t.status==='cancel'?'danger':'info')},
+                              t.status==='arrived'?'✅ Tiba':t.status==='cancel'?'❌ Batal':'🚛 Jalan'
+                            ),
+                            h('div',{style:{fontSize:10,color:'#666',marginTop:2}},
+                              (t.jam_berangkat||'').slice(11,16)+' → '+((t.jam_tiba||'-')||'-').slice(11,16)
+                            )
+                          )
+                        ),
+                        h('td',{style:{fontSize:10,textAlign:'center'}}, (t.jam_berangkat||'').slice(11,16))
+                      ));
+                    }
+                  });
+                  // add-truck row
+                  if(canEdit){
+                    rows.push(h('tr',{key:'add-'+o.id},
+                      h('td',{colSpan:4, style:{textAlign:'center'}},
+                        h('button',{className:'btn-plus-mini', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
                       )
-                    ),
-                    h('td',{style:{fontSize:10,textAlign:'center'}}, (t.jam_berangkat||'').slice(11,16))
-                  ));
-                });
-
-                // Add-truck row
-                if(trips.length>0 && canEdit){
-                  rows.push(h('tr',{key:'add-'+o.id},
-                    h('td',{colSpan:4, style:{textAlign:'center'}},
-                      h('button',{className:'btn-plus-mini', title:'Tambah Truck', onClick:function(){setModal({type:'add',order:o});}},'+')
-                    )
-                  ));
+                    ));
+                  }
                 }
-
                 return rows;
               }),
               !myOrders.length && h('tr',null, h('td',{colSpan:12, style:{textAlign:'center',padding:20,color:'#999'}},'Belum ada order'))
@@ -752,21 +715,14 @@ function OrderPage(){
         )
       )
     ),
-    modal && modal.type==='add' && h(AddDeliveryModal,{
-      order:modal.order,
-      onClose:function(){setModal(null); refresh();}
-    }),
-    modal && modal.type==='update' && h(UpdateDeliveryModal,{
-      p:modal.p,
-      onClose:function(){setModal(null); refresh();}
-    })
+    modal && modal.type==='add' && h(AddDeliveryModal,{order:modal.order, onClose:function(){setModal(null); refresh();}}),
+    modal && modal.type==='update' && h(UpdateDeliveryModal,{p:modal.p, onClose:function(){setModal(null); refresh();}})
   );
 }
 
-/* ========== ADD DELIVERY MODAL ========== */
 function AddDeliveryModal(props){
   const ctx = useAuth();
-  const showToast = ctx.showToast, refresh = ctx.refresh;
+  const showToast = ctx.showToast;
   const trucks = DB.get('truck').filter(function(t){return t.status==='aktif';});
   const [form, setForm] = useState({
     truck_id: trucks[0]?trucks[0].id:'',
@@ -781,7 +737,7 @@ function AddDeliveryModal(props){
 
   const onTruckChange = function(id){
     const t = trucks.find(function(x){return x.id===+id;});
-    setForm({...form, truck_id:+id, no_truck:t.plat_name, driver_nama:t.driver_default||''});
+    setForm(Object.assign({}, form, {truck_id:+id, no_truck:t.plat_name, driver_nama:t.driver_default||''}));
   };
 
   const submit = function(){
@@ -824,30 +780,30 @@ function AddDeliveryModal(props){
         h('div',{className:'form-row'},
           h('div',{className:'form-group'},
             h('label',null,'Nama Driver'),
-            h('input',{value:form.driver_nama, onChange:function(e){setForm({...form, driver_nama:e.target.value});}})
+            h('input',{value:form.driver_nama, onChange:function(e){setForm(Object.assign({}, form, {driver_nama:e.target.value}));}})
           ),
           h('div',{className:'form-group'},
             h('label',null,'Qty *'),
-            h('input',{type:'number', value:form.qty, onChange:function(e){setForm({...form, qty:e.target.value});}})
+            h('input',{type:'number', value:form.qty, onChange:function(e){setForm(Object.assign({}, form, {qty:e.target.value}));}})
           )
         ),
         h('div',{className:'form-row'},
           h('div',{className:'form-group'},
             h('label',null,'Jam Berangkat *'),
-            h('input',{type:'datetime-local', value:form.jam_berangkat, onChange:function(e){setForm({...form, jam_berangkat:e.target.value});}})
+            h('input',{type:'datetime-local', value:form.jam_berangkat, onChange:function(e){setForm(Object.assign({}, form, {jam_berangkat:e.target.value}));}})
           ),
           h('div',{className:'form-group'},
             h('label',null,'Jam Tiba'),
-            h('input',{type:'datetime-local', value:form.jam_tiba, onChange:function(e){setForm({...form, jam_tiba:e.target.value});}})
+            h('input',{type:'datetime-local', value:form.jam_tiba, onChange:function(e){setForm(Object.assign({}, form, {jam_tiba:e.target.value}));}})
           )
         ),
         h('div',{className:'form-group'},
           h('label',null,'No Surat Jalan'),
-          h('input',{value:form.no_surat_jalan, onChange:function(e){setForm({...form, no_surat_jalan:e.target.value});}})
+          h('input',{value:form.no_surat_jalan, onChange:function(e){setForm(Object.assign({}, form, {no_surat_jalan:e.target.value}));}})
         ),
         h('div',{className:'form-group'},
           h('label',null,'Catatan'),
-          h('textarea',{value:form.catatan, onChange:function(e){setForm({...form, catatan:e.target.value});}, rows:2})
+          h('textarea',{value:form.catatan, onChange:function(e){setForm(Object.assign({}, form, {catatan:e.target.value}));}, rows:2})
         )
       ),
       h('div',{className:'modal-footer'},
@@ -858,7 +814,6 @@ function AddDeliveryModal(props){
   );
 }
 
-/* ========== UPDATE DELIVERY MODAL ========== */
 function UpdateDeliveryModal(props){
   const ctx = useAuth();
   const showToast = ctx.showToast;
@@ -892,7 +847,7 @@ function UpdateDeliveryModal(props){
       h('div',{className:'modal-body'},
         h('div',{className:'form-group'},
           h('label',null,'Status *'),
-          h('select',{value:form.status, onChange:function(e){setForm({...form, status:e.target.value});}},
+          h('select',{value:form.status, onChange:function(e){setForm(Object.assign({}, form, {status:e.target.value}));}},
             h('option',{value:'on_delivery'},'🚛 On Delivery'),
             h('option',{value:'arrived'},'✅ Arrived'),
             h('option',{value:'cancel'},'❌ Cancel')
@@ -900,15 +855,15 @@ function UpdateDeliveryModal(props){
         ),
         h('div',{className:'form-group'},
           h('label',null,'Jam Tiba'),
-          h('input',{type:'datetime-local', value:form.jam_tiba, onChange:function(e){setForm({...form, jam_tiba:e.target.value});}})
+          h('input',{type:'datetime-local', value:form.jam_tiba, onChange:function(e){setForm(Object.assign({}, form, {jam_tiba:e.target.value}));}})
         ),
         h('div',{className:'form-group'},
           h('label',null,'No Surat Jalan'),
-          h('input',{value:form.no_surat_jalan, onChange:function(e){setForm({...form, no_surat_jalan:e.target.value});}})
+          h('input',{value:form.no_surat_jalan, onChange:function(e){setForm(Object.assign({}, form, {no_surat_jalan:e.target.value}));}})
         ),
         h('div',{className:'form-group'},
           h('label',null,'Catatan'),
-          h('textarea',{value:form.catatan, onChange:function(e){setForm({...form, catatan:e.target.value});}, rows:2})
+          h('textarea',{value:form.catatan, onChange:function(e){setForm(Object.assign({}, form, {catatan:e.target.value}));}, rows:2})
         )
       ),
       h('div',{className:'modal-footer'},
@@ -934,7 +889,6 @@ function updateOrderTotals(orderId){
   DB.set('order', orders);
 }
 
-/* ========== USERS PAGE ========== */
 function UsersPage(){
   const ctx = useAuth();
   const showToast = ctx.showToast, refresh = ctx.refresh;
@@ -983,26 +937,28 @@ function UsersPage(){
         h('button',{className:'btn btn-create', onClick:function(){setForm(blankForm); setEditId(null); setShowForm(true);}},'+ Tambah User')
       ),
       h('div',{className:'card-body', style:{padding:0}},
-        h('table',null,
-          h('thead',null, h('tr',null,
-            h('th',null,'User ID'), h('th',null,'Nama'), h('th',null,'Email'),
-            h('th',null,'Role'), h('th',null,'Plant'), h('th',null,'Status'), h('th',null,'Aksi')
-          )),
-          h('tbody',null,
-            users.map(function(u){
-              return h('tr',{key:u.id},
-                h('td',null,u.user_id),
-                h('td',null,u.nama),
-                h('td',null,u.email),
-                h('td',null, h('span',{className:'badge badge-info'}, u.role)),
-                h('td',null,u.plant_default||'-'),
-                h('td',null, u.aktif ? h('span',{className:'badge badge-success'},'Aktif') : h('span',{className:'badge badge-danger'},'Non')),
-                h('td',null,
-                  h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px',marginRight:4}, onClick:function(){edit(u);}},'✏️'),
-                  h('button',{className:'btn btn-danger', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){remove(u.id);}},'⛔')
-                )
-              );
-            })
+        h('div',{className:'table-wrap'},
+          h('table',null,
+            h('thead',null, h('tr',null,
+              h('th',null,'User ID'), h('th',null,'Nama'), h('th',null,'Email'),
+              h('th',null,'Role'), h('th',null,'Plant'), h('th',null,'Status'), h('th',null,'Aksi')
+            )),
+            h('tbody',null,
+              users.map(function(u){
+                return h('tr',{key:u.id},
+                  h('td',null,u.user_id),
+                  h('td',null,u.nama),
+                  h('td',null,u.email),
+                  h('td',null, h('span',{className:'badge badge-info'}, u.role)),
+                  h('td',null,u.plant_default||'-'),
+                  h('td',null, u.aktif ? h('span',{className:'badge badge-success'},'Aktif') : h('span',{className:'badge badge-danger'},'Non')),
+                  h('td',null,
+                    h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px',marginRight:4}, onClick:function(){edit(u);}},'✏️'),
+                    h('button',{className:'btn btn-danger', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){remove(u.id);}},'⛔')
+                  )
+                );
+              })
+            )
           )
         )
       )
@@ -1017,11 +973,11 @@ function UsersPage(){
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'User ID *'),
-              h('input',{value:form.user_id, onChange:function(e){setForm({...form, user_id:e.target.value});}})
+              h('input',{value:form.user_id, onChange:function(e){setForm(Object.assign({}, form, {user_id:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Role *'),
-              h('select',{value:form.role, onChange:function(e){setForm({...form, role:e.target.value});}},
+              h('select',{value:form.role, onChange:function(e){setForm(Object.assign({}, form, {role:e.target.value}));}},
                 h('option',{value:'admin'},'Admin'),
                 h('option',{value:'sales'},'Sales'),
                 h('option',{value:'customer'},'Customer')
@@ -1030,33 +986,33 @@ function UsersPage(){
           ),
           h('div',{className:'form-group'},
             h('label',null,'Nama *'),
-            h('input',{value:form.nama, onChange:function(e){setForm({...form, nama:e.target.value});}})
+            h('input',{value:form.nama, onChange:function(e){setForm(Object.assign({}, form, {nama:e.target.value}));}})
           ),
           h('div',{className:'form-group'},
             h('label',null,'Email *'),
-            h('input',{type:'email', value:form.email, onChange:function(e){setForm({...form, email:e.target.value});}})
+            h('input',{type:'email', value:form.email, onChange:function(e){setForm(Object.assign({}, form, {email:e.target.value}));}})
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Password'),
-              h('input',{value:form.password, onChange:function(e){setForm({...form, password:e.target.value});}})
+              h('input',{value:form.password, onChange:function(e){setForm(Object.assign({}, form, {password:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'No HP'),
-              h('input',{value:form.no_hp, onChange:function(e){setForm({...form, no_hp:e.target.value});}})
+              h('input',{value:form.no_hp, onChange:function(e){setForm(Object.assign({}, form, {no_hp:e.target.value}));}})
             )
           ),
           form.role==='customer'
             ? h('div',{className:'form-group'},
                 h('label',null,'Link Customer'),
-                h('select',{value:form.customer_id, onChange:function(e){setForm({...form, customer_id:e.target.value});}},
+                h('select',{value:form.customer_id, onChange:function(e){setForm(Object.assign({}, form, {customer_id:e.target.value}));}},
                   h('option',{value:''},'-- Pilih --'),
                   customers.map(function(c){return h('option',{key:c.id, value:c.id}, c.nama_perusahaan);})
                 )
               )
             : h('div',{className:'form-group'},
                 h('label',null,'Plant Default'),
-                h('input',{value:form.plant_default, onChange:function(e){setForm({...form, plant_default:e.target.value});}, placeholder:'J4MG'})
+                h('input',{value:form.plant_default, onChange:function(e){setForm(Object.assign({}, form, {plant_default:e.target.value}));}, placeholder:'J4MG'})
               )
         ),
         h('div',{className:'modal-footer'},
@@ -1068,7 +1024,6 @@ function UsersPage(){
   );
 }
 
-/* ========== CUSTOMER PAGE ========== */
 function CustomerPage(){
   const ctx = useAuth();
   const showToast = ctx.showToast, refresh = ctx.refresh;
@@ -1102,26 +1057,28 @@ function CustomerPage(){
         h('button',{className:'btn btn-create', onClick:function(){setForm(blankForm); setEditId(null); setShowForm(true);}},'+ Tambah Customer')
       ),
       h('div',{className:'card-body', style:{padding:0}},
-        h('table',null,
-          h('thead',null, h('tr',null,
-            h('th',null,'Kode'), h('th',null,'Perusahaan'), h('th',null,'PIC'),
-            h('th',null,'Kota'), h('th',null,'Zip'), h('th',null,'Sales'), h('th',null,'Aksi')
-          )),
-          h('tbody',null,
-            customers.map(function(c){
-              const s = DB.get('users').find(function(u){return u.id===c.sales_id;});
-              return h('tr',{key:c.id},
-                h('td',null,c.kode_customer),
-                h('td',null, h('b',null,c.nama_perusahaan)),
-                h('td',null,c.nama_pic),
-                h('td',null,c.kota),
-                h('td',null,c.zip_code),
-                h('td',null, s?s.nama:'-'),
-                h('td',null,
-                  h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(c); setEditId(c.id); setShowForm(true);}},'✏️')
-                )
-              );
-            })
+        h('div',{className:'table-wrap'},
+          h('table',null,
+            h('thead',null, h('tr',null,
+              h('th',null,'Kode'), h('th',null,'Perusahaan'), h('th',null,'PIC'),
+              h('th',null,'Kota'), h('th',null,'Zip'), h('th',null,'Sales'), h('th',null,'Aksi')
+            )),
+            h('tbody',null,
+              customers.map(function(c){
+                const s = DB.get('users').find(function(u){return u.id===c.sales_id;});
+                return h('tr',{key:c.id},
+                  h('td',null,c.kode_customer),
+                  h('td',null, h('b',null,c.nama_perusahaan)),
+                  h('td',null,c.nama_pic),
+                  h('td',null,c.kota),
+                  h('td',null,c.zip_code),
+                  h('td',null, s?s.nama:'-'),
+                  h('td',null,
+                    h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(c); setEditId(c.id); setShowForm(true);}},'✏️')
+                  )
+                );
+              })
+            )
           )
         )
       )
@@ -1135,44 +1092,44 @@ function CustomerPage(){
         h('div',{className:'modal-body'},
           h('div',{className:'form-group'},
             h('label',null,'Nama Perusahaan *'),
-            h('input',{value:form.nama_perusahaan, onChange:function(e){setForm({...form, nama_perusahaan:e.target.value});}})
+            h('input',{value:form.nama_perusahaan, onChange:function(e){setForm(Object.assign({}, form, {nama_perusahaan:e.target.value}));}})
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Nama PIC'),
-              h('input',{value:form.nama_pic, onChange:function(e){setForm({...form, nama_pic:e.target.value});}})
+              h('input',{value:form.nama_pic, onChange:function(e){setForm(Object.assign({}, form, {nama_pic:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'No HP PIC'),
-              h('input',{value:form.no_hp_pic, onChange:function(e){setForm({...form, no_hp_pic:e.target.value});}})
+              h('input',{value:form.no_hp_pic, onChange:function(e){setForm(Object.assign({}, form, {no_hp_pic:e.target.value}));}})
             )
           ),
           h('div',{className:'form-group'},
             h('label',null,'Email PIC'),
-            h('input',{value:form.email_pic, onChange:function(e){setForm({...form, email_pic:e.target.value});}})
+            h('input',{value:form.email_pic, onChange:function(e){setForm(Object.assign({}, form, {email_pic:e.target.value}));}})
           ),
           h('div',{className:'form-group'},
             h('label',null,'Alamat'),
-            h('input',{value:form.alamat, onChange:function(e){setForm({...form, alamat:e.target.value});}})
+            h('input',{value:form.alamat, onChange:function(e){setForm(Object.assign({}, form, {alamat:e.target.value}));}})
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Kota'),
-              h('input',{value:form.kota, onChange:function(e){setForm({...form, kota:e.target.value});}})
+              h('input',{value:form.kota, onChange:function(e){setForm(Object.assign({}, form, {kota:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Zip Code'),
-              h('input',{value:form.zip_code, onChange:function(e){setForm({...form, zip_code:e.target.value});}})
+              h('input',{value:form.zip_code, onChange:function(e){setForm(Object.assign({}, form, {zip_code:e.target.value}));}})
             )
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'NPWP'),
-              h('input',{value:form.npwp, onChange:function(e){setForm({...form, npwp:e.target.value});}})
+              h('input',{value:form.npwp, onChange:function(e){setForm(Object.assign({}, form, {npwp:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Termin'),
-              h('select',{value:form.termin_pembayaran, onChange:function(e){setForm({...form, termin_pembayaran:e.target.value});}},
+              h('select',{value:form.termin_pembayaran, onChange:function(e){setForm(Object.assign({}, form, {termin_pembayaran:e.target.value}));}},
                 h('option',null,'Cash'), h('option',null,'7 Hari'),
                 h('option',null,'14 Hari'), h('option',null,'30 Hari'), h('option',null,'60 Hari')
               )
@@ -1180,7 +1137,7 @@ function CustomerPage(){
           ),
           h('div',{className:'form-group'},
             h('label',null,'Sales PIC'),
-            h('select',{value:form.sales_id, onChange:function(e){setForm({...form, sales_id:+e.target.value});}},
+            h('select',{value:form.sales_id, onChange:function(e){setForm(Object.assign({}, form, {sales_id:+e.target.value}));}},
               h('option',{value:''},'-- Pilih --'),
               sales.map(function(s){return h('option',{key:s.id, value:s.id}, s.nama);})
             )
@@ -1195,7 +1152,6 @@ function CustomerPage(){
   );
 }
 
-/* ========== TRUCK PAGE ========== */
 function TruckPage(){
   const ctx = useAuth();
   const showToast = ctx.showToast, refresh = ctx.refresh;
@@ -1228,26 +1184,28 @@ function TruckPage(){
         h('button',{className:'btn btn-create', onClick:function(){setForm(blankForm); setEditId(null); setShowForm(true);}},'+ Tambah Truck')
       ),
       h('div',{className:'card-body', style:{padding:0}},
-        h('table',null,
-          h('thead',null, h('tr',null,
-            h('th',null,'Plat Name'), h('th',null,'No Truck'), h('th',null,'Kapasitas'),
-            h('th',null,'Jenis'), h('th',null,'Plant'), h('th',null,'Driver'), h('th',null,'Status'), h('th',null,'Aksi')
-          )),
-          h('tbody',null,
-            trucks.map(function(t){
-              return h('tr',{key:t.id},
-                h('td',null, h('b',null,t.plat_name)),
-                h('td',null,t.no_truck),
-                h('td',null,t.kapasitas+' m³'),
-                h('td',null,t.jenis),
-                h('td',null,t.plant),
-                h('td',null,t.driver_default),
-                h('td',null, h('span',{className:'badge badge-'+(t.status==='aktif'?'success':'warning')}, t.status)),
-                h('td',null,
-                  h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(t); setEditId(t.id); setShowForm(true);}},'✏️')
-                )
-              );
-            })
+        h('div',{className:'table-wrap'},
+          h('table',null,
+            h('thead',null, h('tr',null,
+              h('th',null,'Plat Name'), h('th',null,'No Truck'), h('th',null,'Kapasitas'),
+              h('th',null,'Jenis'), h('th',null,'Plant'), h('th',null,'Driver'), h('th',null,'Status'), h('th',null,'Aksi')
+            )),
+            h('tbody',null,
+              trucks.map(function(t){
+                return h('tr',{key:t.id},
+                  h('td',null, h('b',null,t.plat_name)),
+                  h('td',null,t.no_truck),
+                  h('td',null,t.kapasitas+' m³'),
+                  h('td',null,t.jenis),
+                  h('td',null,t.plant),
+                  h('td',null,t.driver_default),
+                  h('td',null, h('span',{className:'badge badge-'+(t.status==='aktif'?'success':'warning')}, t.status)),
+                  h('td',null,
+                    h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(t); setEditId(t.id); setShowForm(true);}},'✏️')
+                  )
+                );
+              })
+            )
           )
         )
       )
@@ -1262,21 +1220,21 @@ function TruckPage(){
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Plat Name *'),
-              h('input',{value:form.plat_name, onChange:function(e){setForm({...form, plat_name:e.target.value});}})
+              h('input',{value:form.plat_name, onChange:function(e){setForm(Object.assign({}, form, {plat_name:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'No Truck *'),
-              h('input',{value:form.no_truck, onChange:function(e){setForm({...form, no_truck:e.target.value});}})
+              h('input',{value:form.no_truck, onChange:function(e){setForm(Object.assign({}, form, {no_truck:e.target.value}));}})
             )
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Kapasitas (m³) *'),
-              h('input',{type:'number', value:form.kapasitas, onChange:function(e){setForm({...form, kapasitas:e.target.value});}})
+              h('input',{type:'number', value:form.kapasitas, onChange:function(e){setForm(Object.assign({}, form, {kapasitas:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Jenis'),
-              h('select',{value:form.jenis, onChange:function(e){setForm({...form, jenis:e.target.value});}},
+              h('select',{value:form.jenis, onChange:function(e){setForm(Object.assign({}, form, {jenis:e.target.value}));}},
                 h('option',{value:'mixer'},'Mixer'),
                 h('option',{value:'pompa'},'Pompa'),
                 h('option',{value:'mini'},'Mini')
@@ -1286,11 +1244,11 @@ function TruckPage(){
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Plant'),
-              h('input',{value:form.plant, onChange:function(e){setForm({...form, plant:e.target.value});}})
+              h('input',{value:form.plant, onChange:function(e){setForm(Object.assign({}, form, {plant:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Status'),
-              h('select',{value:form.status, onChange:function(e){setForm({...form, status:e.target.value});}},
+              h('select',{value:form.status, onChange:function(e){setForm(Object.assign({}, form, {status:e.target.value}));}},
                 h('option',{value:'aktif'},'Aktif'),
                 h('option',{value:'maintenance'},'Maintenance'),
                 h('option',{value:'nonaktif'},'Non-aktif')
@@ -1299,7 +1257,7 @@ function TruckPage(){
           ),
           h('div',{className:'form-group'},
             h('label',null,'Driver Default'),
-            h('input',{value:form.driver_default, onChange:function(e){setForm({...form, driver_default:e.target.value});}})
+            h('input',{value:form.driver_default, onChange:function(e){setForm(Object.assign({}, form, {driver_default:e.target.value}));}})
           )
         ),
         h('div',{className:'modal-footer'},
@@ -1311,7 +1269,6 @@ function TruckPage(){
   );
 }
 
-/* ========== MUTU PAGE ========== */
 function MutuPage(){
   const ctx = useAuth();
   const showToast = ctx.showToast, refresh = ctx.refresh;
@@ -1344,25 +1301,27 @@ function MutuPage(){
         h('button',{className:'btn btn-create', onClick:function(){setForm(blankForm); setEditId(null); setShowForm(true);}},'+ Tambah Mutu')
       ),
       h('div',{className:'card-body', style:{padding:0}},
-        h('table',null,
-          h('thead',null, h('tr',null,
-            h('th',null,'Kode'), h('th',null,'Nama'), h('th',null,'Slump'),
-            h('th',null,'Kuat Tekan'), h('th',null,'Harga/m³'), h('th',null,'Status'), h('th',null,'Aksi')
-          )),
-          h('tbody',null,
-            mutu.map(function(m){
-              return h('tr',{key:m.id},
-                h('td',null, h('b',null,m.kode)),
-                h('td',null,m.nama),
-                h('td',null,m.slump),
-                h('td',null,m.kuat_tekan+' MPa'),
-                h('td',null,fmtRp(m.harga_per_m3)),
-                h('td',null, m.aktif ? h('span',{className:'badge badge-success'},'Aktif') : h('span',{className:'badge badge-danger'},'Non')),
-                h('td',null,
-                  h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(m); setEditId(m.id); setShowForm(true);}},'✏️')
-                )
-              );
-            })
+        h('div',{className:'table-wrap'},
+          h('table',null,
+            h('thead',null, h('tr',null,
+              h('th',null,'Kode'), h('th',null,'Nama'), h('th',null,'Slump'),
+              h('th',null,'Kuat Tekan'), h('th',null,'Harga/m³'), h('th',null,'Status'), h('th',null,'Aksi')
+            )),
+            h('tbody',null,
+              mutu.map(function(m){
+                return h('tr',{key:m.id},
+                  h('td',null, h('b',null,m.kode)),
+                  h('td',null,m.nama),
+                  h('td',null,m.slump),
+                  h('td',null,m.kuat_tekan+' MPa'),
+                  h('td',null,fmtRp(m.harga_per_m3)),
+                  h('td',null, m.aktif ? h('span',{className:'badge badge-success'},'Aktif') : h('span',{className:'badge badge-danger'},'Non')),
+                  h('td',null,
+                    h('button',{className:'btn btn-warning', style:{fontSize:10,padding:'3px 8px'}, onClick:function(){setForm(m); setEditId(m.id); setShowForm(true);}},'✏️')
+                  )
+                );
+              })
+            )
           )
         )
       )
@@ -1377,25 +1336,25 @@ function MutuPage(){
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Kode *'),
-              h('input',{value:form.kode, onChange:function(e){setForm({...form, kode:e.target.value});}, placeholder:'K-300'})
+              h('input',{value:form.kode, onChange:function(e){setForm(Object.assign({}, form, {kode:e.target.value}));}, placeholder:'K-300'})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Slump'),
-              h('input',{value:form.slump, onChange:function(e){setForm({...form, slump:e.target.value});}, placeholder:'12±2'})
+              h('input',{value:form.slump, onChange:function(e){setForm(Object.assign({}, form, {slump:e.target.value}));}, placeholder:'12±2'})
             )
           ),
           h('div',{className:'form-group'},
             h('label',null,'Nama *'),
-            h('input',{value:form.nama, onChange:function(e){setForm({...form, nama:e.target.value});}})
+            h('input',{value:form.nama, onChange:function(e){setForm(Object.assign({}, form, {nama:e.target.value}));}})
           ),
           h('div',{className:'form-row'},
             h('div',{className:'form-group'},
               h('label',null,'Kuat Tekan (MPa)'),
-              h('input',{type:'number', value:form.kuat_tekan, onChange:function(e){setForm({...form, kuat_tekan:e.target.value});}})
+              h('input',{type:'number', value:form.kuat_tekan, onChange:function(e){setForm(Object.assign({}, form, {kuat_tekan:e.target.value}));}})
             ),
             h('div',{className:'form-group'},
               h('label',null,'Harga per m³'),
-              h('input',{type:'number', value:form.harga_per_m3, onChange:function(e){setForm({...form, harga_per_m3:e.target.value});}})
+              h('input',{type:'number', value:form.harga_per_m3, onChange:function(e){setForm(Object.assign({}, form, {harga_per_m3:e.target.value}));}})
             )
           )
         ),
@@ -1408,7 +1367,6 @@ function MutuPage(){
   );
 }
 
-/* ========== CUSTOMER DASHBOARD ========== */
 function CustomerDashboard(){
   const ctx = useAuth();
   const user = ctx.user, refreshKey = ctx.refreshKey;
@@ -1463,10 +1421,9 @@ function CustomerDashboard(){
   );
 }
 
-/* ========== CUSTOMER ORDERS ========== */
 function CustomerOrders(){
   const ctx = useAuth();
-  const user = ctx.user, refreshKey = ctx.refreshKey;
+  const user = ctx.user;
   const orders = DB.get('order').filter(function(o){return o.customer_id===user.customer_id;});
   const pengiriman = DB.get('pengiriman');
 
@@ -1496,7 +1453,7 @@ function CustomerOrders(){
                     h('td',null,t.no_truck),
                     h('td',null,t.qty+' m³'),
                     h('td',null,(t.jam_berangkat||'').slice(11,16)),
-                    h('td',null,(t.jam_tiba||'-').slice(11,16)||'-'),
+                    h('td',null,(t.jam_tiba||'-')||'-'),
                     h('td',null,
                       h('span',{className:'badge badge-'+(t.status==='arrived'?'success':t.status==='cancel'?'danger':'info')},
                         t.status==='arrived'?'✅ Tiba':t.status==='cancel'?'❌ Batal':'🚛 Jalan'
@@ -1514,7 +1471,6 @@ function CustomerOrders(){
   );
 }
 
-/* ========== CUSTOMER NEW ORDER ========== */
 function CustomerNewOrder(){
   const ctx = useAuth();
   const user = ctx.user, showToast = ctx.showToast, refresh = ctx.refresh;
@@ -1592,32 +1548,32 @@ function CustomerNewOrder(){
       ),
       h('div',{className:'form-group'},
         h('label',null,'Nama Project *'),
-        h('input',{value:form.nama_project, onChange:function(e){setForm({...form, nama_project:e.target.value});}})
+        h('input',{value:form.nama_project, onChange:function(e){setForm(Object.assign({}, form, {nama_project:e.target.value}));}})
       ),
       h('div',{className:'form-group'},
         h('label',null,'Alamat Pengecoran *'),
-        h('input',{value:form.alamat, onChange:function(e){setForm({...form, alamat:e.target.value});}})
+        h('input',{value:form.alamat, onChange:function(e){setForm(Object.assign({}, form, {alamat:e.target.value}));}})
       ),
       h('div',{className:'form-row'},
         h('div',{className:'form-group'},
           h('label',null,'Rencana Tgl Cor *'),
-          h('input',{type:'date', value:form.rencana_tgl_cor, onChange:function(e){setForm({...form, rencana_tgl_cor:e.target.value});}})
+          h('input',{type:'date', value:form.rencana_tgl_cor, onChange:function(e){setForm(Object.assign({}, form, {rencana_tgl_cor:e.target.value}));}})
         ),
         h('div',{className:'form-group'},
           h('label',null,'Volume (m³) *'),
-          h('input',{type:'number', value:form.volume, onChange:function(e){setForm({...form, volume:e.target.value});}})
+          h('input',{type:'number', value:form.volume, onChange:function(e){setForm(Object.assign({}, form, {volume:e.target.value}));}})
         )
       ),
       h('div',{className:'form-row'},
         h('div',{className:'form-group'},
           h('label',null,'Mutu Beton'),
-          h('select',{value:form.mutu, onChange:function(e){setForm({...form, mutu:e.target.value});}},
+          h('select',{value:form.mutu, onChange:function(e){setForm(Object.assign({}, form, {mutu:e.target.value}));}},
             mutu.map(function(m){return h('option',{key:m.id, value:m.kode}, m.kode+' – '+m.nama);})
           )
         ),
         h('div',{className:'form-group'},
           h('label',null,'Metode Bongkar'),
-          h('select',{value:form.metode_bongkar, onChange:function(e){setForm({...form, metode_bongkar:e.target.value});}},
+          h('select',{value:form.metode_bongkar, onChange:function(e){setForm(Object.assign({}, form, {metode_bongkar:e.target.value}));}},
             h('option',{value:'pompa'},'Pompa'),
             h('option',{value:'manual'},'Manual'),
             h('option',{value:'chute'},'Chute'),
@@ -1627,14 +1583,14 @@ function CustomerNewOrder(){
       ),
       h('div',{className:'form-group'},
         h('label',null,'QC'),
-        h('select',{value:form.qc?'true':'false', onChange:function(e){setForm({...form, qc:e.target.value==='true'});}},
+        h('select',{value:form.qc?'true':'false', onChange:function(e){setForm(Object.assign({}, form, {qc:e.target.value==='true'}));}},
           h('option',{value:'false'},'No'),
           h('option',{value:'true'},'Yes')
         )
       ),
       h('div',{className:'form-group'},
         h('label',null,'Catatan'),
-        h('textarea',{value:form.catatan_customer, onChange:function(e){setForm({...form, catatan_customer:e.target.value});}, rows:3})
+        h('textarea',{value:form.catatan_customer, onChange:function(e){setForm(Object.assign({}, form, {catatan_customer:e.target.value}));}, rows:3})
       ),
       h('button',{className:'btn btn-primary', style:{marginTop:12}, onClick:submit},'📤 SUBMIT REQUEST')
     )
