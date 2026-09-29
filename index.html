@@ -1139,17 +1139,17 @@ let DB = {
         { id_mutu_order: 7, id_order: 'ORD-20260926-003', urutan: 1, kode_mutu: 'K-250', slump: '12±2', target: 30, terkirim: 0, status: 'Menunggu' }
     ],
     pengiriman: [
-    { id_kirim: 1, dp_no: 'ORD-20260926-P001', id_order: 'ORD-20260926-001', id_mutu_order: 1, no_truk: 'A956',  urutan: 1, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 2, dp_no: 'ORD-20260926-P002', id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A969',  urutan: 2, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 3, dp_no: 'ORD-20260926-P003', id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A943',  urutan: 3, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 4, dp_no: 'ORD-20260926-P004', id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A448',  urutan: 4, volume: 6, status: 'Penuangan', ... },
-    { id_kirim: 5, dp_no: 'ORD-20260926-P005', id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A1035', urutan: 5, volume: 6, status: 'Berangkat', ... },
-    { id_kirim: 6, dp_no: 'ORD-20260926-P006', id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1027', urutan: 6, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 7, dp_no: 'ORD-20260926-P007', id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1006', urutan: 7, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 8, dp_no: 'ORD-20260926-P008', id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A940',  urutan: 8, volume: 6, status: 'Selesai',  ... },
-    { id_kirim: 9, dp_no: 'ORD-20260926-P009', id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1009', urutan: 9, volume: 6, status: 'Berangkat', ... }
-] 
-        invoices: [
+        { id_kirim: 1, id_order: 'ORD-20260926-001', id_mutu_order: 1, no_truk: 'A956', urutan: 1, volume: 6, status: 'Selesai', jam_batching: '18:15', jam_loading: '18:30', jam_berangkat: '18:45', jam_sampai: '19:30', jam_selesai: '20:00', remarks: '' },
+        { id_kirim: 2, id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A969', urutan: 2, volume: 6, status: 'Selesai', jam_batching: '21:20', jam_loading: '21:35', jam_berangkat: '21:48', jam_sampai: '22:40', jam_selesai: '23:10', remarks: '' },
+        { id_kirim: 3, id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A943', urutan: 3, volume: 6, status: 'Selesai', jam_batching: '23:25', jam_loading: '23:40', jam_berangkat: '23:54', jam_sampai: '00:50', jam_selesai: '01:20', remarks: '' },
+        { id_kirim: 4, id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A448', urutan: 4, volume: 6, status: 'Penuangan', jam_batching: '02:15', jam_loading: '02:30', jam_berangkat: '02:43', jam_sampai: '03:40', jam_selesai: null, remarks: '' },
+        { id_kirim: 5, id_order: 'ORD-20260926-001', id_mutu_order: 2, no_truk: 'A1035', urutan: 5, volume: 6, status: 'Berangkat', jam_batching: '03:40', jam_loading: '03:55', jam_berangkat: '04:01', jam_sampai: null, jam_selesai: null, remarks: '' },
+        { id_kirim: 6, id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1027', urutan: 6, volume: 6, status: 'Selesai', jam_batching: '00:20', jam_loading: '00:35', jam_berangkat: '00:43', jam_sampai: '01:30', jam_selesai: '02:00', remarks: '' },
+        { id_kirim: 7, id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1006', urutan: 7, volume: 6, status: 'Selesai', jam_batching: '00:30', jam_loading: '00:45', jam_berangkat: '00:51', jam_sampai: '01:40', jam_selesai: '02:10', remarks: '' },
+        { id_kirim: 8, id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A940',  urutan: 8, volume: 6, status: 'Selesai', jam_batching: '01:00', jam_loading: '01:12', jam_berangkat: '01:18', jam_sampai: '02:05', jam_selesai: '02:35', remarks: '' },
+        { id_kirim: 9, id_order: 'ORD-20260926-001', id_mutu_order: 3, no_truk: 'A1009', urutan: 9, volume: 6, status: 'Berangkat', jam_batching: '05:25', jam_loading: '05:38', jam_berangkat: '05:42', jam_sampai: null, jam_selesai: null, remarks: '' }
+    ],
+    invoices: [
         { id_invoice: 'INV-20260926-001', id_order: 'ORD-20260925-001', id_customer: 1, tgl_invoice: '2026-09-26', tgl_jatuh_tempo: '2026-10-26', subtotal: 57360000, diskon: 0, dpp: 57360000, ppn: 6309600, grand_total: 63669600, terbilang: 'Enam Puluh Tiga Juta...', status_bayar: 'Belum Bayar', jumlah_dibayar: 0, sisa_bayar: 63669600, is_shared: true, shared_at: '2026-09-26 14:30', shared_by: 'owner@alvend.com' },
         { id_invoice: 'INV-20260926-002', id_order: 'ORD-20260926-002', id_customer: 2, tgl_invoice: '2026-09-26', tgl_jatuh_tempo: '2026-10-26', subtotal: 30000000, diskon: 0, dpp: 30000000, ppn: 3300000, grand_total: 33300000, terbilang: 'Tiga Puluh Tiga Juta...', status_bayar: 'Belum Bayar', jumlah_dibayar: 0, sisa_bayar: 33300000, is_shared: false, shared_at: null, shared_by: null }
     ],
@@ -2222,7 +2222,6 @@ function renderTruckListCell(id_order) {
             else if (p.status === 'Reject') cls = 'reject';
             else if (['Berangkat', 'Perjalanan', 'Penuangan', 'Sampai Lokasi', 'Loading', 'Batching'].includes(p.status)) cls = 'process';
             return `<span class="truck-badge ${cls}" title="${p.status}${p.remarks ? ' - ' + p.remarks : ''}">T${p.urutan} · ${p.no_truk}</span>`;
-            return `<span class="truck-badge ${cls}" title="${p.status}${p.dp_no ? ' | DP: ' + p.dp_no : ''}${p.remarks ? ' - ' + p.remarks : ''}">T${p.urutan} · ${p.no_truk}</span>`;
         }).join('')}
     </div>`;
 }
@@ -2647,7 +2646,7 @@ function createAdrRow(no, order, pengiriman, cust, plant, inv, mutu) {
     const rejectRemarks = pengiriman && pengiriman.remarks ? pengiriman.remarks : '-';
 
     return {
-        no: no, dpNo: (pengiriman && pengiriman.dp_no) ? pengiriman.dp_no : order.id_order, dpDate: dpDate, dpTime: dpTime, dpStatus: dpStatus,
+        no: no, dpNo: order.id_order, dpDate: dpDate, dpTime: dpTime, dpStatus: dpStatus,
         plantNo: plant ? plant.kode : '-', plantName: plant ? plant.nama : '-',
         productCode: productCode, qty: qty,
         customerNo: cust ? cust.kode_customer : '-', customerName: cust ? cust.nama_perusahaan : '-',
@@ -2872,11 +2871,7 @@ function renderOrderDetail(el, id_order) {
                     return `
                         <div class="truck-card ${justUpdated ? 'just-updated' : ''} ${isRejected ? 'rejected' : ''}">
                             <div class="truck-header">
-                                <span>🚛 Truk ke-${p.urutan} — ${p.no_truk}
-  <small style="font-weight:400;font-size:11px;color:#64748B;margin-left:6px">
-    ${p.dp_no || '-'}
-  </small>
-</span>
+                                <span>🚛 Truk ke-${p.urutan} — ${p.no_truk}</span>
                                 ${canEditTruk ? `
                                     <div class="truck-actions">
                                         <button class="btn btn-primary btn-xs" onclick="openEditTrukModal(${p.id_kirim})">✏️ Edit</button>
@@ -2901,49 +2896,7 @@ function renderOrderDetail(el, id_order) {
         </div>
     `;
 }
-/* ====== DP NO GENERATOR — UNIQUE PER TRUK ====== */
-function generateDpNo(dateStr) {
-    // Format: ORD-YYYYMMDD-PXXX
-    const date = String(dateStr || new Date().toISOString().split('T')[0]).replace(/-/g, '');
-    const prefix = `ORD-${date}-P`;
-    let maxSeq = 0;
-    (DB.pengiriman || []).forEach(p => {
-        if (p.dp_no && p.dp_no.startsWith(prefix)) {
-            const seq = parseInt(p.dp_no.slice(prefix.length), 10) || 0;
-            if (seq > maxSeq) maxSeq = seq;
-        }
-    });
-    return prefix + String(maxSeq + 1).padStart(3, '0');
-}
 
-/* ====== MIGRASI: Beri dp_no untuk pengiriman lama ====== */
-function migratePengirimanDpNo() {
-    let needsSave = false;
-    const groups = {};
-    (DB.pengiriman || []).forEach(p => {
-        if (p.dp_no) return; // sudah punya, skip
-        const order = (DB.orders || []).find(o => o.id_order === p.id_order);
-        const date = String(order?.tgl_pengecoran || order?.tgl_order || new Date().toISOString().split('T')[0]).replace(/-/g, '');
-        if (!groups[date]) groups[date] = [];
-        groups[date].push(p);
-        needsSave = true;
-    });
-    Object.keys(groups).forEach(date => {
-        // Urutkan berdasarkan tgl_order order lalu urutan truk
-        groups[date].sort((a, b) => {
-            const oa = DB.orders.find(o => o.id_order === a.id_order);
-            const ob = DB.orders.find(o => o.id_order === b.id_order);
-            const oc = String(oa?.tgl_order || '').localeCompare(String(ob?.tgl_order || ''));
-            if (oc !== 0) return oc;
-            return (a.urutan || 0) - (b.urutan || 0);
-        });
-        groups[date].forEach((p, idx) => {
-            p.dp_no = `ORD-${date}-P${String(idx + 1).padStart(3, '0')}`;
-        });
-    });
-    if (needsSave) saveDB();
-    return needsSave;
-}
 /* ⭐ UPDATE STATUS ORDER MANUAL */
 function openUpdateStatusOrderModal(id_order) {
     const order = DB.orders.find(o => o.id_order === id_order);
@@ -4687,23 +4640,14 @@ function saveUpdatePengiriman(id_order) {
     if (!noTruk) { alert('No. Truk wajib diisi'); return; }
     const mutu = DB.order_mutu.find(m => m.id_mutu_order === mutuId);
     const existingCount = DB.pengiriman.filter(p => p.id_order === id_order).length;
-    const newDpNo = generateDpNo(order.tgl_pengecoran);
-DB.pengiriman.push({
-    id_kirim: newIdKirim,
-    dp_no: newDpNo,                    // ← TAMBAHKAN BARIS INI
-    id_order: id_order, 
-    id_mutu_order: mutuId,
-    no_truk: noTruk, 
-    urutan: existingCount + 1, 
-    volume: volume, 
-    status: status,
-    jam_batching: jamBatching || null, 
-    jam_loading: null,
-    jam_berangkat: jamBerangkat || null, 
-    jam_sampai: null,
-    jam_selesai: status === 'Selesai' ? currentTime() : null, 
-    remarks: ''
-});
+    const newIdKirim = DB.pengiriman.length + 1;
+    DB.pengiriman.push({
+        id_kirim: newIdKirim, id_order: id_order, id_mutu_order: mutuId,
+        no_truk: noTruk, urutan: existingCount + 1, volume: volume, status: status,
+        jam_batching: jamBatching || null, jam_loading: null,
+        jam_berangkat: jamBerangkat || null, jam_sampai: null,
+        jam_selesai: status === 'Selesai' ? currentTime() : null, remarks: ''
+    });
     lastKnownOrderUpdate[newIdKirim] = Date.now();
     if (status === 'Selesai') {
         mutu.terkirim += volume;
@@ -4818,7 +4762,6 @@ document.addEventListener('click', e => {
     loadDB();
     normalizeV235Data();
 activateCustomerAccess();
-    migratePengirimanDpNo(); 
 setupRealtime();
     restoreSidebarState();
     const saved = localStorage.getItem('arm_user');
