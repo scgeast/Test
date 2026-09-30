@@ -875,6 +875,395 @@ function saveVisitAll(id){
   toast(a.win.checked?'🏆 WIN — status jadi Propose Site No':'✅ Tersimpan','success');
   reRenderCurrentPage();
 }
+  /* ============ PROPOSE SITE NO ============ */
+function renderPropose(m){
+  const list=DB.prospek.filter(p=>{
+    if(p.site_no)return false;
+    if(p.status==='Lost')return false;
+    return (p.follow_up&&p.follow_up.win&&p.follow_up.win.checked)||p.status==='Propose Site No';
+  });
+  const rows=list.map(p=>{
+    const mutuStr=(p.mutu||[]).filter(Boolean).map(x=>`<span class="mutu-tag">${esc(x)}</span>`).join(' ')||'-';
+    return `<tr>
+      <td><b>${esc(p.project_name)}</b><div style="font-size:11px;color:#64748B">${esc(p.address)}</div></td>
+      <td>${esc(p.pic_project||'-')}</td>
+      <td>${p.site_no?`<span class="badge badge-siteno">${esc(p.site_no)}</span>`:'<i style="color:#94A3B8">Belum diisi</i>'}</td>
+      <td>${mutuStr}</td>
+      <td><button class="btn btn-primary btn-xs" onclick="openProposeModal(${p.id})">${p.site_no?'Edit':'Isi Site No'}</button></td>
+    </tr>`;
+  }).join('');
+  m.innerHTML=`
+    <div class="panel">
+      <div class="panel-header"><span>🏗️ Propose Site No</span><span class="refresh-info">Owner Only</span></div>
+      <div class="panel-body">
+        <div class="warn-box">Setiap <b>Mutu = 1 Order</b>. Kalau customer mau 2 mutu, pilih 2 mutu di sini.</div>
+        <div class="table-wrapper"><table class="table">
+          <thead><tr><th>Project</th><th>PIC</th><th>Site No</th><th>Mutu</th><th>Aksi</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="5" class="empty">Belum ada prospek yang perlu di-propose</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+}
+function openProposeModal(id){
+  const p=DB.prospek.find(x=>x.id===id);
+  const mutu=p.mutu&&p.mutu.length?[...p.mutu]:[''];
+  while(mutu.length<6)mutu.push('');
+  const rows=mutu.slice(0,6).map((v,i)=>`
+    <div class="mutu-row2"><span style="width:60px;font-size:12px;color:#475569">Mutu ${i+1}</span>
+      <select id="mutu_${i}"><option value="">-- Pilih Mutu --</option>${DB.mutu_master.filter(x=>x.aktif!==false).map(mm=>`<option value="${esc(mm.kode)}" ${mm.kode===v?'selected':''}>${esc(mm.kode)} — ${esc(mm.nama)}</option>`).join('')}</select>
+    </div>`).join('');
+  showModal(`Propose Site No — ${esc(p.project_name)}`,`
+    <div class="warn-box">Setiap <b>Mutu = 1 Order</b>.</div>
+    <div class="form-group"><label>Nama Project</label><input id="pp_proj" value="${esc(p.project_name)}"></div>
+    <div class="form-row col-2">
+      <div class="form-group"><label>Alamat</label><input id="pp_addr" value="${esc(p.address)}"></div>
+      <div class="form-group"><label>PIC Project</label><input id="pp_pic" value="${esc(p.pic_project||'')}"></div>
+    </div>
+    <div class="form-group"><label>Site No *</label><input id="pp_site" value="${esc(p.site_no)}" placeholder="cth: SN-2026-001"></div>
+    <div class="form-group"><label>Mutu (maksimal 6)</label><div class="mutu-list">${rows}</div></div>`,
+  [{text:'Batal',cls:'btn-gray',action:closeModal},{text:'💾 Simpan',cls:'btn-green',action:()=>savePropose(id)}]);
+}
+function savePropose(id){
+  const p=DB.prospek.find(x=>x.id===id);
+  const site=$('#pp_site').value.trim();
+  if(!site)return toast('Site No wajib','error');
+  p.project_name=$('#pp_proj').value.trim();
+  p.address=$('#pp_addr').value.trim();
+  p.pic_project=$('#pp_pic').value.trim();
+  p.site_no=site;
+  const mutu=[];
+  for(let i=0;i<6;i++){const v=($('#mutu_'+i)?.value||'').trim();if(v&&!mutu.includes(v))mutu.push(v);}
+  p.mutu=mutu;p.status='Complete';
+  saveDB();closeModal();toast('✅ Site No tersimpan — status COMPLETE','success');reRenderCurrentPage();
+}
+
+/* ============ ORDER ============ */
+function renderOrder(m){
+  const rows=DB.orders.map(o=>`<tr>
+    <td><b>${esc(o.site_no)}</b></td>
+    <td>${o.mutu?`<span class="mutu-tag">${esc(o.mutu)}</span>`:'-'}</td>
+    <td>${esc(o.customer_name||'-')}</td>
+    <td>${esc(o.project_name)}</td>
+    <td>${esc(o.plant_name||'-')}</td>
+    <td>${o.qty_order}</td>
+    <td>${esc(o.delivery_date||'-')}<br><small>${esc(o.jam_loading||'')}</small></td>
+    <td>${statusBadge(o.order_status||'Pending')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-primary btn-xs" onclick="openOrderModal(${o.id})">Edit</button>
+      <button class="btn btn-red btn-xs" onclick="hapusOrder(${o.id})">Hapus</button>
+    </td>
+  </tr>`).join('');
+  m.innerHTML=`
+    <div class="panel">
+      <div class="panel-header"><span>📦 Order</span><button class="btn btn-orange btn-sm" onclick="openOrderModal()">+ Order Baru</button></div>
+      <div class="panel-body">
+        <div class="info-box"><b>1 Order = 1 Mutu.</b> Multi-Plant diatur di menu Jadwal Pengecoran.</div>
+        <div class="table-wrapper"><table class="table">
+          <thead><tr><th>Site No</th><th>Mutu</th><th>Customer</th><th>Project</th><th>Plant</th><th>Qty Order</th><th>Delivery</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="9" class="empty">Belum ada order</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+}
+function hapusOrder(id){
+  const o=DB.orders.find(x=>x.id===id);
+  if(!confirm(`Hapus order "${o.site_no} / ${o.mutu}"?`))return;
+  DB.orders=DB.orders.filter(x=>x.id!==id);
+  DB.schedules=DB.schedules.filter(s=>s.order_id!==id);
+  saveDB();toast('Order dihapus','success');reRenderCurrentPage();
+}
+function openOrderFromProspek(id){
+  const p=DB.prospek.find(x=>x.id===id);
+  if(!p||!p.site_no)return toast('Site No belum diisi','error');
+  openOrderModal(null,p.site_no);
+}
+function openOrderModal(orderId,initialSite){
+  const o=orderId?DB.orders.find(x=>x.id===orderId):null;
+  const site=o?.site_no||initialSite||'';
+  showModal(o?'Edit Order':'Order Baru',`
+    <div class="info-box"><b>1 Order = 1 Mutu.</b> Setelah Save → masuk Jadwal Pengecoran.</div>
+    <div class="form-group"><label>Site No * (paste Site No untuk auto-fetch)</label><input id="o_site" value="${esc(site)}" oninput="tryAutofetch()"></div>
+    <div class="form-row col-2">
+      <div class="form-group"><label>Customer *</label><input id="o_cust" value="${esc(o?.customer_name||'')}" placeholder="Nama customer"></div>
+      <div class="form-group"><label>Mutu * (pilih 1)</label><select id="o_mutu"><option value="">-- Isi Site No dulu --</option></select></div>
+    </div>
+    <div class="form-row col-2">
+      <div class="form-group"><label>Nama Project</label><input id="o_proj" value="${esc(o?.project_name||'')}" readonly class="input-readonly"></div>
+      <div class="form-group"><label>Alamat</label><input id="o_addr" value="${esc(o?.address||'')}" readonly class="input-readonly"></div>
+    </div>
+    <div class="form-row col-2">
+      <div class="form-group"><label>Plant Name *</label><select id="o_plant">${plantOptions(o?.plant_name||'')}</select></div>
+      <div class="form-group"><label>Qty Order (m³) *</label><input id="o_qty" type="number" value="${o?.qty_order||0}"></div>
+    </div>
+    <div class="form-row col-2">
+      <div class="form-group"><label>Delivery Date *</label><input id="o_deliv_date" type="date" value="${esc(o?.delivery_date||today())}"></div>
+      <div class="form-group"><label>Jam Loading *</label><input id="o_jam_loading" type="time" value="${esc(o?.jam_loading||'08:00')}"></div>
+    </div>
+    <div class="form-group"><label>Kontak PIC</label><input id="o_pic" value="${esc(o?.kontak_pic||'')}" readonly class="input-readonly"></div>`,
+  [{text:'Batal',cls:'btn-gray',action:closeModal},{text:'💾 Simpan',cls:'btn-green',action:()=>saveOrder(orderId||null)}]);
+  if(site)setTimeout(()=>populateMutuDropdown(site,o?.mutu||''),30);
+}
+function populateMutuDropdown(site,selectedMutu){
+  const sel=$('#o_mutu');if(!sel)return;
+  const prospek=DB.prospek.find(p=>p.site_no===site);
+  const mutuList=(prospek&&prospek.mutu)?prospek.mutu.filter(Boolean):[];
+  if(mutuList.length===0){sel.innerHTML='<option value="">-- Tidak ada mutu --</option>';return;}
+  sel.innerHTML='<option value="">-- Pilih Mutu --</option>'+mutuList.map(m=>`<option value="${esc(m)}" ${m===selectedMutu?'selected':''}>${esc(m)}</option>`).join('');
+}
+function tryAutofetch(){
+  const site=$('#o_site').value.trim();
+  const prospek=DB.prospek.find(p=>p.site_no===site);
+  if(!prospek){
+    $('#o_proj').value='';$('#o_addr').value='';$('#o_pic').value='';
+    $('#o_mutu').innerHTML='<option value="">-- Site No tidak ditemukan --</option>';
+    return;
+  }
+  $('#o_proj').value=prospek.project_name||'';
+  $('#o_addr').value=prospek.address||'';
+  $('#o_pic').value=prospek.pic_project||'';
+  const custEl=$('#o_cust');if(custEl&&!custEl.value)custEl.value=prospek.customer_name||'';
+  const vPlant=prospek.visit_detail?.plant_name;const plantEl=$('#o_plant');if(vPlant&&plantEl&&!plantEl.value)plantEl.value=vPlant;
+  populateMutuDropdown(site,$('#o_mutu').value);
+  toast('Data terpanggil dari '+site,'info');
+}
+function saveOrder(id){
+  const site=$('#o_site').value.trim();
+  const mutu=$('#o_mutu').value;
+  const custName=$('#o_cust').value.trim();
+  const plantName=$('#o_plant').value;
+  const delivDate=$('#o_deliv_date').value;
+  const jamLoading=$('#o_jam_loading').value;
+  const qty=+$('#o_qty').value||0;
+  if(!site)return toast('Site No wajib','error');
+  if(!mutu)return toast('Mutu wajib','error');
+  if(!custName)return toast('Customer wajib','error');
+  if(!plantName)return toast('Plant wajib','error');
+  if(!delivDate)return toast('Delivery Date wajib','error');
+  if(!jamLoading)return toast('Jam Loading wajib','error');
+  const data={site_no:site,mutu,customer_name:custName,project_name:$('#o_proj').value,address:$('#o_addr').value,kontak_pic:$('#o_pic').value,plant_name:plantName,qty_order:qty,delivery_date:delivDate,jam_loading:jamLoading,order_status:'Scheduled'};
+  let orderId;
+  if(id){Object.assign(DB.orders.find(o=>o.id===id),data);orderId=id;}
+  else{
+    if(DB.orders.find(o=>o.site_no===site&&o.mutu===mutu))return toast('Order sudah ada','error');
+    orderId=Date.now();
+    DB.orders.push({id:orderId,...data,qty_delivery:0,delivery_status:'Pending',created_at:today()});
+  }
+  syncOrderToSchedule(orderId);
+  saveDB();closeModal();toast('Order tersimpan','success');reRenderCurrentPage();
+}
+function syncOrderToSchedule(orderId){
+  const o=DB.orders.find(x=>x.id===orderId);if(!o)return;
+  let sch=DB.schedules.find(s=>s.order_id===orderId);
+  const payload={order_id:orderId,site_no:o.site_no,customer_name:o.customer_name,project_name:o.project_name,mutu:o.mutu,date:o.delivery_date,time:o.jam_loading,volume:o.qty_order,location:o.address,status:o.order_status||'Scheduled'};
+  if(sch){Object.assign(sch,payload);if(!sch.plants)sch.plants=[];}
+  else DB.schedules.push({id:Date.now()+1,...payload,plants:[],updates:[]});
+}
+
+/* ============ ORDER SEARCH (Default Tanggal = Hari Ini) ============ */
+function renderOrderSearch(m){
+  const f=window._osf||(window._osf={site:'',d1:'',d2:'',cust:''});
+  if(!f.d1 && !f.d2){
+    const t=today();
+    f.d1=t;
+    f.d2=t;
+    window._osf=f;
+  }
+  const hasDateFilter=!!(f.d1||f.d2);
+  let list=[];
+  if(hasDateFilter){
+    list=[...DB.orders];
+    if(f.site)list=list.filter(o=>o.site_no.toLowerCase().includes(f.site.toLowerCase()));
+    if(f.cust)list=list.filter(o=>(o.customer_name||'').toLowerCase().includes(f.cust.toLowerCase()));
+    if(f.d1)list=list.filter(o=>o.delivery_date&&o.delivery_date>=f.d1);
+    if(f.d2)list=list.filter(o=>o.delivery_date&&o.delivery_date<=f.d2);
+  }
+  const rows=list.map(o=>{
+    const qo=o.qty_order||0,qd=o.qty_delivery||0,qr=qo-qd;
+    return `<tr>
+      <td><b>${esc(o.site_no)}</b></td>
+      <td>${o.mutu?`<span class="mutu-tag">${esc(o.mutu)}</span>`:'-'}</td>
+      <td>${esc(o.customer_name||'-')}</td>
+      <td>${esc(o.project_name)}</td>
+      <td>${esc(o.plant_name||'-')}</td>
+      <td><b>${qo}</b></td>
+      <td><b style="color:#1E40AF">${qd.toFixed(1)}</b></td>
+      <td><b style="color:${qr>0?'#DC2626':'#16A34A'}">${qr.toFixed(1)}</b></td>
+      <td>${statusBadge(o.delivery_status)}</td>
+      <td>${esc(o.delivery_date||'-')}</td>
+    </tr>`;
+  }).join('');
+  m.innerHTML=`
+    <div class="panel">
+      <div class="panel-header"><span>🔎 Order Search</span></div>
+      <div class="panel-body">
+        <div class="filter-bar">
+          <div class="fg"><label>Site No</label><input id="f_site" value="${esc(f.site)}"></div>
+          <div class="fg"><label>Start Date *</label><input id="f_d1" type="date" value="${esc(f.d1)}"></div>
+          <div class="fg"><label>End Date *</label><input id="f_d2" type="date" value="${esc(f.d2)}"></div>
+          <div class="fg"><label>Customer</label><input id="f_cust" value="${esc(f.cust)}"></div>
+          <button class="btn btn-primary" onclick="applyOS()">Cari</button>
+          <button class="btn btn-gray" onclick="resetOS()">Reset</button>
+        </div>
+        ${!hasDateFilter?`<div class="filter-hint"><b>📅 Pilih filter Delivery Date dulu</b>Data order ditampilkan setelah rentang tanggal dipilih.</div>`:`
+          <div style="font-size:12px;color:#64748B;margin-bottom:10px">Menampilkan <b>${list.length}</b> order</div>
+          <div class="table-wrapper"><table class="table">
+            <thead><tr><th>Site No</th><th>Mutu</th><th>Customer</th><th>Project</th><th>Plant</th><th>Qty Order</th><th>Qty Delivery</th><th>Qty Remain</th><th>Status</th><th>Delivery Date</th></tr></thead>
+            <tbody>${rows||'<tr><td colspan="10" class="empty">Tidak ada order</td></tr>'}</tbody>
+          </table></div>
+        `}
+      </div>
+    </div>`;
+}
+function applyOS(){window._osf={site:$('#f_site').value,d1:$('#f_d1').value,d2:$('#f_d2').value,cust:$('#f_cust').value};renderOrderSearch($('#contentArea'));}
+function resetOS(){window._osf={site:'',d1:today(),d2:today(),cust:''};renderOrderSearch($('#contentArea'));}
+
+/* ============ AFTER DELIVERY REPORT (Default Tanggal = Hari Ini) ============ */
+function renderADR(m){
+  if(!adrFilter.startDate && !adrFilter.endDate){
+    const t=today();
+    adrFilter.startDate=t;
+    adrFilter.endDate=t;
+  }
+  const plantOpts=DB.plants.map(p=>`<option value="${p.id_plant}" ${adrFilter.plantId==p.id_plant?'selected':''}>${esc(p.nama)}</option>`).join('');
+  m.innerHTML=`
+    <div class="panel">
+      <div class="panel-header"><span>📊 After Delivery Report</span><span class="refresh-info"><span class="live-badge"><span class="live-dot"></span>Realtime</span></span></div>
+      <div class="panel-body">
+        <div class="adr-filter-compact">
+          <div class="form-group"><label>🏭 Plant Name</label>
+            <select id="adr_plant" onchange="updateAdrFilter()">
+              <option value="">-- Semua Plant --</option>
+              ${plantOpts}
+            </select>
+          </div>
+          <div class="form-group"><label>📅 Start Date</label>
+            <input type="date" id="adr_start" value="${adrFilter.startDate||''}" onchange="updateAdrFilter()">
+          </div>
+          <div class="form-group"><label>📅 End Date</label>
+            <input type="date" id="adr_end" value="${adrFilter.endDate||''}" onchange="updateAdrFilter()">
+          </div>
+          <div class="form-group"><label>📍 Site No</label>
+            <input type="text" id="adr_site" placeholder="Cari Site No..." value="${esc(adrFilter.siteNo||'')}" oninput="updateAdrFilter()">
+          </div>
+          <div class="form-group"><label>👤 Customer</label>
+            <input type="text" id="adr_customer" placeholder="Cari Customer..." value="${esc(adrFilter.customer||'')}" oninput="updateAdrFilter()">
+          </div>
+          <div class="form-group"><label>📌 Status Pengiriman</label>
+            <select id="adr_status" onchange="updateAdrFilter()">
+              <option value="">-- Semua Status --</option>
+              <option value="Pending" ${adrFilter.status==='Pending'?'selected':''}>Pending</option>
+              <option value="In Transit" ${adrFilter.status==='In Transit'?'selected':''}>In Transit</option>
+              <option value="Partially Delivered" ${adrFilter.status==='Partially Delivered'?'selected':''}>Partially Delivered</option>
+              <option value="Delivered" ${adrFilter.status==='Delivered'?'selected':''}>Delivered</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap">
+            <button class="btn btn-green" onclick="downloadAdrExcel()">📥 Download Excel</button>
+            <button class="btn btn-gray" onclick="resetAdrFilter()">🔄 Reset Filter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span>📋 Data Report <span id="adrCount">(0 baris)</span></span>
+        <span class="refresh-info"><span class="live-badge"><span class="live-dot"></span>LIVE</span></span>
+      </div>
+      <div class="panel-body">
+        <div class="table-wrapper" style="overflow-x:auto;max-width:100%">
+          <table class="table" id="adrTable" style="font-size:11px;white-space:nowrap">
+            <thead>
+              <tr>
+                <th>No</th><th>Site No</th><th>Customer</th><th>Project</th>
+                <th>Plant</th><th>Mutu</th><th>Delivery Date</th>
+                <th>Qty Order</th><th>Qty Delivery</th><th>Qty Remain</th>
+                <th>Status</th><th>Kontak PIC</th>
+              </tr>
+            </thead>
+            <tbody id="adrTableBody">
+              <tr><td colspan="12" class="text-center text-muted">Gunakan filter di atas untuk menampilkan data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  applyAdrFilter();
+}
+function updateAdrFilter(){
+  adrFilter.plantId=document.getElementById('adr_plant').value;
+  adrFilter.startDate=document.getElementById('adr_start').value;
+  adrFilter.endDate=document.getElementById('adr_end').value;
+  adrFilter.siteNo=document.getElementById('adr_site').value;
+  adrFilter.customer=document.getElementById('adr_customer').value;
+  adrFilter.status=document.getElementById('adr_status').value;
+  applyAdrFilter();
+}
+function resetAdrFilter(){
+  adrFilter={plantId:'',startDate:today(),endDate:today(),siteNo:'',customer:'',status:''};
+  reRenderCurrentPage();
+}
+function getAdrData(){
+  let list=[...DB.orders];
+  if(adrFilter.plantId){
+    const plant=DB.plants.find(p=>p.id_plant==adrFilter.plantId);
+    if(plant)list=list.filter(o=>(o.plant_name||'')===plant.nama);
+  }
+  if(adrFilter.startDate)list=list.filter(o=>o.delivery_date&&o.delivery_date>=adrFilter.startDate);
+  if(adrFilter.endDate)list=list.filter(o=>o.delivery_date&&o.delivery_date<=adrFilter.endDate);
+  if(adrFilter.siteNo)list=list.filter(o=>(o.site_no||'').toLowerCase().includes(adrFilter.siteNo.toLowerCase()));
+  if(adrFilter.customer)list=list.filter(o=>(o.customer_name||'').toLowerCase().includes(adrFilter.customer.toLowerCase()));
+  if(adrFilter.status)list=list.filter(o=>(o.delivery_status||'')===adrFilter.status);
+  return list;
+}
+function applyAdrFilter(){
+  const list=getAdrData();
+  const tbody=document.getElementById('adrTableBody');
+  const countEl=document.getElementById('adrCount');
+  if(!tbody)return;
+  if(list.length===0){
+    tbody.innerHTML='<tr><td colspan="12" class="text-center text-muted">Tidak ada data untuk filter ini</td></tr>';
+    if(countEl)countEl.textContent='(0 baris)';
+    return;
+  }
+  tbody.innerHTML=list.map((o,i)=>{
+    const qo=o.qty_order||0,qd=o.qty_delivery||0,qr=qo-qd;
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${esc(o.site_no)}</b></td>
+      <td>${esc(o.customer_name||'-')}</td>
+      <td>${esc(o.project_name)}</td>
+      <td>${esc(o.plant_name||'-')}</td>
+      <td>${o.mutu?`<span class="mutu-tag">${esc(o.mutu)}</span>`:'-'}</td>
+      <td>${esc(o.delivery_date||'-')}</td>
+      <td class="text-right"><b>${qo}</b></td>
+      <td class="text-right"><b style="color:#1E40AF">${qd.toFixed(1)}</b></td>
+      <td class="text-right"><b style="color:${qr>0?'#DC2626':'#16A34A'}">${qr.toFixed(1)}</b></td>
+      <td>${statusBadge(o.delivery_status)}</td>
+      <td>${esc(o.kontak_pic||'-')}</td>
+    </tr>`;
+  }).join('');
+  if(countEl)countEl.textContent=`(${list.length} baris)`;
+}
+function downloadAdrExcel(){
+  const list=getAdrData();
+  if(list.length===0)return toast('⚠️ Tidak ada data untuk di-download','warning');
+  const headers=['No','Site No','Customer','Project','Plant','Mutu','Delivery Date','Qty Order','Qty Delivery','Qty Remain','Status','Kontak PIC'];
+  const rows=[headers.join(';')];
+  list.forEach((o,i)=>{
+    const qo=o.qty_order||0,qd=o.qty_delivery||0,qr=qo-qd;
+    const row=[i+1,o.site_no,o.customer_name,o.project_name,o.plant_name,o.mutu,o.delivery_date,qo,qd.toFixed(1),qr.toFixed(1),o.delivery_status,o.kontak_pic]
+      .map(v=>`"${String(v||'').replace(/"/g,'""')}"`);
+    rows.push(row.join(';'));
+  });
+  const csv='\uFEFF'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=`ADR_${adrFilter.startDate||'all'}_${adrFilter.endDate||'all'}.csv`;
+  link.click();
+  toast('📥 File ADR berhasil di-download','success');
+}
     /* ============ JADWAL PENGECORAN (Default Tanggal = Hari Ini) ============ */
 function renderSchedule(m){
   const f=window._schf||(window._schf={plant:'',d1:'',d2:'',status:''});
