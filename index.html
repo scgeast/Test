@@ -173,13 +173,13 @@ a{text-decoration:none;color:inherit}
 .adr-filter-compact input,.adr-filter-compact select{height:38px;padding:8px 12px;font-size:13px;border-radius:8px;width:100%}
 
 .toggle-wrap{display:flex;align-items:center;gap:8px}
-.toggle{position:relative;display:inline-block;width:54px;height:26px;cursor:pointer;flex-shrink:0}
-.toggle .slider{position:absolute;inset:0;background:#CBD5E1;transition:.3s;border-radius:26px}
-.toggle .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;transition:.3s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle{position:relative;display:inline-block;width:36px;height:18px;cursor:pointer;flex-shrink:0}
+.toggle .slider{position:absolute;inset:0;background:#CBD5E1;transition:.3s;border-radius:18px}
+.toggle .slider:before{content:"";position:absolute;height:14px;width:14px;left:2px;top:2px;background:white;transition:.3s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .toggle.on .slider{background:#16A34A}
-.toggle.on .slider:before{transform:translateX(28px)}
+.toggle.on .slider:before{transform:translateX(18px)}
 .toggle.locked{cursor:not-allowed;opacity:.6}
-.toggle-lbl{font-size:11px;font-weight:600}
+.toggle-lbl{font-size:10px;font-weight:600}
 .toggle-lbl.on{color:#16A34A}
 .toggle-lbl.off{color:#64748B}
 
@@ -919,7 +919,7 @@ function openProposeModal(id){
       <div class="form-group"><label>Alamat</label><input id="pp_addr" value="${esc(p.address)}"></div>
       <div class="form-group"><label>PIC Project</label><input id="pp_pic" value="${esc(p.pic_project||'')}"></div>
     </div>
-    <div class="form-group"><label>Site No *</label><input id="pp_site" value="${esc(p.site_no)}" placeholder="cth: SN-2026-001"></div>
+<div class="form-group"><label style="color:#DC2626;font-weight:700">Site No * <span style="font-size:10px;color:#94A3B8;font-weight:400">(wajib diisi)</span></label><input id="pp_site" class="input-site-no-highlight" value="${esc(p.site_no)}" placeholder="cth: SN-2026-001"></div>
     <div class="form-group"><label>Mutu (maksimal 6)</label><div class="mutu-list">${rows}</div></div>`,
   [{text:'Batal',cls:'btn-gray',action:closeModal},{text:'💾 Simpan',cls:'btn-green',action:()=>savePropose(id)}]);
 }
