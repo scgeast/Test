@@ -898,18 +898,6 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </template>
         </nav>
         <div class="sidebar-footer">
-          <div class="user-info" x-show="sidebarOpen">
-            <template x-if="currentUser.avatar">
-              <img :src="currentUser.avatar" class="avatar avatar-img" alt="Avatar">
-            </template>
-            <template x-if="!currentUser.avatar">
-              <div class="avatar" x-text="(currentUser.name||'?').charAt(0).toUpperCase()"></div>
-            </template>
-            <div style="overflow:hidden">
-              <div class="user-name" x-text="currentUser.name"></div>
-              <div class="user-role" x-text="currentUser.role"></div>
-            </div>
-          </div>
           <button @click="logout()" class="btn-logout">
             <i class="fa-solid fa-right-from-bracket"></i> <span x-show="sidebarOpen">Logout</span>
           </button>
@@ -1032,7 +1020,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <!-- DATA PROSPEK -->
           <div x-show="page==='dataProspek' && hasAccess('dataProspek')">
             <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input x-model="pFilter.q" placeholder="Cari project..." class="input">
                 <select x-model="pFilter.source" class="input">
                   <option value="">Semua Sumber</option>
@@ -1046,7 +1034,6 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                   <option value="complete">Complete</option>
                   <option value="held">Hold</option>
                 </select>
-                <button @click="pFilter.q='';pFilter.status='';pFilter.source=''" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
               </div>
             </div>
             <div class="card overflow-x-auto">
@@ -1201,44 +1188,37 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
               </div>
             </template>
 
-            <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div class="relative" x-data="{ open:false }" @click.outside="open=false">
-                  <label class="label">Filter Plant (multi)</label>
-                  <button type="button" @click="open=!open" class="input flex items-center justify-between text-left">
-                    <span class="truncate" x-text="jFilter.plants.length ? jFilter.plants.map(id=>plantName(id)).join(', ') : 'Semua Plant'"></span>
-                    <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-2"></i>
-                  </button>
-                  <div x-show="open" x-cloak class="dropdown-panel">
-                    <div class="p-2 border-b bg-slate-50 flex justify-between items-center text-xs">
-                      <span class="font-semibold text-slate-600"><span x-text="jFilter.plants.length"></span> dipilih</span>
-                      <button type="button" @click="jFilter.plants=[]" class="text-blue-600 hover:underline">Clear</button>
-                    </div>
+            <div class="card mb-4" style="padding:10px 14px">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label class="label">Plant (multi)</label>
+                  <div class="flex flex-wrap gap-1 p-1 border rounded-lg bg-white" style="min-height:40px;align-items:center">
                     <template x-for="p in jadwalPlantOptions" :key="p.id">
-                      <label class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer">
-                        <input type="checkbox" :value="p.id" x-model.number="jFilter.plants">
+                      <label class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded cursor-pointer border select-none"
+                             :class="jFilter.plants.map(Number).includes(Number(p.id)) ? 'bg-red-100 text-red-700 border-red-300' : 'bg-slate-100 text-slate-600 border-slate-200'">
+                        <input type="checkbox" :value="p.id" x-model.number="jFilter.plants" class="hidden">
                         <span x-text="p.name"></span>
                       </label>
                     </template>
                     <template x-if="jadwalPlantOptions.length===0">
-                      <div class="px-3 py-3 text-xs text-slate-400">Belum ada Plant Name. Tambahkan Plant di Kelola Plant.</div>
+                      <span class="text-xs text-slate-400">Belum ada Plant</span>
                     </template>
                   </div>
                 </div>
-                <select x-model="jFilter.status" class="input self-end">
-                  <option value="">Semua Status</option>
-                  <option value="scheduled">Scheduled</option>
-                  <option value="partial">Partial</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                <div class="fg" style="min-width:170px">
+                <div>
+                  <label class="label">Status</label>
+                  <select x-model="jFilter.status" class="input">
+                    <option value="">Semua Status</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="partial">Partial</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
                   <label class="label">Tanggal Pengiriman</label>
                   <input type="date" x-model="jFilter.date" class="input">
                 </div>
-              </div>
-              <div class="flex justify-end mt-3">
-                <button @click="resetJadwalFilter()" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
               </div>
             </div>
 
@@ -1518,7 +1498,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <!-- PROPOSE SITE NO -->
           <div x-show="page==='proposeSiteNo' && currentUser.role==='owner'">
             <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input x-model="psFilter.q" placeholder="Cari project / site no..." class="input md:col-span-2">
                 <select x-model="psFilter.status" class="input">
                   <option value="">Semua Status</option>
@@ -1526,7 +1506,6 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                   <option value="complete">Released</option>
                   <option value="held">Hold / Suspend</option>
                 </select>
-                <button @click="psFilter.q='';psFilter.status=''" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
               </div>
             </div>
             <div class="card overflow-x-auto">
@@ -1904,7 +1883,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <!-- LOG AKTIVITAS -->
           <div x-show="page==='logAktivitas' && currentUser.role==='owner'">
             <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input x-model="logFilter.q" placeholder="Cari User ID / Nama..." class="input">
                 <select x-model="logFilter.status" class="input">
                   <option value="">Semua Status</option>
@@ -1912,7 +1891,6 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                   <option value="failed">❌ Gagal</option>
                   <option value="inactive">🚫 Nonaktif</option>
                 </select>
-                <button @click="logFilter.q='';logFilter.status=''" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
               </div>
             </div>
             <div class="card overflow-x-auto">
