@@ -713,42 +713,72 @@ tbody tr:hover{background:#FEF2F2!important}
   .topbar-user span:not(.top-avatar){display:none}
 }
 </style>
+<style id="alvend-mobile-responsive">
+/* ALVEND responsive layer — UI only */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg{max-width:100%}
+button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-height:40px}
+@media (max-width: 1024px){
+  .sidebar{width:220px!important}
+  .main-content,.content,.page-content{max-width:100%!important}
+  .card,.panel{border-radius:12px}
+  .table-wrapper,.overflow-x-auto{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{min-width:720px}
+}
+@media (max-width: 768px){
+  body{font-size:14px}
+  .sidebar{width:100%!important;max-width:290px;z-index:1000}
+  .main-content,.content,.page-content{width:100%!important;margin-left:0!important;padding:12px!important}
+  .topbar{position:sticky;top:0;z-index:900}
+  .card,.panel{padding:12px!important;margin-bottom:12px}
+  .grid{grid-template-columns:1fr!important}
+  .grid.md\\:grid-cols-2,.grid.lg\\:grid-cols-2,.grid.lg\\:grid-cols-3,.grid.lg\\:grid-cols-4{grid-template-columns:1fr!important}
+  .form-row,.form-grid{grid-template-columns:1fr!important;display:grid!important;gap:10px!important}
+  .form-row.col-2,.col-2{grid-template-columns:1fr!important}
+  .flex{min-width:0}
+  .flex.justify-between,.flex.items-center.justify-between{flex-wrap:wrap;gap:8px}
+  .modal-box{width:calc(100vw - 24px)!important;max-height:92vh!important;margin:12px}
+  .modal-bg{padding:0!important}
+  .input,select,input,textarea{max-width:100%;box-sizing:border-box}
+  .th{font-size:.66rem;padding:.55rem .6rem}
+  .td{font-size:.76rem;padding:.55rem .6rem}
+  .kpi,.stat-card{min-width:0!important}
+  .page-header h1,.page-title{font-size:1.25rem!important}
+  .btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{font-size:.82rem;padding:.55rem .75rem}
+}
+@media (max-width: 480px){
+  .main-content,.content,.page-content{padding:8px!important}
+  .card,.panel{padding:10px!important;border-radius:10px}
+  .panel-header{flex-wrap:wrap;gap:6px}
+  .form-actions,.actions{display:grid!important;grid-template-columns:1fr!important;width:100%}
+  .form-actions>* ,.actions>*{width:100%!important}
+  .modal-box{width:calc(100vw - 12px)!important}
+  .table-wrapper,.overflow-x-auto{margin-left:-2px;margin-right:-2px}
+}
+</style>
 
-<style id="alvend-responsive-mobile">
-/* ALVEND responsive layout: desktop + tablet + phone */
-@media (max-width:1024px){
-  .sidebar{width:240px;}
-  .main-content,.content,.page-content{padding-left:16px;padding-right:16px;}
-  .grid,.form-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-  .overflow-x-auto{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  table{min-width:720px;}
-}
-@media (max-width:768px){
-  body{font-size:14px;overflow-x:hidden;}
-  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;width:min(82vw,300px);transform:translateX(-105%);transition:transform .22s ease;box-shadow:8px 0 24px rgba(0,0,0,.12);}
-  .sidebar:not(.collapsed){transform:translateX(0);}
-  .sidebar.collapsed{transform:translateX(-105%);}
-  .main-content,.content,.page-content{margin-left:0 !important;padding:12px !important;width:100% !important;}
-  .topbar{position:sticky;top:0;z-index:40;padding:10px 12px !important;}
-  .grid,.form-grid,.form-row,.row{grid-template-columns:1fr !important;display:grid !important;}
-  .col-2,.col-3,.col-4{grid-template-columns:1fr !important;}
-  .card,.panel{border-radius:12px;margin-bottom:12px;max-width:100%;} 
-  .card-header,.panel-header{padding:12px !important;flex-wrap:wrap;gap:8px;}
-  .card-body,.panel-body{padding:12px !important;}
-  .btn{min-height:40px;}
-  input,select,textarea{font-size:16px !important;min-height:42px;}
-  .table-wrapper,.overflow-x-auto{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
-  table{min-width:760px;}
-  .modal-box{width:calc(100vw - 24px) !important;max-width:none !important;max-height:88vh;border-radius:14px;}
-  .modal-bg{padding:12px;}
-  .dashboard-grid,.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-}
-@media (max-width:480px){
-  .dashboard-grid,.stats-grid{grid-template-columns:1fr !important;}
-  .page-title{font-size:20px !important;}
-  .btn-group{width:100%;display:grid !important;grid-template-columns:1fr 1fr;gap:8px;}
-  .btn-group .btn{width:100%;}
-}
+<style id="jadwal-filter-compact-fix">
+  .jadwal-filter-compact{align-items:end}
+  .jadwal-filter-compact > *{min-width:0}
+  .jadwal-plant-filter{min-width:0}
+  .jadwal-plant-filter > button{min-width:0;max-width:100%;overflow:hidden}
+  .jadwal-plant-filter .dropdown-panel{width:100%;min-width:220px;max-width:calc(100vw - 32px);z-index:1000}
+  .jadwal-date-filter{min-width:0!important}
+  .jadwal-date-filter .input{min-width:0;width:100%}
+  @media (min-width:769px){
+    .jadwal-filter-compact{grid-template-columns:minmax(180px,1.25fr) minmax(130px,.8fr) minmax(145px,.9fr)!important}
+  }
+  @media (max-width:768px){
+    .jadwal-filter-compact{grid-template-columns:1fr!important}
+    .jadwal-plant-filter .dropdown-panel{min-width:0;width:100%;max-width:100vw}
+  }
+</style>
+<style id="jadwal-filter-final-fix">
+  .topbar-logout{display:inline-flex!important;align-items:center;gap:6px}
+  .jadwal-filter-compact,.jadwal-plant-filter{min-width:0!important;overflow:visible!important}
+  .jadwal-plant-filter .input,.jadwal-filter-compact select.input{width:100%;min-width:0!important;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .jadwal-filter-compact{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
+  @media(max-width:768px){.jadwal-filter-compact{grid-template-columns:1fr!important}.topbar-logout{padding:.45rem .65rem!important}}
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -892,20 +922,8 @@ tbody tr:hover{background:#FEF2F2!important}
           </template>
         </nav>
         <div class="sidebar-footer">
-          <div class="user-info" x-show="sidebarOpen">
-            <template x-if="currentUser.avatar">
-              <img :src="currentUser.avatar" class="avatar avatar-img" alt="Avatar">
-            </template>
-            <template x-if="!currentUser.avatar">
-              <div class="avatar" x-text="(currentUser.name||'?').charAt(0).toUpperCase()"></div>
-            </template>
-            <div style="overflow:hidden">
-              <div class="user-name" x-text="currentUser.name"></div>
-              <div class="user-role" x-text="currentUser.role"></div>
-            </div>
-          </div>
           <button @click="logout()" class="btn-logout">
-            <i class="fa-solid fa-right-from-bracket"></i> <span x-show="sidebarOpen">Logout</span>
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -926,11 +944,7 @@ tbody tr:hover{background:#FEF2F2!important}
               <button @click="nav('dataProspek')" class="btn-danger btn-xs-alvend animate-pulse-red"><i class="fa-solid fa-bell"></i> <span x-text="unreadNotifCount + ' Repeat Order'"></span></button>
             </template>
             <span class="live-badge"><span class="live-dot"></span>LIVE</span>
-            <button @click="nav('profil')" class="topbar-user" title="Klik untuk buka profil">
-              <template x-if="currentUser.avatar"><img :src="currentUser.avatar" alt="Avatar" class="top-avatar"></template>
-              <template x-if="!currentUser.avatar"><span class="top-avatar top-avatar-fallback" x-text="(currentUser.name||'?').charAt(0).toUpperCase()"></span></template>
-              <span x-text="currentUser.name"></span>
-            </button>
+            <button @click="logout()" class="btn-logout topbar-logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button>
           </div>
         </header>
 
@@ -1026,7 +1040,7 @@ tbody tr:hover{background:#FEF2F2!important}
           <!-- DATA PROSPEK -->
           <div x-show="page==='dataProspek' && hasAccess('dataProspek')">
             <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2 jadwal-filter-compact">
                 <input x-model="pFilter.q" placeholder="Cari project..." class="input">
                 <select x-model="pFilter.source" class="input">
                   <option value="">Semua Sumber</option>
@@ -1197,24 +1211,14 @@ tbody tr:hover{background:#FEF2F2!important}
 
             <div class="card mb-4">
               <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div class="relative" x-data="{ open:false }" @click.outside="open=false">
-                  <label class="label">Filter Plant (multi)</label>
-                  <button type="button" @click="open=!open" class="input flex items-center justify-between text-left">
-                    <span class="truncate" x-text="jFilter.plants.length ? jFilter.plants.map(id=>plantName(id)).join(', ') : 'Semua Plant'"></span>
-                    <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-2"></i>
-                  </button>
-                  <div x-show="open" x-cloak class="dropdown-panel">
-                    <div class="p-2 border-b bg-slate-50 flex justify-between items-center text-xs">
-                      <span class="font-semibold text-slate-600"><span x-text="jFilter.plants.length"></span> dipilih</span>
-                      <button type="button" @click="jFilter.plants=[]" class="text-blue-600 hover:underline">Clear</button>
-                    </div>
-                    <template x-for="p in plants" :key="p.id">
-                      <label class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer">
-                        <input type="checkbox" :value="p.id" x-model.number="jFilter.plants">
-                        <span x-text="p.name"></span>
-                      </label>
+                <div class="jadwal-plant-filter">
+                  <label class="label">Plant Name</label>
+                  <select class="input" @change="jFilter.plants = $event.target.value ? [Number($event.target.value)] : []">
+                    <option value="">Semua Plant</option>
+                    <template x-for="p in jadwalPlantOptions" :key="p.id">
+                      <option :value="p.id" :selected="jFilter.plants.length && Number(jFilter.plants[0])===Number(p.id)" x-text="p.name"></option>
                     </template>
-                  </div>
+                  </select>
                 </div>
                 <select x-model="jFilter.status" class="input self-end">
                   <option value="">Semua Status</option>
@@ -1223,11 +1227,10 @@ tbody tr:hover{background:#FEF2F2!important}
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-                <input type="date" x-model="jFilter.date_from" class="input self-end">
-                <input type="date" x-model="jFilter.date_to" class="input self-end">
-              </div>
-              <div class="flex justify-end mt-3">
-                <button @click="resetJadwalFilter()" class="btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+                <div class="fg jadwal-date-filter">
+                  <label class="label">Tanggal Pengiriman</label>
+                  <input type="date" x-model="jFilter.date" class="input">
+                </div>
               </div>
             </div>
 
@@ -1254,11 +1257,17 @@ tbody tr:hover{background:#FEF2F2!important}
                     <template x-for="o in grp.orders" :key="o.id">
                       <tr :class="o.status==='cancelled' ? 'bg-red-50 opacity-70' : ''">
                         <td class="td">
-                          <template x-if="hasAccess('orderSearch')">
+                          <template x-if="hasAccess('orderSearch') && !isOrderFinished(o)">
                             <button @click="openEditOrder(o)" class="font-mono text-xs text-blue-600 hover:underline">
                               <span x-text="o.order_no"></span>
                               <i class="fa-solid fa-pen-to-square ml-1 text-slate-400"></i>
                             </button>
+                          </template>
+                          <template x-if="hasAccess('orderSearch') && isOrderFinished(o)">
+                            <span class="font-mono text-xs text-slate-500" :title="'Order Finished/Complete — tidak dapat diedit'">
+                              <span x-text="o.order_no"></span>
+                              <i class="fa-solid fa-lock ml-1 text-emerald-600"></i>
+                            </span>
                           </template>
                           <template x-if="!hasAccess('orderSearch')">
                             <span class="font-mono text-xs" x-text="o.order_no"></span>
@@ -1297,10 +1306,13 @@ tbody tr:hover{background:#FEF2F2!important}
                               <template x-if="(d.status||'delivered')==='rejected'">
                                 <span class="badge bg-orange-100 text-orange-700 text-xs">REJECT</span>
                               </template>
-                              <template x-if="hasAccess('orderSearch')">
+                              <template x-if="hasAccess('orderSearch') && !isOrderFinished(o)">
                                 <button @click="openEditDelivery(d)" class="text-blue-600 hover:text-blue-800 text-xs" title="Edit pengiriman">
                                   <i class="fa-solid fa-pen"></i>
                                 </button>
+                              </template>
+                              <template x-if="hasAccess('orderSearch') && isOrderFinished(o)">
+                                <span class="text-emerald-600 text-xs" title="Order Complete/Finished — pengiriman terkunci"><i class="fa-solid fa-lock"></i></span>
                               </template>
                             </div>
                           </template>
@@ -1428,7 +1440,6 @@ tbody tr:hover{background:#FEF2F2!important}
                   <option value="rejected">Rejected</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-                
               </div>
             </div>
             <div class="card overflow-x-auto">
@@ -2155,8 +2166,11 @@ tbody tr:hover{background:#FEF2F2!important}
         </template>
         <div class="p-4 border-t flex justify-end gap-2">
           <button @click="orderDetailModal.show=false" class="btn-secondary">Tutup</button>
-          <template x-if="currentUser?.role==='owner' && orderDetailModal.data">
+          <template x-if="currentUser?.role==='owner' && orderDetailModal.data && !isOrderFinished(orderDetailModal.data)">
             <button @click="openEditOrderFromDetail()" class="btn-primary"><i class="fa-solid fa-pen-to-square"></i> Edit Order</button>
+          </template>
+          <template x-if="currentUser?.role==='owner' && orderDetailModal.data && isOrderFinished(orderDetailModal.data)">
+            <span class="text-emerald-600 text-xs font-medium flex items-center"><i class="fa-solid fa-lock mr-1"></i> Complete / Finished — terkunci</span>
           </template>
         </div>
       </div>
@@ -2220,7 +2234,6 @@ tbody tr:hover{background:#FEF2F2!important}
             </div>
           </div>
           <div class="flex justify-between gap-2 pt-3 border-t">
-            
             <div class="flex gap-2 ml-auto">
               <button type="button" @click="editDvModal.show=false" class="btn-secondary">Batal</button>
               <button class="btn-success"><i class="fa-solid fa-save"></i> Simpan</button>
@@ -2685,7 +2698,7 @@ function app() {
     pForm: { project_name:'',address:'',pic_name:'',pic_contact:'',construction_type:'',competitor_id:'',competitor_other:'' },
     pFilter: { q:'',visit:'',status:'',source:'' },
     oForm: { site_no:'',project_name:'',address:'',po_no:'',pic_name:'',pic_contact:'',mutu_id:'',plant_id:'',delivery_date:'',pouring_time:'',qty_order:0,metode_cor:'',mutu_list:[],plant_list:[] },
-    jFilter: { plants:[],status:'',date_from:'',date_to:'' },
+    jFilter: { plants:[],status:'',date:'' },
     sFilter: { q:'',plant_id:'',mutu_id:'',status:'' },
     adFilter: { q:'',date_from:'',date_to:'',status:'' },
     psFilter: { q:'', status:'' },
@@ -2775,7 +2788,7 @@ function app() {
         else localStorage.removeItem('beton_current');
       }
       this.adFilter.date_from = todayISO(); this.adFilter.date_to = todayISO();
-      this.jFilter.date_from = todayISO(); this.jFilter.date_to = todayISO();
+      this.jFilter.date = todayISO();
     },
 
     // ===== HAK AKSES HELPERS =====
@@ -2992,7 +3005,6 @@ function app() {
         .sort((a,b)=> b.id - a.id);
     },
 
-    resetJadwalFilter() { this.jFilter = { plants:[], status:'', date_from: todayISO(), date_to: todayISO() }; },
     resetAdFilter() { this.adFilter = { q:'', date_from: todayISO(), date_to: todayISO(), status:'' }; },
 
     login() {
@@ -3395,6 +3407,22 @@ function app() {
       this.nav('jadwal');
     },
 
+    get jadwalPlantOptions() {
+      const map = new Map();
+      (this.plants || []).filter(p => p && p.name && p.is_active !== false).forEach(p => {
+        map.set(Number(p.id), { id:Number(p.id), name:p.name });
+      });
+      // Fallback: jika master Plant belum termuat tetapi order sudah punya plant_id.
+      (this.orders || []).forEach(o => {
+        const id = Number(o.plant_id);
+        if (id && !map.has(id)) map.set(id, { id, name: this.plantName(id) || ('Plant #' + id) });
+      });
+      return Array.from(map.values()).sort((a,b)=>a.name.localeCompare(b.name));
+    },
+    isOrderFinished(o) {
+      return ['completed','complete','finished'].includes(String(o?.status || '').toLowerCase()) || Number(o?.qty_remain) <= 0;
+    },
+
     get groupedOrders() {
       const u = this.currentUser;
       if (!u) return [];
@@ -3404,8 +3432,7 @@ function app() {
       if (u.role === 'customer') list = list.filter(o=>allowed.includes(o.site_no));
       if (this.jFilter.plants.length) list = list.filter(o=>this.jFilter.plants.map(Number).includes(Number(o.plant_id)));
       if (this.jFilter.status) list = list.filter(o=>o.status===this.jFilter.status);
-      if (this.jFilter.date_from) list = list.filter(o=>o.delivery_date>=this.jFilter.date_from);
-      if (this.jFilter.date_to) list = list.filter(o=>o.delivery_date<=this.jFilter.date_to);
+      if (this.jFilter.date) list = list.filter(o=>o.delivery_date===this.jFilter.date);
       list = list.map(o=>({ ...o, deliveries: this.deliveries.filter(d=>Number(d.order_id)===Number(o.id)) }));
       list.sort((a,b)=> (a.delivery_date+a.pouring_time).localeCompare(b.delivery_date+b.pouring_time));
       const map = {};
@@ -3475,8 +3502,10 @@ function app() {
     },
 
     openEditDelivery(d) {
+      const parentOrder = this.orderById(d.order_id);
+      if (this.isOrderFinished(parentOrder)) { this.toastMsg('Order sudah Complete/Finished. Pengiriman tidak dapat diedit.','error'); return; }
       this.editDvModal = {
-        show: true, deliveryId: d.id,
+        show: true, deliveryId: d.id, order_id: d.order_id,
         order_no: this.orderById(d.order_id)?.order_no || '-',
         delivery_date: d.delivery_date,
       };
@@ -3491,6 +3520,8 @@ function app() {
     },
 
     saveEditDelivery() {
+      const parentOrder = this.orderById(this.editDvModal.order_id || this.editDvModal.data?.order_id);
+      if (parentOrder && this.isOrderFinished(parentOrder)) { this.toastMsg('Order sudah Complete/Finished. Pengiriman tidak dapat diedit.','error'); this.editDvModal.show=false; return; }
       const dList = DB.get('deliveries');
       const i = dList.findIndex(x => Number(x.id) === Number(this.editDvModal.deliveryId));
       if (i < 0) return;
@@ -3531,8 +3562,7 @@ function app() {
     downloadAfterDeliveryExcel() {
       const rows = this.filteredDeliveries;
       if (rows.length === 0) { this.toastMsg('Tidak ada data untuk di-download','error'); return; }
-      let html = '<html><head><meta charset="UTF-8">
-</head><body>';
+      let html = '<html><head><meta charset="UTF-8"></head><body>';
       html += '<h3>After Delivery Report</h3>';
       html += '<table border="1" cellpadding="4" cellspacing="0"><thead><tr>';
       const cols = ['Tgl Kirim','No SJ','Status','Order No','Site No','Project','Sales','Mutu','Plant','Truck No','Qty (m³)','Driver','Remarks'];
@@ -3570,12 +3600,14 @@ function app() {
     },
 
     openEditOrder(o) {
+      if (this.isOrderFinished(o)) { this.toastMsg('Order sudah Complete/Finished dan tidak dapat diedit.','error'); return; }
       this.editOrderModal = { show:true, data:o };
       this.eoForm = { mutu_id:o.mutu_id, plant_id:o.plant_id, delivery_date:o.delivery_date,
                       pouring_time:o.pouring_time, qty_order:o.qty_order, metode_cor:o.metode_cor, status:o.status };
     },
     saveEditOrder() {
       const o = this.editOrderModal.data;
+      if (this.isOrderFinished(o)) { this.toastMsg('Order sudah Complete/Finished dan tidak dapat diedit.','error'); this.editOrderModal.show=false; return; }
       const list = DB.get('orders');
       const i = list.findIndex(x => Number(x.id) === Number(o.id));
       if (i < 0) return;
