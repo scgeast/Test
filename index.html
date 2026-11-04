@@ -37,18 +37,11 @@
   .animate-pulse-red{animation:pulse-red 1.5s infinite}
   .strikethrough{text-decoration:line-through;text-decoration-color:#dc2626;text-decoration-thickness:2px}
 
-
-/* ================================================================
-   ALVEND UI SKIN — PRESENTATION FROM PASTED TEXT (5)
-   IMPORTANT: no Alpine/business logic is changed here.
-   ================================================================ */
-
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
 body{background:#F3F4F6;color:#111827;font-size:14px;line-height:1.5}
 a{text-decoration:none;color:inherit}
 .hidden{display:none !important}
 
-/* LOGIN */
 #loginPage{position:fixed;inset:0;z-index:100;background:white}
 .login-wrapper{display:flex;height:100vh;width:100vw}
 .login-left{flex:1;background:#DC2626;color:white;display:flex;align-items:center;padding:60px;position:relative;overflow:hidden}
@@ -76,7 +69,6 @@ a{text-decoration:none;color:inherit}
 .demo-accounts code{background:#E5E7EB;padding:2px 6px;border-radius:3px;color:#DC2626;font-weight:600}
 .login-footer{position:fixed;bottom:30px;right:30px;display:flex;gap:20px;color:#6B7280;font-size:13px;z-index:101}
 
-/* LAYOUT */
 .app-wrapper{display:flex;min-height:100vh}
 .sidebar{width:240px;background:#FFFFFF;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;z-index:100;transition:width 0.3s ease, transform 0.3s ease}
 .sidebar.collapsed{width:0;overflow:hidden;border-right:none}
@@ -264,7 +256,6 @@ a{text-decoration:none;color:inherit}
 .hardcopy-box h3{font-size:16px;margin-bottom:10px;color:#1E3A8A}
 .hardcopy-actions{display:flex;gap:12px;margin-top:15px}
 
-/* FORM SECTION */
 .form-section{border:1px solid #E5E7EB;border-radius:8px;padding:20px;margin-bottom:20px;background:#FAFAFA}
 .form-section-title{font-size:14px;font-weight:700;color:#DC2626;margin-bottom:15px;padding-bottom:8px;border-bottom:2px solid #FEE2E2;display:flex;align-items:center;gap:8px}
 .form-section-title .num{background:#DC2626;color:white;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
@@ -298,33 +289,18 @@ a{text-decoration:none;color:inherit}
 .io-form .form-row.col-2{grid-template-columns:repeat(2,1fr)}
 .io-form label{font-size:13px;color:#374151;font-weight:500;display:block;margin-bottom:6px}
 
-/* UPLOAD BOX */
-.upload-box{
-    border:2px dashed #D1D5DB;border-radius:8px;padding:30px;
-    text-align:center;background:#F9FAFB;cursor:pointer;
-    transition:all 0.2s;margin-bottom:15px
-}
+.upload-box{border:2px dashed #D1D5DB;border-radius:8px;padding:30px;text-align:center;background:#F9FAFB;cursor:pointer;transition:all 0.2s;margin-bottom:15px}
 .upload-box:hover{border-color:#DC2626;background:#FEF2F2}
 .upload-box.dragover{border-color:#DC2626;background:#FEE2E2}
 .upload-icon{font-size:48px;color:#9CA3AF;margin-bottom:10px}
 .upload-text{font-size:14px;color:#374151;font-weight:600;margin-bottom:5px}
 .upload-hint{font-size:12px;color:#9CA3AF}
-.upload-file-info{
-    display:flex;align-items:center;gap:12px;padding:12px 15px;
-    background:#D1FAE5;border-radius:6px;margin-bottom:15px;
-    border-left:4px solid #10B981
-}
+.upload-file-info{display:flex;align-items:center;gap:12px;padding:12px 15px;background:#D1FAE5;border-radius:6px;margin-bottom:15px;border-left:4px solid #10B981}
 .upload-file-info .file-icon{font-size:24px}
 .upload-file-info .file-name{font-weight:600;color:#065F46;flex:1}
 .upload-file-info .file-size{font-size:11px;color:#6B7280}
-.upload-file-info .btn-remove{
-    background:#FEE2E2;color:#991B1B;border:none;width:28px;height:28px;
-    border-radius:50%;cursor:pointer;font-weight:700;font-size:14px
-}
-.upload-preview{
-    max-height:300px;overflow-y:auto;border:1px solid #E5E7EB;
-    border-radius:6px;margin-bottom:15px;background:white
-}
+.upload-file-info .btn-remove{background:#FEE2E2;color:#991B1B;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-weight:700;font-size:14px}
+.upload-preview{max-height:300px;overflow-y:auto;border:1px solid #E5E7EB;border-radius:6px;margin-bottom:15px;background:white}
 .upload-preview table{width:100%;border-collapse:collapse;font-size:12px}
 .upload-preview th{background:#FEE2E2;color:#7F1D1D;padding:8px;text-align:left;font-weight:600;position:sticky;top:0}
 .upload-preview td{padding:6px 8px;border-bottom:1px solid #F3F4F6}
@@ -346,9 +322,6 @@ a{text-decoration:none;color:inherit}
     .periode-info{margin-left:0}
 }
 
-/* =========================================================
-   ALVEND ARM PRO UI — visual upgrade layer
-   ========================================================= */
 :root{
   --arm-red:#C62828;--arm-red-2:#E53935;--arm-red-soft:#FFF1F2;
   --arm-blue:#2563EB;--arm-green:#10B981;--arm-ink:#111827;
@@ -364,103 +337,53 @@ button,input,select,textarea{font-family:inherit}
 ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:20px}
 ::-webkit-scrollbar-thumb:hover{background:#94A3B8}
 
-/* Login */
 #loginPage{background:linear-gradient(135deg,#fff 0%,#f8fafc 100%)}
-.login-left{
-  background:
-    radial-gradient(circle at 80% 20%,rgba(255,255,255,.18),transparent 28%),
-    radial-gradient(circle at 15% 85%,rgba(0,0,0,.12),transparent 30%),
-    linear-gradient(145deg,#8E1515 0%,#C62828 48%,#E53935 100%);
-}
+.login-left{background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.18),transparent 28%),radial-gradient(circle at 15% 85%,rgba(0,0,0,.12),transparent 30%),linear-gradient(145deg,#8E1515 0%,#C62828 48%,#E53935 100%);}
 .login-left-content{max-width:620px}
 .login-left h1{font-size:clamp(34px,4vw,54px);letter-spacing:-1.5px}
 .login-left-subtitle{font-size:17px;letter-spacing:.2px}
 .login-right{background:rgba(255,255,255,.94);backdrop-filter:blur(12px)}
 .login-logo{padding:12px 18px;border:1px solid #F1F5F9;border-radius:16px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
 .login-form{max-width:430px}
-.form-group input,.form-group select,.form-group textarea{
-  border-color:#CBD5E1;border-radius:10px;background:#F8FAFC;padding:13px 15px;
-}
+.form-group input,.form-group select,.form-group textarea{border-color:#CBD5E1;border-radius:10px;background:#F8FAFC;padding:13px 15px;}
 .form-group input:hover,.form-group select:hover,.form-group textarea:hover{border-color:#94A3B8}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
-  border-color:var(--arm-red-2);box-shadow:0 0 0 4px rgba(229,57,53,.10)
-}
-.btn-login{
-  background:linear-gradient(135deg,var(--arm-red),var(--arm-red-2));
-  border-radius:10px;box-shadow:0 8px 18px rgba(198,40,40,.22)
-}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--arm-red-2);box-shadow:0 0 0 4px rgba(229,57,53,.10)}
+.btn-login{background:linear-gradient(135deg,var(--arm-red),var(--arm-red-2));border-radius:10px;box-shadow:0 8px 18px rgba(198,40,40,.22)}
 .btn-login:hover{background:linear-gradient(135deg,#A91F1F,#C62828);transform:translateY(-1px)}
 .demo-accounts{border-radius:12px;border-left-color:#F59E0B;box-shadow:0 6px 20px rgba(15,23,42,.04)}
 
-/* Shell */
-.sidebar{
-  width:260px;background:rgba(255,255,255,.97);border-right:1px solid #E2E8F0;
-  box-shadow:8px 0 30px rgba(15,23,42,.04);backdrop-filter:blur(14px)
-}
-.sidebar-header{
-  padding:20px 20px 18px;
-  background:linear-gradient(145deg,#8E1515,#C62828 60%,#E53935);
-  box-shadow:0 8px 20px rgba(198,40,40,.16)
-}
+.sidebar{width:260px;background:rgba(255,255,255,.97);border-right:1px solid #E2E8F0;box-shadow:8px 0 30px rgba(15,23,42,.04);backdrop-filter:blur(14px)}
+.sidebar-header{padding:20px 20px 18px;background:linear-gradient(145deg,#8E1515,#C62828 60%,#E53935);box-shadow:0 8px 20px rgba(198,40,40,.16)}
 .sidebar-header .logo{font-size:19px}
 .sidebar-menu{padding:14px 10px}
 .sidebar-menu li{margin-bottom:4px}
-.sidebar-menu a{
-  margin:0 4px;padding:11px 12px;border:1px solid transparent;border-radius:10px;
-  border-left:3px solid transparent;color:#475569
-}
+.sidebar-menu a{margin:0 4px;padding:11px 12px;border:1px solid transparent;border-radius:10px;border-left:3px solid transparent;color:#475569}
 .sidebar-menu a:hover{background:#FFF5F5;color:#B91C1C;border-color:#FEE2E2}
-.sidebar-menu a.active{
-  background:linear-gradient(90deg,#FFF1F2,#FFF7F7);color:#B91C1C;
-  border-color:#FECACA;border-left-color:#C62828;box-shadow:0 5px 14px rgba(198,40,40,.08)
-}
-.sidebar-menu .icon{
-  width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;
-  border-radius:8px;background:#F8FAFC;font-size:16px
-}
+.sidebar-menu a.active{background:linear-gradient(90deg,#FFF1F2,#FFF7F7);color:#B91C1C;border-color:#FECACA;border-left-color:#C62828;box-shadow:0 5px 14px rgba(198,40,40,.08)}
+.sidebar-menu .icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:#F8FAFC;font-size:16px}
 .sidebar-menu a.active .icon{background:#FEE2E2}
 .sidebar-menu .menu-group{padding:16px 12px 7px;color:#94A3B8}
 .sidebar-footer{padding:16px;border-top:1px solid #E2E8F0}
-.sidebar-footer .avatar{
-  background:linear-gradient(135deg,#C62828,#EF5350);box-shadow:0 5px 12px rgba(198,40,40,.22)
-}
+.sidebar-footer .avatar{background:linear-gradient(135deg,#C62828,#EF5350);box-shadow:0 5px 12px rgba(198,40,40,.22)}
 .btn-logout{border-radius:9px;padding:9px;background:#FFF1F2}
 .main-content{margin-left:260px}
-.sidebar-toggle{
-  left:280px;background:#111827;border-radius:10px;width:38px;height:38px;
-  box-shadow:0 8px 20px rgba(15,23,42,.16)
-}
+.sidebar-toggle{left:280px;background:#111827;border-radius:10px;width:38px;height:38px;box-shadow:0 8px 20px rgba(15,23,42,.16)}
 .sidebar-toggle:hover{background:#1F2937;transform:translateY(-1px) scale(1.02)}
 .sidebar-toggle.collapsed{left:15px}
-.topbar{
-  padding:14px 30px 14px 72px;background:rgba(255,255,255,.9);
-  backdrop-filter:blur(14px);border-bottom:1px solid #E2E8F0;box-shadow:0 4px 18px rgba(15,23,42,.035)
-}
+.topbar{padding:14px 30px 14px 72px;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid #E2E8F0;box-shadow:0 4px 18px rgba(15,23,42,.035)}
 .topbar-title{font-size:20px;letter-spacing:-.3px}
 .topbar-right{gap:12px}
 .topbar-user{border:1px solid #E2E8F0;background:#F8FAFC}
 .content-area{padding:28px 30px}
 
-/* Components */
 .live-badge{box-shadow:inset 0 0 0 1px rgba(16,185,129,.15)}
 .periode-filter{background:linear-gradient(90deg,#FFF1F2,#FFF7F7);border-left-width:4px;box-shadow:0 8px 20px rgba(15,23,42,.035)}
-.panel,.card,.truck-card{
-  border:1px solid #E2E8F0;border-radius:14px;box-shadow:var(--arm-shadow)
-}
+.panel,.card,.truck-card{border:1px solid #E2E8F0;border-radius:14px;box-shadow:var(--arm-shadow)}
 .panel{overflow:hidden}
-.panel-header{
-  padding:14px 20px;background:linear-gradient(135deg,#A91F1F,#C62828 65%,#D32F2F);
-  letter-spacing:.1px
-}
+.panel-header{padding:14px 20px;background:linear-gradient(135deg,#A91F1F,#C62828 65%,#D32F2F);letter-spacing:.1px}
 .panel-body{padding:22px}
-.card{
-  padding:20px;border-left:0;position:relative;overflow:hidden;
-  transition:transform .2s,box-shadow .2s
-}
-.card::after{
-  content:'';position:absolute;right:-24px;top:-24px;width:80px;height:80px;
-  border-radius:50%;background:rgba(198,40,40,.055)
-}
+.card{padding:20px;border-left:0;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.card::after{content:'';position:absolute;right:-24px;top:-24px;width:80px;height:80px;border-radius:50%;background:rgba(198,40,40,.055)}
 .card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(15,23,42,.10)}
 .card-label{color:#64748B;font-weight:700}
 .card-value{font-size:30px;letter-spacing:-.8px}
@@ -491,7 +414,6 @@ button,input,select,textarea{font-family:inherit}
 .hardcopy-box{border-radius:12px}
 .tag,.plant-tag,.mutu-tag,.site-tag,.sales-tag,.wilayah-tag{border-radius:7px}
 
-/* Desktop/mobile polish */
 @media (max-width:1100px){
   .sidebar{width:240px}.main-content{margin-left:240px}.sidebar-toggle{left:260px}
   .content-area{padding:22px}
@@ -516,106 +438,23 @@ button,input,select,textarea{font-family:inherit}
   .card-value{font-size:25px}
 }
 
-
-/* =========================================================
-   SIDEBAR ICON SYSTEM — ENTERPRISE / LUCIDE-STYLE
-   Inline SVG, no external icon dependency
-   ========================================================= */
-.sidebar-menu a{
-  position:relative;
-  gap:11px;
-  min-height:46px;
-  border-left:3px solid transparent;
-  border-radius:0 11px 11px 0;
-  margin:2px 10px 2px 0;
-  padding:10px 12px 10px 14px;
-}
-.sidebar-menu a::after{
-  content:"";
-  position:absolute;
-  right:10px;
-  top:50%;
-  width:4px;
-  height:4px;
-  border-radius:50%;
-  background:transparent;
-  transform:translateY(-50%) scale(.7);
-  transition:all .18s ease;
-}
-.sidebar-menu a:hover{
-  background:linear-gradient(90deg,#FFF5F5 0%,#FFFFFF 100%);
-  color:#B91C1C;
-}
+.sidebar-menu a{position:relative;gap:11px;min-height:46px;border-left:3px solid transparent;border-radius:0 11px 11px 0;margin:2px 10px 2px 0;padding:10px 12px 10px 14px;}
+.sidebar-menu a::after{content:"";position:absolute;right:10px;top:50%;width:4px;height:4px;border-radius:50%;background:transparent;transform:translateY(-50%) scale(.7);transition:all .18s ease;}
+.sidebar-menu a:hover{background:linear-gradient(90deg,#FFF5F5 0%,#FFFFFF 100%);color:#B91C1C;}
 .sidebar-menu a:hover::after{background:#FCA5A5;transform:translateY(-50%) scale(1)}
-.sidebar-menu a.active{
-  background:linear-gradient(90deg,#FFF1F2 0%,#FFF9F9 100%);
-  color:#B91C1C;
-  font-weight:700;
-  border-left-color:#DC2626;
-  box-shadow:0 3px 12px rgba(220,38,38,.07);
-}
+.sidebar-menu a.active{background:linear-gradient(90deg,#FFF1F2 0%,#FFF9F9 100%);color:#B91C1C;font-weight:700;border-left-color:#DC2626;box-shadow:0 3px 12px rgba(220,38,38,.07);}
 .sidebar-menu a.active::after{background:#DC2626;transform:translateY(-50%) scale(1)}
-.sidebar-menu .icon{
-  width:34px;
-  height:34px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  flex:0 0 34px;
-  border:1px solid #E5E7EB;
-  border-radius:10px;
-  background:#F8FAFC;
-  color:#64748B;
-  box-shadow:0 1px 2px rgba(15,23,42,.04);
-  transition:all .18s ease;
-}
-.sidebar-menu .icon svg{
-  width:18px;
-  height:18px;
-  stroke:currentColor;
-  fill:none;
-  stroke-width:1.9;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-}
-.sidebar-menu a:hover .icon{
-  color:#DC2626;
-  background:#FFFFFF;
-  border-color:#FECACA;
-  transform:translateY(-1px);
-}
-.sidebar-menu a.active .icon{
-  color:#DC2626;
-  background:#FFFFFF;
-  border-color:#FECACA;
-  box-shadow:0 4px 10px rgba(220,38,38,.10);
-}
+.sidebar-menu .icon{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;border:1px solid #E5E7EB;border-radius:10px;background:#F8FAFC;color:#64748B;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:all .18s ease;}
+.sidebar-menu .icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+.sidebar-menu a:hover .icon{color:#DC2626;background:#FFFFFF;border-color:#FECACA;transform:translateY(-1px);}
+.sidebar-menu a.active .icon{color:#DC2626;background:#FFFFFF;border-color:#FECACA;box-shadow:0 4px 10px rgba(220,38,38,.10);}
 .sidebar-menu .menu-text{font-size:13.5px;letter-spacing:.02px}
-.sidebar-menu .badge{
-  min-width:22px;
-  text-align:center;
-  padding:3px 7px;
-  border-radius:999px;
-  box-shadow:0 2px 7px rgba(220,38,38,.18);
-}
-.sidebar-menu .menu-group{
-  padding:17px 14px 7px;
-  margin-top:2px;
-  font-size:10px;
-  letter-spacing:.9px;
-  font-weight:800;
-  color:#94A3B8;
-}
-@media(max-width:768px){
-  .sidebar-menu a{margin-right:8px}
-}
+.sidebar-menu .badge{min-width:22px;text-align:center;padding:3px 7px;border-radius:999px;box-shadow:0 2px 7px rgba(220,38,38,.18);}
+.sidebar-menu .menu-group{padding:17px 14px 7px;margin-top:2px;font-size:10px;letter-spacing:.9px;font-weight:800;color:#94A3B8;}
+@media(max-width:768px){.sidebar-menu a{margin-right:8px}}
 
-
-
-/* Source (4) markup compatibility -> ALVEND skin */
 body{background:#F3F4F6!important;color:#111827!important;font-family:'Segoe UI',Tahoma,Arial,sans-serif!important}
 
-/* Login */
 .alvend-login{position:fixed;inset:0;z-index:1000;background:#fff}
 .alvend-login .login-wrapper{display:flex;height:100vh;width:100vw}
 .alvend-login .login-left{flex:1;background:#DC2626;color:#fff;display:flex;align-items:center;padding:60px;position:relative;overflow:hidden}
@@ -645,7 +484,6 @@ body{background:#F3F4F6!important;color:#111827!important;font-family:'Segoe UI'
 .alvend-password-wrap input{padding-right:44px!important}
 .alvend-password-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#9CA3AF;cursor:pointer;padding:5px}
 
-/* App frame */
 .app-wrapper{display:flex;min-height:100vh}
 .app-wrapper .sidebar{width:240px;background:#fff;border-right:1px solid #E5E7EB;display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;z-index:100;transition:width .3s ease,transform .3s ease}
 .app-wrapper .sidebar.collapsed{width:0;overflow:hidden;border-right:none}
@@ -682,7 +520,6 @@ body{background:#F3F4F6!important;color:#111827!important;font-family:'Segoe UI'
 .btn-xs-alvend{padding:6px 10px!important;font-size:11px!important}
 .content-area{padding:25px 30px}
 
-/* Common components: use ALVEND 5 palette */
 .card{background:#fff!important;border-radius:8px!important;padding:20px!important;box-shadow:0 1px 3px rgba(0,0,0,.08)!important;border-left:4px solid #DC2626!important}
 .btn-primary{background:#1E88E5!important;color:#fff!important;border-radius:4px!important}
 .btn-primary:hover{background:#1565C0!important}
@@ -714,7 +551,6 @@ tbody tr:hover{background:#FEF2F2!important}
 }
 </style>
 <style id="alvend-mobile-responsive">
-/* ALVEND responsive layer — UI only */
 html,body{max-width:100%;overflow-x:hidden}
 img,svg{max-width:100%}
 button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-height:40px}
@@ -761,7 +597,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
 
 <div x-data="app()" x-init="init()" x-cloak>
 
-  <!-- LOGIN — ALVEND DESIGN FROM PASTED TEXT (5) -->
+  <!-- LOGIN -->
   <div x-show="!currentUser" class="alvend-login">
     <div class="login-wrapper">
       <div class="login-left">
@@ -847,7 +683,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                   <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadNotifCount"></span>
                 </template>
               </a>
-              <template x-if="hasAccess('inputOrder') || hasAccess('orderSearch')">
+              <template x-if="hasAccess('inputOrder') || hasAccess('orderSearch') || hasAccess('marketing')">
                 <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">ORDER</div>
               </template>
               <a x-show="hasAccess('inputOrder')" @click="nav('inputOrder')" :class="page==='inputOrder'?'active':''" class="menu-link">
@@ -855,6 +691,9 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
               </a>
               <a x-show="hasAccess('orderSearch')" @click="nav('orderSearch')" :class="page==='orderSearch'?'active':''" class="menu-link">
                 <i class="fa-solid fa-magnifying-glass w-5"></i><span x-show="sidebarOpen">Order Search</span>
+              </a>
+              <a x-show="hasAccess('marketing')" @click="nav('marketing')" :class="page==='marketing'?'active':''" class="menu-link">
+                <i class="fa-solid fa-chart-line w-5"></i><span x-show="sidebarOpen">Marketing</span>
               </a>
               <template x-if="hasAccess('jadwal') || hasAccess('afterDelivery')">
                 <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">PENGIRIMAN</div>
@@ -871,7 +710,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
             <div>
               <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">OWNER</div>
               <a @click="nav('proposeSiteNo')" :class="page==='proposeSiteNo'?'active':''" class="menu-link">
-                <i class="fa-solid fa-file-signature w-5"></i><span x-show="sidebarOpen">Propose Site No</span>
+                <i class="fa-solid fa-file-signature w-5"></i><span x-show="sidebarOpen">Approval Site No</span>
               </a>
               <a @click="nav('kelolaUser')" :class="page==='kelolaUser'?'active':''" class="menu-link">
                 <i class="fa-solid fa-users w-5"></i><span x-show="sidebarOpen">Kelola User</span>
@@ -1415,6 +1254,143 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
             </div>
           </div>
 
+          <!-- MARKETING — SITE NO DETAIL -->
+          <div x-show="page==='marketing' && hasAccess('marketing')">
+            <div class="card mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="label">Pilih Site No</label>
+                  <select x-model="mktFilter.site_no" class="input">
+                    <option value="">-- Pilih Site No --</option>
+                    <template x-for="s in marketingSites" :key="s.id">
+                      <option :value="s.site_no" x-text="s.site_no + ' — ' + s.project_name"></option>
+                    </template>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">Cari Project / Site No</label>
+                  <input x-model="mktFilter.q" placeholder="Ketik untuk filter dropdown..." class="input">
+                </div>
+              </div>
+            </div>
+
+            <template x-if="!mktSelectedSite">
+              <div class="card text-center py-12 text-slate-400">
+                <i class="fa-solid fa-chart-line text-4xl mb-3 text-slate-300"></i>
+                <p class="mb-1 font-medium">Pilih Site No terlebih dahulu</p>
+                <p class="text-xs">Untuk melihat Qty PO, Qty Ordered, Qty Delivered, Remain, dan riwayat delivery</p>
+              </div>
+            </template>
+
+            <template x-if="mktSelectedSite">
+              <div>
+                <div class="card mb-4">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <div class="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg font-mono text-sm" x-text="mktSelectedSite.site_no"></div>
+                    <div class="font-semibold text-lg" x-text="mktSelectedSite.project_name"></div>
+                    <div class="text-sm text-slate-500" x-text="mktSelectedSite.pic_name ? 'PIC: ' + mktSelectedSite.pic_name : ''"></div>
+                    <div class="ml-auto">
+                      <template x-if="mktSelectedSite.site_no_status==='complete'">
+                        <span class="badge bg-emerald-100 text-emerald-700"><i class="fa-solid fa-check mr-1"></i>Approved</span>
+                      </template>
+                      <template x-if="mktSelectedSite.site_no_status==='held'">
+                        <span class="badge bg-red-100 text-red-700"><i class="fa-solid fa-pause mr-1"></i>Hold</span>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div class="card">
+                    <p class="text-sm text-slate-500">Qty PO</p>
+                    <p class="text-2xl font-bold text-blue-600" x-text="mktStats.hasLimit ? fmt(mktStats.qty_po)+' m³' : 'N/A'"></p>
+                    <p class="text-xs text-slate-400 mt-1" x-text="mktStats.hasLimit ? 'Kuota PO' : 'Belum diset'"></p>
+                  </div>
+                  <div class="card">
+                    <p class="text-sm text-slate-500">Qty Ordered</p>
+                    <p class="text-2xl font-bold text-orange-600" x-text="fmt(mktStats.totalOrdered)+' m³'"></p>
+                    <p class="text-xs text-slate-400 mt-1">Total order aktif</p>
+                  </div>
+                  <div class="card">
+                    <p class="text-sm text-slate-500">Qty Delivered</p>
+                    <p class="text-2xl font-bold text-emerald-600" x-text="fmt(mktStats.totalDelivered)+' m³'"></p>
+                    <p class="text-xs text-slate-400 mt-1">Total terkirim</p>
+                  </div>
+                  <div class="card">
+                    <p class="text-sm text-slate-500">Remain Qty PO</p>
+                    <p class="text-2xl font-bold" :class="!mktStats.hasLimit ? 'text-slate-400' : (mktStats.remainPO < 0 ? 'text-red-600' : 'text-emerald-600')" x-text="mktStats.hasLimit ? fmt(mktStats.remainPO)+' m³' : '-'"></p>
+                    <p class="text-xs text-slate-400 mt-1" x-text="!mktStats.hasLimit ? 'Tanpa batas PO' : (mktStats.remainPO < 0 ? '⚠️ Over PO!' : 'Sisa kuota PO')"></p>
+                  </div>
+                </div>
+
+                <div class="card mb-4 overflow-x-auto">
+                  <h3 class="font-semibold mb-3"><i class="fa-solid fa-cart-shopping mr-2 text-blue-600"></i>Daftar Order</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th class="th">Order No</th><th class="th">Tgl Kirim</th><th class="th">Mutu</th>
+                        <th class="th">Plant</th><th class="th">Qty Order</th><th class="th">Qty Delivered</th>
+                        <th class="th">Remain</th><th class="th">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="o in mktOrders" :key="o.id">
+                        <tr :class="o.status==='cancelled' ? 'bg-red-50 opacity-70' : ''">
+                          <td class="td font-mono text-xs" x-text="o.order_no"></td>
+                          <td class="td text-xs" x-text="o.delivery_date"></td>
+                          <td class="td" x-text="mutuCode(o.mutu_id)"></td>
+                          <td class="td" x-text="plantName(o.plant_id)"></td>
+                          <td class="td font-semibold" x-text="fmt(o.qty_order)"></td>
+                          <td class="td text-emerald-600 font-semibold" x-text="fmt(o.qty_delivery)"></td>
+                          <td class="td font-semibold" :class="o.qty_remain > 0 ? 'text-orange-600' : 'text-emerald-600'" x-text="fmt(o.qty_remain)"></td>
+                          <td class="td"><span class="badge" :class="statusBadge(o.status)" x-text="o.status"></span></td>
+                        </tr>
+                      </template>
+                      <template x-if="mktOrders.length===0">
+                        <tr><td colspan="8" class="td text-center py-6 text-slate-400">Belum ada order untuk site ini</td></tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="card overflow-x-auto">
+                  <h3 class="font-semibold mb-3"><i class="fa-solid fa-truck-fast mr-2 text-emerald-600"></i>Detail Delivery</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th class="th">Tgl Kirim</th><th class="th">No SJ</th><th class="th">Order No</th>
+                        <th class="th">Mutu</th><th class="th">Plant</th><th class="th">Truck No</th>
+                        <th class="th">Qty (m³)</th><th class="th">Driver</th><th class="th">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="d in mktDeliveries" :key="d.id">
+                        <tr :class="(d.status==='cancelled'||d.status==='rejected') ? 'bg-red-50 opacity-75' : ''">
+                          <td class="td text-xs" x-text="d.delivery_date"></td>
+                          <td class="td font-mono text-xs" x-text="d.sj_no || '-'"></td>
+                          <td class="td font-mono text-xs" x-text="orderById(d.order_id)?.order_no || '-'"></td>
+                          <td class="td" x-text="mutuCode(orderById(d.order_id)?.mutu_id)"></td>
+                          <td class="td" x-text="plantName(orderById(d.order_id)?.plant_id)"></td>
+                          <td class="td font-mono" x-text="d.truck_no"></td>
+                          <td class="td font-semibold" x-text="fmt(d.qty)"></td>
+                          <td class="td text-xs" x-text="d.driver_name || '-'"></td>
+                          <td class="td">
+                            <template x-if="(d.status||'delivered')==='delivered'"><span class="badge bg-emerald-100 text-emerald-700">Delivered</span></template>
+                            <template x-if="d.status==='rejected'"><span class="badge bg-orange-100 text-orange-700">Rejected</span></template>
+                            <template x-if="d.status==='cancelled'"><span class="badge bg-red-100 text-red-700">Cancelled</span></template>
+                          </td>
+                        </tr>
+                      </template>
+                      <template x-if="mktDeliveries.length===0">
+                        <tr><td colspan="9" class="td text-center py-6 text-slate-400">Belum ada pengiriman</td></tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </template>
+          </div>
+
           <!-- AFTER DELIVERY -->
           <div x-show="page==='afterDelivery' && hasAccess('afterDelivery')">
             <div class="card mb-4">
@@ -1495,11 +1471,11 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
             </div>
           </div>
 
-          <!-- PROPOSE SITE NO -->
+          <!-- APPROVAL SITE NO -->
           <div x-show="page==='proposeSiteNo' && currentUser.role==='owner'">
             <div class="card mb-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input x-model="psFilter.q" placeholder="Cari project / site no..." class="input md:col-span-2">
+                <input x-model="psFilter.q" placeholder="Cari project / site no / mutu..." class="input md:col-span-2">
                 <select x-model="psFilter.status" class="input">
                   <option value="">Semua Status</option>
                   <option value="propose_site_no">Draft (Propose)</option>
@@ -1515,6 +1491,8 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                     <th class="th">Project Name</th>
                     <th class="th">Sales Name</th>
                     <th class="th">Site No</th>
+                    <th class="th">Mutu Diminta</th>
+                    <th class="th">Qty PO</th>
                     <th class="th">Date Propose</th>
                     <th class="th">Date Release</th>
                     <th class="th">Status</th>
@@ -1530,6 +1508,24 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                         <template x-if="p.site_no"><span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded" x-text="p.site_no"></span></template>
                         <template x-if="!p.site_no"><span class="text-slate-400 text-xs">-</span></template>
                       </td>
+                      <td class="td">
+                        <template x-if="p.visit_mutu_code">
+                          <div>
+                            <span class="badge bg-blue-100 text-blue-700 font-mono font-bold" x-text="p.visit_mutu_code"></span>
+                            <div class="text-xs text-slate-500 mt-0.5" x-text="p.visit_mutu_name || ''"></div>
+                            <template x-if="p.visit_estimasi_volume > 0">
+                              <div class="text-xs text-slate-400 mt-0.5"><i class="fa-solid fa-cube"></i> <span x-text="fmt(p.visit_estimasi_volume)+' m³'"></span></div>
+                            </template>
+                          </div>
+                        </template>
+                        <template x-if="!p.visit_mutu_code">
+                          <span class="text-slate-400 text-xs italic">Belum diisi</span>
+                        </template>
+                      </td>
+                      <td class="td">
+                        <template x-if="p.qty_po"><span class="font-semibold text-blue-700" x-text="fmt(p.qty_po)+' m³'"></span></template>
+                        <template x-if="!p.qty_po"><span class="text-slate-400 text-xs">-</span></template>
+                      </td>
                       <td class="td text-xs" x-text="fmtDate(p.propose_date)"></td>
                       <td class="td text-xs" x-text="p.site_no_completed_at ? fmtDate(p.site_no_completed_at) : '-'"></td>
                       <td class="td">
@@ -1540,10 +1536,10 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                       <td class="td">
                         <div class="flex flex-wrap gap-2 items-center">
                           <template x-if="p.site_no_status==='propose_site_no'">
-                            <button @click="openPropose(p)" class="btn-primary text-xs"><i class="fa-solid fa-play"></i> Proses</button>
+                            <button @click="openPropose(p)" class="btn-primary text-xs"><i class="fa-solid fa-play"></i> Approve</button>
                           </template>
                           <template x-if="p.site_no_status==='complete' || p.site_no_status==='held'">
-                            <button @click="openEditPropose(p)" class="btn-warning text-xs" title="Edit Site No (Owner)">
+                            <button @click="openEditPropose(p)" class="btn-warning text-xs" title="Edit Site No & Qty PO (Owner)">
                               <i class="fa-solid fa-pen-to-square"></i> Edit
                             </button>
                           </template>
@@ -1567,7 +1563,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                     </tr>
                   </template>
                   <template x-if="filteredProposals.length===0">
-                    <tr><td colspan="7" class="td text-center py-8 text-slate-400">Tidak ada data</td></tr>
+                    <tr><td colspan="9" class="td text-center py-8 text-slate-400">Tidak ada data</td></tr>
                   </template>
                 </tbody>
               </table>
@@ -1990,23 +1986,32 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
     </div>
   </template>
 
-  <!-- MODAL: EDIT PROPOSE (Edit Site No) -->
+  <!-- MODAL: EDIT PROPOSE -->
   <template x-if="editPropModal.show">
     <div class="modal-bg" @click.self="editPropModal.show=false">
       <div class="modal-box" style="max-width:600px">
         <div class="p-4 border-b flex justify-between items-center bg-amber-50">
-          <h3 class="font-semibold text-amber-800"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit Propose Site No</h3>
+          <h3 class="font-semibold text-amber-800"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit Approval Site No</h3>
           <button @click="editPropModal.show=false" class="text-slate-400"><i class="fa-solid fa-times"></i></button>
         </div>
         <form @submit.prevent="saveEditPropose()" class="p-4 space-y-3">
           <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
             <i class="fa-solid fa-info-circle mr-1"></i>
-            Perubahan Site No akan otomatis update di Data Prospek. PO No, Mutu, dan Plant juga akan diupdate.
+            Perubahan Site No, Qty PO, PO No, Mutu, dan Plant akan otomatis update di Data Prospek. Order baru akan dibatasi sesuai Qty PO.
           </div>
           <div><label class="label text-xs">Project Name</label><input :value="editPropModal.project_name" readonly class="input bg-slate-50"></div>
           <div><label class="label text-xs">Alamat</label><input :value="editPropModal.address" readonly class="input bg-slate-50"></div>
+          <div>
+            <label class="label text-xs"><i class="fa-solid fa-flask text-blue-600"></i> Mutu Diminta (dari Visit)</label>
+            <input :value="editPropVisitMutuLabel" readonly class="input bg-blue-50 font-semibold text-blue-700">
+          </div>
           <div><label class="label">Site No *</label><input x-model="editPropForm.site_no" required class="input font-mono"></div>
           <div><label class="label">PO No *</label><input x-model="editPropForm.po_no" required class="input font-mono"></div>
+          <div>
+            <label class="label">Qty PO (m³) *</label>
+            <input type="number" step="0.01" min="0.01" x-model.number="editPropForm.qty_po" required class="input font-mono" placeholder="Total kuota PO">
+            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-info-circle"></i> Total qty order untuk site ini tidak boleh melebihi Qty PO</p>
+          </div>
           <div>
             <label class="label">Mutu (multi) *</label>
             <div class="grid grid-cols-3 gap-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
@@ -2528,19 +2533,28 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
     </div>
   </template>
 
-  <!-- MODAL: PROPOSE SITE NO -->
+  <!-- MODAL: APPROVE SITE NO -->
   <template x-if="propModal.show">
     <div class="modal-bg" @click.self="propModal.show=false">
       <div class="modal-box" style="max-width:600px">
         <div class="p-4 border-b flex justify-between items-center">
-          <h3 class="font-semibold">Propose Site No Details</h3>
+          <h3 class="font-semibold">Approval Site No Details</h3>
           <button @click="propModal.show=false" class="text-slate-400"><i class="fa-solid fa-times"></i></button>
         </div>
         <form @submit.prevent="savePropose()" class="p-4 space-y-3">
           <div><label class="label text-xs">Project Name</label><input :value="propModal.data.project_name" readonly class="input bg-slate-50"></div>
           <div><label class="label text-xs">Alamat</label><input :value="propModal.data.address" readonly class="input bg-slate-50"></div>
+          <div>
+            <label class="label text-xs"><i class="fa-solid fa-flask text-blue-600"></i> Mutu Diminta (dari Visit)</label>
+            <input :value="propVisitMutuLabel" readonly class="input bg-blue-50 font-semibold text-blue-700">
+          </div>
           <div><label class="label">Site No *</label><input x-model="propForm.site_no" required class="input"></div>
           <div><label class="label">PO No *</label><input x-model="propForm.po_no" required class="input"></div>
+          <div>
+            <label class="label">Qty PO (m³) *</label>
+            <input type="number" step="0.01" min="0.01" x-model.number="propForm.qty_po" required class="input" placeholder="Total kuota PO">
+            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-info-circle"></i> Total qty order untuk site ini tidak boleh melebihi Qty PO</p>
+          </div>
           <div>
             <label class="label">Mutu (multi) *</label>
             <div class="grid grid-cols-3 gap-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
@@ -2560,7 +2574,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
           <div class="flex justify-end gap-2 pt-3 border-t">
             <button type="button" @click="propModal.show=false" class="btn-secondary">Batal</button>
-            <button class="btn-success"><i class="fa-solid fa-save"></i> Save</button>
+            <button class="btn-success"><i class="fa-solid fa-save"></i> Approve & Save</button>
           </div>
         </form>
       </div>
@@ -2648,11 +2662,10 @@ const DB = {
 };
 const todayISO = () => new Date().toISOString().slice(0,10);
 
-// Default permissions per role
 const DEFAULT_PERMISSIONS = {
-  owner: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','jadwal','afterDelivery','proposeSiteNo','kelolaUser','kelolaHakAkses','kelolaPlant','kelolaMutu','kelolaKompetitor','kelolaAlamat','logAktivitas'],
-  admin: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','jadwal','afterDelivery'],
-  sales: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','jadwal','afterDelivery'],
+  owner: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','marketing','jadwal','afterDelivery','proposeSiteNo','kelolaUser','kelolaHakAkses','kelolaPlant','kelolaMutu','kelolaKompetitor','kelolaAlamat','logAktivitas'],
+  admin: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','marketing','jadwal','afterDelivery'],
+  sales: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','marketing','jadwal','afterDelivery'],
   logistik: ['dashboard','jadwal','afterDelivery'],
   customer: ['jadwal']
 };
@@ -2686,6 +2699,7 @@ function app() {
     oForm: { site_no:'',project_name:'',address:'',po_no:'',pic_name:'',pic_contact:'',mutu_id:'',plant_id:'',delivery_date:'',pouring_time:'',qty_order:0,metode_cor:'',mutu_list:[],plant_list:[] },
     jFilter: { plants:[],status:'',date:'' },
     sFilter: { q:'',plant_id:'',mutu_id:'',status:'' },
+    mktFilter: { site_no:'', q:'' },
     adFilter: { q:'',date_from:'',date_to:'',status:'' },
     psFilter: { q:'', status:'' },
 
@@ -2703,15 +2717,14 @@ function app() {
     orderDetailModal: { show:false, data:null },
 
     propModal: { show:false, data:{} },
-    propForm: { site_no:'',po_no:'',mutu:[],plant_ids:[] },
+    propForm: { site_no:'',po_no:'',qty_po:0,mutu:[],plant_ids:[] },
 
     editPropModal: { show:false, prospectId:null, project_name:'', address:'' },
-    editPropForm: { site_no:'', po_no:'', mutu:[], plant_ids:[] },
+    editPropForm: { site_no:'', po_no:'', qty_po:0, mutu:[], plant_ids:[] },
 
     accessModal: { show:false, userId:null, userName:'' },
     accessForm: { permissions:[] },
 
-    // Menu definitions for permission UI
     menuGroups: [
       { group:'Dashboard', items:[
         { key:'dashboard', label:'Dashboard', icon:'fa-solid fa-gauge-high' }
@@ -2722,14 +2735,15 @@ function app() {
       ]},
       { group:'Order', items:[
         { key:'inputOrder', label:'Input Order', icon:'fa-solid fa-cart-plus' },
-        { key:'orderSearch', label:'Order Search', icon:'fa-solid fa-magnifying-glass' }
+        { key:'orderSearch', label:'Order Search', icon:'fa-solid fa-magnifying-glass' },
+        { key:'marketing', label:'Marketing', icon:'fa-solid fa-chart-line' }
       ]},
       { group:'Pengiriman', items:[
         { key:'jadwal', label:'Jadwal Pengecoran', icon:'fa-solid fa-calendar-days' },
         { key:'afterDelivery', label:'After Delivery', icon:'fa-solid fa-truck-fast' }
       ]},
       { group:'Owner', items:[
-        { key:'proposeSiteNo', label:'Propose Site No', icon:'fa-solid fa-file-signature' },
+        { key:'proposeSiteNo', label:'Approval Site No', icon:'fa-solid fa-file-signature' },
         { key:'kelolaUser', label:'Kelola User', icon:'fa-solid fa-users' },
         { key:'kelolaHakAkses', label:'Kelola Hak Akses', icon:'fa-solid fa-key' },
         { key:'kelolaPlant', label:'Kelola Plant', icon:'fa-solid fa-industry' },
@@ -2777,7 +2791,6 @@ function app() {
       this.jFilter.date = todayISO();
     },
 
-    // ===== HAK AKSES HELPERS =====
     defaultPermsFor(role) {
       return DEFAULT_PERMISSIONS[role] || [];
     },
@@ -2795,7 +2808,6 @@ function app() {
       return perms.includes(menuKey);
     },
 
-    // ===== KELOLA HAK AKSES =====
     openAccessModal(u) {
       this.accessModal = { show:true, userId: u.id, userName: u.name };
       const current = Array.isArray(u.permissions) && u.permissions.length > 0
@@ -2816,7 +2828,6 @@ function app() {
       if (i < 0) return;
       list[i].permissions = [...this.accessForm.permissions];
       DB.set('users', list);
-      // Kalau edit diri sendiri
       if (Number(this.accessModal.userId) === Number(this.currentUser.id)) {
         this.currentUser = list[i];
         localStorage.setItem('beton_current', JSON.stringify(list[i]));
@@ -2894,6 +2905,7 @@ function app() {
             if (!item.source) { item.source = 'internal'; fixed++; }
             if (!item.site_no_status) { item.site_no_status = 'waiting'; fixed++; }
             if (!item.visit_status) { item.visit_status = 'not_yet'; fixed++; }
+            if (typeof item.qty_po === 'undefined') { item.qty_po = 0; fixed++; }
           }
           if (tbl === 'deliveries') {
             if (!item.status) { item.status = 'delivered'; fixed++; }
@@ -2901,6 +2913,7 @@ function app() {
           }
           if (tbl === 'propose') {
             if (!Array.isArray(item.plant_ids)) { item.plant_ids = []; fixed++; }
+            if (typeof item.qty_po === 'undefined') { item.qty_po = 0; fixed++; }
           }
         });
         DB.set(tbl, list);
@@ -2956,7 +2969,8 @@ function app() {
       return {
         dashboard:'Dashboard', inputProspek:'Input Prospek Project', dataProspek:'Data Project Prospek',
         inputOrder:'Input Order', jadwal:'Jadwal Pengecoran', orderSearch:'Order Search',
-        afterDelivery:'After Delivery Report', proposeSiteNo:'Propose Site No',
+        marketing:'Marketing — Site No Detail',
+        afterDelivery:'After Delivery Report', proposeSiteNo:'Approval Site No',
         kelolaUser:'Kelola User', kelolaHakAkses:'Kelola Hak Akses',
         kelolaPlant:'Kelola Plant', kelolaMutu:'Kelola Mutu',
         kelolaKompetitor:'Kelola Kompetitor', kelolaAlamat:'Kelola Alamat',
@@ -2974,17 +2988,30 @@ function app() {
     },
     get filteredProposals() {
       const propose = DB.get('propose');
+      const visits = DB.get('visits');
       return this.prospects
         .filter(p => ['propose_site_no','complete','held'].includes(p.site_no_status||''))
         .map(p => {
           const pr = propose.find(x => Number(x.prospect_id) === Number(p.id));
-          return { ...p, propose_date: pr?.created_at || p.visit_done_at || p.created_at };
+          const v = visits.find(x => Number(x.prospect_id) === Number(p.id));
+          const mutuDiminta = (v && v.mutu_id) ? this.mutuList.find(m => Number(m.id) === Number(v.mutu_id)) : null;
+          return {
+            ...p,
+            propose_date: pr?.created_at || p.visit_done_at || p.created_at,
+            visit_mutu_id: v?.mutu_id || null,
+            visit_mutu_code: mutuDiminta?.code || null,
+            visit_mutu_name: mutuDiminta?.name || null,
+            visit_estimasi_volume: v?.estimasi_volume || 0,
+          };
         })
         .filter(p => {
           if (this.psFilter.status && p.site_no_status !== this.psFilter.status) return false;
           if (this.psFilter.q) {
             const q = this.psFilter.q.toLowerCase();
-            return (p.project_name||'').toLowerCase().includes(q) || (p.site_no||'').toLowerCase().includes(q) || (p.pic_name||'').toLowerCase().includes(q);
+            return (p.project_name||'').toLowerCase().includes(q)
+                || (p.site_no||'').toLowerCase().includes(q)
+                || (p.pic_name||'').toLowerCase().includes(q)
+                || (p.visit_mutu_code||'').toLowerCase().includes(q);
           }
           return true;
         })
@@ -3013,7 +3040,6 @@ function app() {
       this.loginError = '';
       this.loginForm = { username:'', password:'' };
       this.recordLogin(u, uid, 'success');
-      // Default page based on access
       let defaultPage = 'dashboard';
       if (!this.hasAccess('dashboard')) {
         if (this.hasAccess('jadwal')) defaultPage = 'jadwal';
@@ -3021,6 +3047,7 @@ function app() {
         else if (this.hasAccess('dataProspek')) defaultPage = 'dataProspek';
         else if (this.hasAccess('inputOrder')) defaultPage = 'inputOrder';
         else if (this.hasAccess('orderSearch')) defaultPage = 'orderSearch';
+        else if (this.hasAccess('marketing')) defaultPage = 'marketing';
         else if (this.hasAccess('afterDelivery')) defaultPage = 'afterDelivery';
       }
       this.nav(defaultPage);
@@ -3137,7 +3164,7 @@ function app() {
         competitor_id: comp?Number(comp.id):null,
         competitor_name: comp?.name || this.pForm.competitor_other || '',
         sales_id: this.currentUser.id, sales_visit_id: null,
-        site_no: null, site_no_status: 'waiting', po_no: null,
+        site_no: null, site_no_status: 'waiting', po_no: null, qty_po: 0,
         visit_status: 'not_yet', final_status: 'open',
         source: 'internal', created_at: new Date().toISOString(),
       });
@@ -3148,21 +3175,22 @@ function app() {
       this.nav('dataProspek');
     },
 
-    get filteredProspek() {
-      const u = this.currentUser;
-      const allowed = this.accessibleSites;
-      return this.prospects
-        .filter(p => {
-          if (u?.role === 'sales') return Number(p.sales_id) === Number(u.id) || (p.source === 'customer_repeat' && !p.sales_id);
-          if (u?.role === 'customer') return allowed.includes(p.site_no);
-          return true;
-        })
-        .filter(p => !this.pFilter.q || p.project_name.toLowerCase().includes(this.pFilter.q.toLowerCase()))
-        .filter(p => !this.pFilter.visit || p.visit_status === this.pFilter.visit)
-        .filter(p => !this.pFilter.status || p.site_no_status === this.pFilter.status)
-        .filter(p => !this.pFilter.source || (p.source||'internal') === this.pFilter.source)
-        .sort((a,b)=> b.id - a.id);
-    },
+get filteredProspek() {
+  const u = this.currentUser;
+  const allowed = this.accessibleSites;
+  return this.prospects
+    .filter(p => {
+      // Hanya customer yang dibatasi ke site yang di-assign
+      if (u?.role === 'customer') return allowed.includes(p.site_no);
+      // Semua role lain (owner, admin, sales, logistik) melihat SEMUA prospek
+      return true;
+    })
+    .filter(p => !this.pFilter.q || p.project_name.toLowerCase().includes(this.pFilter.q.toLowerCase()))
+    .filter(p => !this.pFilter.visit || p.visit_status === this.pFilter.visit)
+    .filter(p => !this.pFilter.status || p.site_no_status === this.pFilter.status)
+    .filter(p => !this.pFilter.source || (p.source||'internal') === this.pFilter.source)
+    .sort((a,b)=> b.id - a.id);
+},
 
     openVisit(p) {
       const v = this.visits.find(x=>Number(x.prospect_id)===Number(p.id)) || {};
@@ -3369,9 +3397,25 @@ function app() {
         this.oForm.plant_id = '';
       }
     },
+
     saveOrder() {
       const p = this.prospects.find(x=>x.site_no===this.oForm.site_no);
       if (!p) { this.toastMsg('Site No tidak valid','error'); return; }
+
+      // VALIDASI QTY PO
+      const qty_po = Number(p.qty_po) || 0;
+      if (qty_po > 0) {
+        const totalOrdered = this.orders
+          .filter(o => o.site_no === this.oForm.site_no && o.status !== 'cancelled')
+          .reduce((s,o) => s + (Number(o.qty_order)||0), 0);
+        const newQty = Number(this.oForm.qty_order) || 0;
+        if (totalOrdered + newQty > qty_po) {
+          const remain = Math.max(0, qty_po - totalOrdered);
+          this.toastMsg(`⚠️ Order melebihi Qty PO! Sisa kuota: ${this.fmt(remain)} m³ dari total PO ${this.fmt(qty_po)} m³. Order tidak dapat dijadwalkan.`, 'error');
+          return;
+        }
+      }
+
       const list = DB.get('orders');
       const yy = new Date().toISOString().slice(0,7).replace('-','');
       const no = `ORD/${yy}/${String(list.length+1).padStart(4,'0')}`;
@@ -3399,7 +3443,6 @@ function app() {
       (this.plants || []).filter(p => p && p.name && p.is_active !== false).forEach(p => {
         map.set(Number(p.id), { id:Number(p.id), name:p.name });
       });
-      // Fallback: jika master Plant belum termuat tetapi order sudah punya plant_id.
       (this.orders || []).forEach(o => {
         const id = Number(o.plant_id);
         if (id && !map.has(id)) map.set(id, { id, name: this.plantName(id) || ('Plant #' + id) });
@@ -3598,6 +3641,23 @@ function app() {
       const list = DB.get('orders');
       const i = list.findIndex(x => Number(x.id) === Number(o.id));
       if (i < 0) return;
+
+      // VALIDASI QTY PO
+      const prospect = this.prospects.find(x => x.site_no === o.site_no);
+      const qty_po = Number(prospect?.qty_po) || 0;
+      if (qty_po > 0) {
+        const totalOther = this.orders
+          .filter(x => x.site_no === o.site_no && x.status !== 'cancelled' && Number(x.id) !== Number(o.id))
+          .reduce((s,x) => s + (Number(x.qty_order)||0), 0);
+        const newQty = Number(this.eoForm.qty_order) || 0;
+        const oldQty = Number(o.qty_order) || 0;
+        if (newQty > oldQty && (totalOther + newQty > qty_po)) {
+          const remain = Math.max(0, qty_po - totalOther);
+          this.toastMsg(`⚠️ Order melebihi Qty PO! Sisa kuota: ${this.fmt(remain)} m³ dari total PO ${this.fmt(qty_po)} m³.`, 'error');
+          return;
+        }
+      }
+
       const qty = Number(this.eoForm.qty_order);
       const del = Number(list[i].qty_delivery) || 0;
       const remain = qty - del;
@@ -3698,21 +3758,80 @@ function app() {
       return list.sort((a,b)=>b.id-a.id);
     },
 
+    // MARKETING GETTERS
+    get marketingSites() {
+      let list = this.prospects.filter(p => p.site_no && p.site_no_status === 'complete');
+      if (this.mktFilter.q) {
+        const q = this.mktFilter.q.toLowerCase();
+        list = list.filter(p => (p.site_no||'').toLowerCase().includes(q) || (p.project_name||'').toLowerCase().includes(q));
+      }
+      return list.sort((a,b) => (a.site_no||'').localeCompare(b.site_no||''));
+    },
+    get mktSelectedSite() {
+      if (!this.mktFilter.site_no) return null;
+      return this.prospects.find(p => p.site_no === this.mktFilter.site_no) || null;
+    },
+    get mktStats() {
+      if (!this.mktSelectedSite) return { qty_po:0, totalOrdered:0, totalDelivered:0, remainPO:0, hasLimit:false };
+      const site_no = this.mktSelectedSite.site_no;
+      const qty_po = Number(this.mktSelectedSite.qty_po) || 0;
+      const orders = this.orders.filter(o => o.site_no === site_no && o.status !== 'cancelled');
+      const totalOrdered = orders.reduce((s,o) => s + (Number(o.qty_order)||0), 0);
+      const orderIds = orders.map(o => Number(o.id));
+      const delivs = this.deliveries.filter(d => orderIds.includes(Number(d.order_id)) && (d.status||'delivered') === 'delivered');
+      const totalDelivered = delivs.reduce((s,d) => s + (Number(d.qty)||0), 0);
+      return {
+        qty_po, totalOrdered, totalDelivered,
+        remainPO: qty_po > 0 ? (qty_po - totalOrdered) : 0,
+        hasLimit: qty_po > 0,
+      };
+    },
+    get mktOrders() {
+      if (!this.mktSelectedSite) return [];
+      return this.orders
+        .filter(o => o.site_no === this.mktSelectedSite.site_no)
+        .sort((a,b) => b.id - a.id);
+    },
+    get mktDeliveries() {
+      if (!this.mktSelectedSite) return [];
+      const orderIds = this.mktOrders.map(o => Number(o.id));
+      return this.deliveries
+        .filter(d => orderIds.includes(Number(d.order_id)))
+        .sort((a,b) => b.id - a.id);
+    },
+
     get pendingProposals() { return this.prospects.filter(p=>p.site_no_status==='propose_site_no' && p.source !== 'customer_repeat'); },
+    get propVisitMutuLabel() {
+      if (!this.propModal.data?.id) return '-';
+      const v = DB.get('visits').find(x => Number(x.prospect_id) === Number(this.propModal.data.id));
+      if (!v?.mutu_id) return 'Belum ada mutu dari Visit';
+      const m = this.mutuList.find(x => Number(x.id) === Number(v.mutu_id));
+      return m ? `${m.code} — ${m.name}` : '-';
+    },
+    get editPropVisitMutuLabel() {
+      if (!this.editPropModal.prospectId) return '-';
+      const v = DB.get('visits').find(x => Number(x.prospect_id) === Number(this.editPropModal.prospectId));
+      if (!v?.mutu_id) return 'Belum ada mutu dari Visit';
+      const m = this.mutuList.find(x => Number(x.id) === Number(v.mutu_id));
+      return m ? `${m.code} — ${m.name}` : '-';
+    },
+
     openPropose(p) { 
       this.propModal = { show:true, data:p }; 
-      this.propForm = { site_no:'', po_no:'', mutu:[], plant_ids:[] }; 
+      this.propForm = { site_no:'', po_no:'', qty_po:0, mutu:[], plant_ids:[] }; 
     },
     savePropose() {
-      if (!this.propForm.site_no || !this.propForm.po_no || this.propForm.mutu.length===0) {
-        this.toastMsg('Lengkapi Site No, PO No, Mutu','error'); return;
+      if (!this.propForm.site_no || !this.propForm.po_no || !this.propForm.qty_po || this.propForm.mutu.length===0) {
+        this.toastMsg('Lengkapi Site No, PO No, Qty PO, dan Mutu','error'); return;
       }
       const p = this.propModal.data;
       const prList = DB.get('propose');
       prList.push({
         id: DB.nextId('propose'), prospect_id: p.id, project_name: p.project_name,
         address: p.address, pic_project: p.pic_name, pic_contact: p.pic_contact,
-        sales_visit_id: p.sales_visit_id, site_no: this.propForm.site_no, po_no: this.propForm.po_no,
+        sales_visit_id: p.sales_visit_id, site_no: this.propForm.site_no,
+        po_no: this.propForm.po_no,
+        qty_po: Number(this.propForm.qty_po) || 0,
         mutu: this.propForm.mutu.map(Number),
         plant_ids: (this.propForm.plant_ids || []).map(Number),
         status: 'complete', created_by: this.currentUser?.id,
@@ -3724,56 +3843,57 @@ function app() {
       if (pi>=0) {
         ps[pi].site_no = this.propForm.site_no;
         ps[pi].po_no = this.propForm.po_no;
+        ps[pi].qty_po = Number(this.propForm.qty_po) || 0;
         ps[pi].site_no_status = 'complete';
         ps[pi].site_no_completed_at = new Date().toISOString();
       }
       DB.set('prospects', ps);
       this.reload();
       this.propModal.show = false;
-      this.toastMsg('Site No ' + this.propForm.site_no + ' dirilis');
+      this.toastMsg('Site No ' + this.propForm.site_no + ' disetujui (Qty PO: ' + this.fmt(this.propForm.qty_po) + ' m³)');
     },
 
-    // ===== EDIT PROPOSE (Owner) =====
     openEditPropose(p) {
       const pr = DB.get('propose').find(x => Number(x.prospect_id) === Number(p.id));
       this.editPropModal = { show:true, prospectId: p.id, project_name: p.project_name, address: p.address };
       this.editPropForm = {
         site_no: p.site_no || (pr?.site_no || ''),
         po_no: p.po_no || (pr?.po_no || ''),
+        qty_po: Number(p.qty_po || pr?.qty_po || 0),
         mutu: (pr?.mutu || []).map(Number),
         plant_ids: (pr?.plant_ids || []).map(Number),
       };
     },
     saveEditPropose() {
-      if (!this.editPropForm.site_no || !this.editPropForm.po_no) {
-        this.toastMsg('Site No dan PO No wajib diisi','error'); return;
+      if (!this.editPropForm.site_no || !this.editPropForm.po_no || !this.editPropForm.qty_po) {
+        this.toastMsg('Site No, PO No, dan Qty PO wajib diisi','error'); return;
       }
       const pId = this.editPropModal.prospectId;
-      // Update prospect
       const ps = DB.get('prospects');
       const pi = ps.findIndex(x => Number(x.id) === Number(pId));
       if (pi < 0) return;
       ps[pi].site_no = this.editPropForm.site_no;
       ps[pi].po_no = this.editPropForm.po_no;
+      ps[pi].qty_po = Number(this.editPropForm.qty_po) || 0;
       DB.set('prospects', ps);
 
-      // Update propose
       const prList = DB.get('propose');
       const pri = prList.findIndex(x => Number(x.prospect_id) === Number(pId));
       if (pri >= 0) {
         prList[pri].site_no = this.editPropForm.site_no;
         prList[pri].po_no = this.editPropForm.po_no;
+        prList[pri].qty_po = Number(this.editPropForm.qty_po) || 0;
         prList[pri].mutu = this.editPropForm.mutu.map(Number);
         prList[pri].plant_ids = this.editPropForm.plant_ids.map(Number);
         prList[pri].updated_at = new Date().toISOString();
       } else {
-        // Kalau belum ada propose record, buat baru
         prList.push({
           id: DB.nextId('propose'), prospect_id: pId,
           project_name: ps[pi].project_name, address: ps[pi].address,
           pic_project: ps[pi].pic_name, pic_contact: ps[pi].pic_contact,
           sales_visit_id: ps[pi].sales_visit_id,
           site_no: this.editPropForm.site_no, po_no: this.editPropForm.po_no,
+          qty_po: Number(this.editPropForm.qty_po) || 0,
           mutu: this.editPropForm.mutu.map(Number),
           plant_ids: this.editPropForm.plant_ids.map(Number),
           status: 'complete', created_by: this.currentUser?.id,
@@ -3781,7 +3901,6 @@ function app() {
         });
       }
       DB.set('propose', prList);
-
       this.reload();
       this.editPropModal.show = false;
       this.toastMsg('Site No berhasil diupdate');
