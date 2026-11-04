@@ -1583,7 +1583,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                   <input x-model="uForm.name" required class="input" placeholder="Nama Lengkap">
                   <input x-model="uForm.email" type="email" class="input" placeholder="Email (opsional)">
                   <div class="relative">
-                    <input x-model="uForm.password" :type="showUserPw?'text':'password'" required class="input pr-10" placeholder="Password">
+                    <input x-model="uForm.password" :type="showUserPw?'text':'password'" required minlength="6" class="input pr-10" placeholder="Password (min 6 karakter)">
                     <button type="button" @click="showUserPw=!showUserPw" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><i :class="showUserPw?'fa-solid fa-eye-slash':'fa-solid fa-eye'"></i></button>
                   </div>
                   <select x-model="uForm.role" required class="input">
@@ -2782,10 +2782,19 @@ function app() {
       this.normalizeData();
       const saved = localStorage.getItem('beton_current');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        const found = this.users.find(u => u.email === parsed.email || u.username === parsed.username);
-        if (found) { this.currentUser = found; if (found.role === 'customer') this.page = 'jadwal'; }
-        else localStorage.removeItem('beton_current');
+        try {
+          const parsed = JSON.parse(saved);
+          const found = this.users.find(u => {
+            if (parsed.username && u.username) {
+              return String(u.username).toLowerCase() === String(parsed.username).toLowerCase();
+            }
+            return false;
+          });
+          if (found) { this.currentUser = found; if (found.role === 'customer') this.page = 'jadwal'; }
+          else localStorage.removeItem('beton_current');
+        } catch (e) {
+          localStorage.removeItem('beton_current');
+        }
       }
       this.adFilter.date_from = todayISO(); this.adFilter.date_to = todayISO();
       this.jFilter.date = todayISO();
@@ -3024,10 +3033,22 @@ function app() {
     login() {
       const uid = (this.loginForm.username || '').trim().toLowerCase();
       if (!uid) { this.loginError = 'User ID wajib diisi'; return; }
-      const u = this.users.find(x => ((x.username && x.username.toLowerCase() === uid) || (x.email && x.email.toLowerCase() === uid)));
-      if (!u || u.password !== this.loginForm.password) {
-        this.loginError = 'User ID / password salah';
+
+      // Baca langsung dari localStorage agar selalu fresh
+      const users = DB.get('users');
+      const u = users.find(x =>
+        (x.username && String(x.username).toLowerCase() === uid) ||
+        (x.email    && String(x.email).toLowerCase()    === uid)
+      );
+
+      if (!u) {
+        this.loginError = 'User ID tidak ditemukan. Pastikan akun sudah dibuat oleh Owner.';
         this.recordLogin(null, uid, 'failed');
+        return;
+      }
+      if (String(u.password) !== String(this.loginForm.password)) {
+        this.loginError = 'Password salah';
+        this.recordLogin(u, uid, 'failed');
         return;
       }
       if (u.is_active === false) {
@@ -3035,19 +3056,22 @@ function app() {
         this.recordLogin(u, uid, 'inactive');
         return;
       }
+
+      this.users = users;                 // sync state reaktif
       this.currentUser = u;
       localStorage.setItem('beton_current', JSON.stringify(u));
       this.loginError = '';
       this.loginForm = { username:'', password:'' };
       this.recordLogin(u, uid, 'success');
+
       let defaultPage = 'dashboard';
       if (!this.hasAccess('dashboard')) {
-        if (this.hasAccess('jadwal')) defaultPage = 'jadwal';
-        else if (this.hasAccess('inputProspek')) defaultPage = 'inputProspek';
-        else if (this.hasAccess('dataProspek')) defaultPage = 'dataProspek';
-        else if (this.hasAccess('inputOrder')) defaultPage = 'inputOrder';
-        else if (this.hasAccess('orderSearch')) defaultPage = 'orderSearch';
-        else if (this.hasAccess('marketing')) defaultPage = 'marketing';
+        if (this.hasAccess('jadwal'))        defaultPage = 'jadwal';
+        else if (this.hasAccess('inputProspek'))  defaultPage = 'inputProspek';
+        else if (this.hasAccess('dataProspek'))   defaultPage = 'dataProspek';
+        else if (this.hasAccess('inputOrder'))    defaultPage = 'inputOrder';
+        else if (this.hasAccess('orderSearch'))   defaultPage = 'orderSearch';
+        else if (this.hasAccess('marketing'))     defaultPage = 'marketing';
         else if (this.hasAccess('afterDelivery')) defaultPage = 'afterDelivery';
       }
       this.nav(defaultPage);
@@ -3175,22 +3199,22 @@ function app() {
       this.nav('dataProspek');
     },
 
-get filteredProspek() {
-  const u = this.currentUser;
-  const allowed = this.accessibleSites;
-  return this.prospects
-    .filter(p => {
-      // Hanya customer yang dibatasi ke site yang di-assign
-      if (u?.role === 'customer') return allowed.includes(p.site_no);
-      // Semua role lain (owner, admin, sales, logistik) melihat SEMUA prospek
-      return true;
-    })
-    .filter(p => !this.pFilter.q || p.project_name.toLowerCase().includes(this.pFilter.q.toLowerCase()))
-    .filter(p => !this.pFilter.visit || p.visit_status === this.pFilter.visit)
-    .filter(p => !this.pFilter.status || p.site_no_status === this.pFilter.status)
-    .filter(p => !this.pFilter.source || (p.source||'internal') === this.pFilter.source)
-    .sort((a,b)=> b.id - a.id);
-},
+    get filteredProspek() {
+      const u = this.currentUser;
+      const allowed = this.accessibleSites;
+      return this.prospects
+        .filter(p => {
+          // Hanya customer yang dibatasi ke site yang di-assign
+          if (u?.role === 'customer') return allowed.includes(p.site_no);
+          // Semua role lain (owner, admin, sales, logistik) melihat SEMUA prospek
+          return true;
+        })
+        .filter(p => !this.pFilter.q || p.project_name.toLowerCase().includes(this.pFilter.q.toLowerCase()))
+        .filter(p => !this.pFilter.visit || p.visit_status === this.pFilter.visit)
+        .filter(p => !this.pFilter.status || p.site_no_status === this.pFilter.status)
+        .filter(p => !this.pFilter.source || (p.source||'internal') === this.pFilter.source)
+        .sort((a,b)=> b.id - a.id);
+    },
 
     openVisit(p) {
       const v = this.visits.find(x=>Number(x.prospect_id)===Number(p.id)) || {};
@@ -4030,23 +4054,50 @@ get filteredProspek() {
 
     addUser() {
       const list = DB.get('users');
-      const uid = (this.uForm.username || '').trim().toLowerCase();
-      const mail = (this.uForm.email || '').trim().toLowerCase();
-      if (!uid || !/^[a-z0-9_.\-]+$/.test(uid)) { this.toastMsg('User ID tidak valid','error'); return; }
-      if (list.find(u => (u.username||'').toLowerCase() === uid)) { this.toastMsg('User ID sudah dipakai','error'); return; }
-      if (mail && list.find(u => (u.email||'').toLowerCase() === mail)) { this.toastMsg('Email sudah dipakai','error'); return; }
-      list.push({
-        id: DB.nextId('users'), username: uid, name: this.uForm.name, email: mail,
-        password: this.uForm.password, role: this.uForm.role,
+      const uid      = (this.uForm.username || '').trim().toLowerCase();
+      const mail     = (this.uForm.email || '').trim().toLowerCase();
+      const name     = (this.uForm.name || '').trim();
+      const password = this.uForm.password || '';
+
+      // ── Validasi ──
+      if (!uid) { this.toastMsg('User ID wajib diisi','error'); return; }
+      if (!/^[a-z0-9_.\-]+$/.test(uid)) {
+        this.toastMsg('User ID hanya boleh huruf, angka, titik, underscore, strip','error'); return;
+      }
+      if (!name) { this.toastMsg('Nama wajib diisi','error'); return; }
+      if (password.length < 6) { this.toastMsg('Password minimal 6 karakter','error'); return; }
+      if (!this.uForm.role) { this.toastMsg('Role wajib dipilih','error'); return; }
+
+      const validRoles = ['owner','admin','sales','logistik','customer'];
+      if (!validRoles.includes(this.uForm.role)) {
+        this.toastMsg('Role tidak valid','error'); return;
+      }
+      if (list.find(u => (u.username || '').toLowerCase() === uid)) {
+        this.toastMsg('User ID sudah dipakai','error'); return;
+      }
+      if (mail && list.find(u => (u.email || '').toLowerCase() === mail)) {
+        this.toastMsg('Email sudah dipakai','error'); return;
+      }
+
+      // ── Buat akun (semua field dijamin terisi) ──
+      const newUser = {
+        id: DB.nextId('users'),
+        username: uid,
+        name: name,
+        email: mail,
+        password: password,
+        role: this.uForm.role,
         plant_id: this.uForm.plant_id ? Number(this.uForm.plant_id) : null,
         assigned_sites: this.uForm.role === 'customer' ? (this.uForm.assigned_sites || []) : [],
         is_active: true,
         permissions: this.defaultPermsFor(this.uForm.role).slice(),
-      });
+      };
+      list.push(newUser);
       DB.set('users', list);
-      this.uForm = { username:'', name:'',email:'',password:'',role:'',plant_id:'',assigned_sites:[] };
+
+      this.uForm = { username:'', name:'', email:'', password:'', role:'', plant_id:'', assigned_sites:[] };
       this.reload();
-      this.toastMsg('User "' + uid + '" ditambahkan');
+      this.toastMsg('User "' + uid + '" berhasil ditambahkan. Akun dapat langsung login.');
     },
     delUser(id) { DB.set('users', DB.get('users').filter(u=>Number(u.id)!==Number(id))); this.reload(); },
     addPlant() { const list = DB.get('plants'); list.push({ id: DB.nextId('plants'), ...this.plForm, is_active:1 }); DB.set('plants', list); this.plForm={ code:'',name:'',address:'',phone:'' }; this.reload(); this.toastMsg('Plant ditambahkan'); },
