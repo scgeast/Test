@@ -3093,13 +3093,28 @@ async function signOutSupabaseAuth() {
 }
 
 const todayISO = () => new Date().toISOString().slice(0,10);
-// Akun Developer sementara (localStorage only). Tidak disimpan di tabel users.
-const DEVELOPER_ACCOUNT_KEY = 'beton_developer_account';
+// ─────────────────────────────────────────────────────────────────
+//  AKUN DEVELOPER (IN-MEMORY ONLY)
+//  Disimpan hanya di kode JavaScript — TIDAK ada di localStorage,
+//  TIDAK ada di tabel users Supabase. Kredensial selalu ambil dari
+//  sini, jadi tidak akan ada masalah cache stale.
+//
+//  Email   : bookingeast0@gmail.com
+//  Password: sultan3110
+//
+//  ⚠ Untuk produksi: daftarkan email ini di Supabase Auth (Dashboard →
+//    Authentication → Users → Add user) supaya login developer divalidasi
+//    server-side. Tanpa Supabase Auth, login tetap berfungsi via
+//    credential di bawah ini.
+// ─────────────────────────────────────────────────────────────────
 const DEVELOPER_DEFAULT_ACCOUNT = {
   id: -999999, username: 'developer', name: 'Application Developer',
   email: 'bookingeast0@gmail.com', password: 'sultan3110',
   role: 'developer', is_active: true, permissions: ['*']
 };
+// Nama key localStorage lama — dipakai HANYA untuk migrasi cleanup
+// (hapus data lama yang tersisa dari versi sebelumnya).
+const DEVELOPER_ACCOUNT_LEGACY_KEYS = ['beton_developer_account', 'beton_developer_account_version'];
 
 const DEFAULT_PERMISSIONS = {
   owner: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','marketing','jadwal','afterDelivery','proposeSiteNo','kelolaUser','kelolaHakAkses','kelolaPlant','kelolaMutu','kelolaKompetitor','kelolaAlamat','logAktivitas'],
@@ -3234,8 +3249,22 @@ function app() {
           const parsed = JSON.parse(saved);
           const devAccount = this.getDeveloperAccount();
           let found = null;
-          if (parsed.role === 'developer' && parsed.username === devAccount.username) {
-            found = devAccount;
+          // ─── Restore session developer ───
+          // Cocokkan via username ATAU email. Karena kredensial developer
+          // sekarang purely in-memory (kode JS), sesi lama yang tersimpan di
+          // localStorage akan otomatis di-restore ke kredensial terbaru.
+          if (parsed.role === 'developer') {
+            const savedUsername = String(parsed.username || '').toLowerCase();
+            const savedEmail    = String(parsed.email || '').toLowerCase();
+            const isDev = savedUsername === String(devAccount.username).toLowerCase()
+                       || savedEmail    === String(devAccount.email || '').toLowerCase()
+                       // Fallback: kalau email lama 'developer@dutaintinusa.local', tetap restore
+                       || savedUsername === 'developer';
+            if (isDev) {
+              found = devAccount;
+              // Sinkronkan localStorage session dengan kredensial terbaru
+              localStorage.setItem('beton_current', JSON.stringify(devAccount));
+            }
           } else {
             found = this.users.find(u => u.username && String(u.username).toLowerCase() === String(parsed.username).toLowerCase());
           }
@@ -3463,16 +3492,20 @@ function app() {
     },
 
     ensureDeveloperAccount() {
-      // Jika key belum ada, buat akun lokal default satu kali. Tidak pernah menambahkannya ke tabel users.
-      if (!localStorage.getItem(DEVELOPER_ACCOUNT_KEY)) {
-        localStorage.setItem(DEVELOPER_ACCOUNT_KEY, JSON.stringify({ ...DEVELOPER_DEFAULT_ACCOUNT }));
-      }
+      // Cleanup legacy localStorage keys dari versi sebelumnya
+      // (akun developer dulu disimpan di localStorage — sekarang tidak lagi).
+      // Method ini TIDAK menulis apa pun ke localStorage; hanya membersihkan
+      // data lama agar tidak bentrok dengan kredensial in-memory yang baru.
+      DEVELOPER_ACCOUNT_LEGACY_KEYS.forEach(key => {
+        if (localStorage.getItem(key)) {
+          try { localStorage.removeItem(key); } catch (_) {}
+        }
+      });
     },
     getDeveloperAccount() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(DEVELOPER_ACCOUNT_KEY) || 'null');
-        return saved && saved.role === 'developer' ? saved : { ...DEVELOPER_DEFAULT_ACCOUNT };
-      } catch (_) { return { ...DEVELOPER_DEFAULT_ACCOUNT }; }
+      // Selalu kembalikan kredensial terbaru dari kode JavaScript (in-memory).
+      // Tidak ada lagi baca dari localStorage → tidak mungkin cache stale.
+      return { ...DEVELOPER_DEFAULT_ACCOUNT };
     },
     isOwnerOrDeveloper() {
       return !!this.currentUser && ['owner','developer'].includes(this.currentUser.role);
