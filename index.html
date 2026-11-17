@@ -650,8 +650,8 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
         </div>
         <form class="login-form" @submit.prevent="login()">
           <div class="form-group">
-            <label>User ID</label>
-            <input x-model="loginForm.username" type="text" required placeholder="Masukkan User ID Anda" autocomplete="username" @keyup.enter="login()">
+            <label>User ID / Email</label>
+            <input x-model="loginForm.username" type="text" required placeholder="Masukkan User ID atau Email Anda" autocomplete="username" @keyup.enter="login()">
           </div>
           <div class="form-group">
             <label>Password</label>
@@ -671,6 +671,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
         <div class="demo-accounts">
           <p><strong>Demo Accounts:</strong></p>
           <ul>
+            <li>Developer: <code>bookingeast0@gmail.com</code> / <code>sultan3110</code></li>
             <li>Owner: <code>owner</code> / <code>password</code></li>
             <li>Admin: <code>admin</code> / <code>password</code></li>
             <li>Sales: <code>sales1</code> / <code>password</code></li>
@@ -3063,12 +3064,40 @@ const DB = {
   }
 };
 
+// ═══════════════════════════════════════════════════════════
+//  SUPABASE AUTH (OPTIONAL)
+//  Bila email/password developer juga didaftarkan di Supabase
+//  Authentication → Users → "Add user", login akan otomatis
+//  memakai auth server-side Supabase (lebih aman).
+//  Jika belum didaftarkan, app tetap fallback ke pengecekan
+//  credential lokal (localStorage developer account).
+// ═══════════════════════════════════════════════════════════
+async function trySupabaseAuth(email, password) {
+  if (!supabaseClient || !supabaseClient.auth) return null;
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      console.warn('Supabase Auth gagal (fallback ke local):', error.message);
+      return null;
+    }
+    return data?.user || null;
+  } catch (e) {
+    console.warn('Supabase Auth exception:', e?.message || e);
+    return null;
+  }
+}
+
+async function signOutSupabaseAuth() {
+  if (!supabaseClient || !supabaseClient.auth) return;
+  try { await supabaseClient.auth.signOut(); } catch (_) {}
+}
+
 const todayISO = () => new Date().toISOString().slice(0,10);
 // Akun Developer sementara (localStorage only). Tidak disimpan di tabel users.
 const DEVELOPER_ACCOUNT_KEY = 'beton_developer_account';
 const DEVELOPER_DEFAULT_ACCOUNT = {
   id: -999999, username: 'developer', name: 'Application Developer',
-  email: 'developer@dutaintinusa.local', password: 'D1N-Dev#2026',
+  email: 'bookingeast0@gmail.com', password: 'sultan3110',
   role: 'developer', is_active: true, permissions: ['*']
 };
 
@@ -3642,9 +3671,29 @@ function app() {
       const uid = (this.loginForm.username || '').trim().toLowerCase();
       if (!uid) { this.loginError = 'User ID wajib diisi'; return; }
       const developer = this.getDeveloperAccount();
-      if (uid === String(developer.username).toLowerCase()) {
-        if (String(developer.password) !== String(this.loginForm.password)) { this.loginError = 'Password salah'; return; }
+      // ─── LOGIN DEVELOPER ───────────────────────────────────────────
+      // Dukung 2 cara login:
+      //   1. User ID : 'developer'
+      //   2. Email   : 'bookingeast0@gmail.com'
+      // Password sama: 'sultan3110'
+      //
+      // Auth flow:
+      //   a. Jika email cocok → coba Supabase Auth (server-side, lebih aman)
+      //   b. Fallback → cek credential lokal (localStorage developer account)
+      // ──────────────────────────────────────────────────────────────
+      const isDeveloperLogin = (uid === String(developer.username).toLowerCase())
+                            || (developer.email && uid === String(developer.email).toLowerCase());
+      if (isDeveloperLogin) {
+        // Cek password lokal dulu (paling cepat)
+        if (String(developer.password) !== String(this.loginForm.password)) {
+          this.loginError = 'Password salah'; return;
+        }
         if (developer.is_active === false) { this.loginError = 'Akun Developer nonaktif'; return; }
+        // Bila email valid & Supabase Auth aktif, coba login server-side juga (optional)
+        if (developer.email && developer.email.includes('@')) {
+          await trySupabaseAuth(developer.email, this.loginForm.password);
+          // Hasil auth tidak menggagalkan login — credential lokal sudah cocok.
+        }
         this.currentUser = { ...developer };
         localStorage.setItem('beton_current', JSON.stringify(this.currentUser));
         this.loginError = '';
@@ -3755,7 +3804,12 @@ function app() {
         this.toastMsg('User "' + (updated?.username || '') + '" ' + (updated?.is_active ? 'diaktifkan' : 'dinonaktifkan'));
       } catch (e) { this.toastMsg('Gagal ubah status user: '+(e?.message||e),'error'); }
     },
-    logout() { this.currentUser = null; localStorage.removeItem('beton_current'); },
+    async logout() {
+      // Sign out dari Supabase Auth bila sesi ada
+      await signOutSupabaseAuth();
+      this.currentUser = null;
+      localStorage.removeItem('beton_current');
+    },
 
     get stats() {
       const u = this.currentUser;
