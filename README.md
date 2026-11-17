@@ -35,19 +35,31 @@ Tidak perlu web server — file ini standalone.
 
 Akun Demo
 Role
-User ID
+User ID / Email
 Password
+Developer	bookingeast0@gmail.com	sultan3110
 Owner	owner	password
 Admin	admin	password
 Sales	sales1	password
 Customer	customer	password
 
-Akun Developer (khusus lokal)
-User ID
-Password
-developer	D1N-Dev#2026
+Akun Developer (Email Auth)
+Akun developer bisa login dengan 2 cara:
 
-Akun developer hanya disimpan di localStorage browser (tidak ada di Supabase). Berguna untuk debugging.
+User ID: developer + password sultan3110
+Email: bookingeast0@gmail.com + password sultan3110
+Login via Supabase Auth (Opsional — Lebih Aman)
+Default-nya, akun developer diverifikasi via credential lokal (localStorage).
+Untuk meningkatkan keamanan, daftarkan juga di Supabase Authentication:
+
+Buka Supabase Dashboard → Authentication → Users → Add user
+Email: bookingeast0@gmail.com
+Password: sultan3110
+Centang Auto Confirm User (supaya bisa langsung login tanpa verifikasi email)
+Klik Create user
+Setelah didaftarkan, app otomatis memakai Supabase Auth saat developer login via email. Bila belum didaftarkan, app tetap fallback ke credential lokal — login tetap berfungsi.
+
+Catatan: Akun developer TIDAK muncul di tabel users Supabase dan TIDAK muncul di menu Kelola User / Log Aktivitas. Aktivitas developer juga TIDAK dicatat di log aktivitas.
 
 4. Yang Berubah dari Versi localStorage
 Aspek
