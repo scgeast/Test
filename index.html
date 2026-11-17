@@ -597,6 +597,16 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
 .kpi-tight{padding:12px 14px!important}
 .kpi-tight p.text-xl{font-size:20px!important;line-height:1.25}
 .kpi-tight p.text-lg{font-size:17px!important;line-height:1.25}
+
+/* ── GLOBAL TIGHTEN: Merapatkan semua konten ke area header (Topbar) ── */
+.content-area {
+  padding-top: 10px !important; /* Memangkas jarak atas secara global */
+}
+@media (max-width: 768px) {
+  .content-area {
+    padding-top: 8px !important; 
+  }
+}
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -667,23 +677,23 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <template x-if="hasAccess('jadwal') && !hasAccess('dashboard')">
             <div>
               <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">PROYEK SAYA</div>
-              <a @click="nav('jadwal')" :class="page==='jadwal'?'active':''" class="menu-link">
+              <a href="#page=jadwal" @click.prevent="nav('jadwal')" :class="page==='jadwal'?'active':''" class="menu-link">
                 <i class="fa-solid fa-calendar-days w-5"></i><span x-show="sidebarOpen">Jadwal Pengecoran</span>
               </a>
             </div>
           </template>
           <template x-if="hasAccess('dashboard')">
             <div>
-              <a @click="nav('dashboard')" :class="page==='dashboard'?'active':''" class="menu-link">
+              <a href="#page=dashboard" @click.prevent="nav('dashboard')" :class="page==='dashboard'?'active':''" class="menu-link">
                 <i class="fa-solid fa-gauge-high w-5"></i><span x-show="sidebarOpen">Dashboard</span>
               </a>
               <template x-if="hasAccess('inputProspek') || hasAccess('dataProspek')">
                 <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">PROSPEK</div>
               </template>
-              <a x-show="hasAccess('inputProspek')" @click="nav('inputProspek')" :class="page==='inputProspek'?'active':''" class="menu-link">
+              <a x-show="hasAccess('inputProspek')" href="#page=inputProspek" @click.prevent="nav('inputProspek')" :class="page==='inputProspek'?'active':''" class="menu-link">
                 <i class="fa-solid fa-plus-circle w-5"></i><span x-show="sidebarOpen">Input Prospek</span>
               </a>
-              <a x-show="hasAccess('dataProspek')" @click="nav('dataProspek')" :class="page==='dataProspek'?'active':''" class="menu-link">
+              <a x-show="hasAccess('dataProspek')" href="#page=dataProspek" @click.prevent="nav('dataProspek')" :class="page==='dataProspek'?'active':''" class="menu-link">
                 <i class="fa-solid fa-list w-5"></i><span x-show="sidebarOpen">Data Prospek</span>
                 <template x-if="unreadNotifCount>0">
                   <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5" x-text="unreadNotifCount"></span>
@@ -692,51 +702,51 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
               <template x-if="hasAccess('inputOrder') || hasAccess('orderSearch') || hasAccess('marketing')">
                 <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">ORDER</div>
               </template>
-              <a x-show="hasAccess('inputOrder')" @click="nav('inputOrder')" :class="page==='inputOrder'?'active':''" class="menu-link">
+              <a x-show="hasAccess('inputOrder')" href="#page=inputOrder" @click.prevent="nav('inputOrder')" :class="page==='inputOrder'?'active':''" class="menu-link">
                 <i class="fa-solid fa-cart-plus w-5"></i><span x-show="sidebarOpen">Input Order</span>
               </a>
-              <a x-show="hasAccess('orderSearch')" @click="nav('orderSearch')" :class="page==='orderSearch'?'active':''" class="menu-link">
+              <a x-show="hasAccess('orderSearch')" href="#page=orderSearch" @click.prevent="nav('orderSearch')" :class="page==='orderSearch'?'active':''" class="menu-link">
                 <i class="fa-solid fa-magnifying-glass w-5"></i><span x-show="sidebarOpen">Order Search</span>
               </a>
-              <a x-show="hasAccess('marketing')" @click="nav('marketing')" :class="page==='marketing'?'active':''" class="menu-link">
+              <a x-show="hasAccess('marketing')" href="#page=marketing" @click.prevent="nav('marketing')" :class="page==='marketing'?'active':''" class="menu-link">
                 <i class="fa-solid fa-chart-line w-5"></i><span x-show="sidebarOpen">Marketing</span>
               </a>
               <template x-if="hasAccess('jadwal') || hasAccess('afterDelivery')">
                 <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">PENGIRIMAN</div>
               </template>
-              <a x-show="hasAccess('jadwal')" @click="nav('jadwal')" :class="page==='jadwal'?'active':''" class="menu-link">
+              <a x-show="hasAccess('jadwal')" href="#page=jadwal" @click.prevent="nav('jadwal')" :class="page==='jadwal'?'active':''" class="menu-link">
                 <i class="fa-solid fa-calendar-days w-5"></i><span x-show="sidebarOpen">Jadwal Pengecoran</span>
               </a>
-              <a x-show="hasAccess('afterDelivery')" @click="nav('afterDelivery')" :class="page==='afterDelivery'?'active':''" class="menu-link">
+              <a x-show="hasAccess('afterDelivery')" href="#page=afterDelivery" @click.prevent="nav('afterDelivery')" :class="page==='afterDelivery'?'active':''" class="menu-link">
                 <i class="fa-solid fa-truck-fast w-5"></i><span x-show="sidebarOpen">After Delivery</span>
               </a>
             </div>
           </template>
-          <template x-if="currentUser.role==='owner'">
+          <template x-if="isOwnerOrDeveloper()">
             <div>
               <div x-show="sidebarOpen" class="text-xs text-slate-500 mt-4 px-2">OWNER</div>
-              <a @click="nav('proposeSiteNo')" :class="page==='proposeSiteNo'?'active':''" class="menu-link">
+              <a href="#page=proposeSiteNo" @click.prevent="nav('proposeSiteNo')" :class="page==='proposeSiteNo'?'active':''" class="menu-link">
                 <i class="fa-solid fa-file-signature w-5"></i><span x-show="sidebarOpen">Approval Site No</span>
               </a>
-              <a @click="nav('kelolaUser')" :class="page==='kelolaUser'?'active':''" class="menu-link">
+              <a href="#page=kelolaUser" @click.prevent="nav('kelolaUser')" :class="page==='kelolaUser'?'active':''" class="menu-link">
                 <i class="fa-solid fa-users w-5"></i><span x-show="sidebarOpen">Kelola User</span>
               </a>
-              <a @click="nav('kelolaHakAkses')" :class="page==='kelolaHakAkses'?'active':''" class="menu-link">
+              <a href="#page=kelolaHakAkses" @click.prevent="nav('kelolaHakAkses')" :class="page==='kelolaHakAkses'?'active':''" class="menu-link">
                 <i class="fa-solid fa-key w-5"></i><span x-show="sidebarOpen">Kelola Hak Akses</span>
               </a>
-              <a @click="nav('kelolaPlant')" :class="page==='kelolaPlant'?'active':''" class="menu-link">
+              <a href="#page=kelolaPlant" @click.prevent="nav('kelolaPlant')" :class="page==='kelolaPlant'?'active':''" class="menu-link">
                 <i class="fa-solid fa-industry w-5"></i><span x-show="sidebarOpen">Kelola Plant</span>
               </a>
-              <a @click="nav('kelolaMutu')" :class="page==='kelolaMutu'?'active':''" class="menu-link">
+              <a href="#page=kelolaMutu" @click.prevent="nav('kelolaMutu')" :class="page==='kelolaMutu'?'active':''" class="menu-link">
                 <i class="fa-solid fa-flask w-5"></i><span x-show="sidebarOpen">Kelola Mutu</span>
               </a>
-              <a @click="nav('kelolaKompetitor')" :class="page==='kelolaKompetitor'?'active':''" class="menu-link">
+              <a href="#page=kelolaKompetitor" @click.prevent="nav('kelolaKompetitor')" :class="page==='kelolaKompetitor'?'active':''" class="menu-link">
                 <i class="fa-solid fa-flag w-5"></i><span x-show="sidebarOpen">Kelola Kompetitor</span>
               </a>
-              <a @click="nav('kelolaAlamat')" :class="page==='kelolaAlamat'?'active':''" class="menu-link">
+              <a href="#page=kelolaAlamat" @click.prevent="nav('kelolaAlamat')" :class="page==='kelolaAlamat'?'active':''" class="menu-link">
                 <i class="fa-solid fa-map-location-dot w-5"></i><span x-show="sidebarOpen">Kelola Alamat</span>
               </a>
-              <a @click="nav('logAktivitas')" :class="page==='logAktivitas'?'active':''" class="menu-link">
+              <a href="#page=logAktivitas" @click.prevent="nav('logAktivitas')" :class="page==='logAktivitas'?'active':''" class="menu-link">
                 <i class="fa-solid fa-clock-rotate-left w-5"></i><span x-show="sidebarOpen">Log Aktivitas</span>
               </a>
             </div>
@@ -758,13 +768,13 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
             <div class="topbar-title" x-text="pageTitle"></div>
           </div>
           <div class="topbar-right">
-            <template x-if="currentUser.role==='owner'">
-              <button @click="refreshData()" class="btn-secondary btn-xs-alvend" title="Refresh data"><i class="fa-solid fa-rotate"></i> Refresh</button>
+            <template x-if="isOwnerOrDeveloper()">
+              <button @click="refreshData()" class="topbar-refresh" title="Refresh data" aria-label="Refresh data"><i class="fa-solid fa-rotate"></i></button>
             </template>
             <template x-if="hasAccess('dataProspek') && unreadNotifCount>0">
               <button @click="nav('dataProspek')" class="btn-danger btn-xs-alvend animate-pulse-red"><i class="fa-solid fa-bell"></i> <span x-text="unreadNotifCount + ' Repeat Order'"></span></button>
             </template>
-            <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+            <span class="live-indicator" title="Live" aria-label="Live"></span>
             <button @click="nav('profil')" class="topbar-user" title="Klik untuk buka profil">
               <template x-if="currentUser.avatar"><img :src="currentUser.avatar" alt="Avatar" class="top-avatar"></template>
               <template x-if="!currentUser.avatar"><span class="top-avatar top-avatar-fallback" x-text="(currentUser.name||'?').charAt(0).toUpperCase()"></span></template>
@@ -779,7 +789,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </template>
 
           <template x-if="hasAccess('dataProspek') && unreadNotifCount>0">
-            <div class="mb-4 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg flex items-center justify-between">
+            <div class="mb-3 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="bg-amber-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
                   <i class="fa-solid fa-bell text-lg"></i>
@@ -1150,7 +1160,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                           <template x-if="(p.source||'internal')==='customer_repeat' && !p.sales_id && currentUser.role==='sales'">
                             <button @click="claimProspek(p)" class="btn-warning text-xs whitespace-nowrap"><i class="fa-solid fa-hand"></i> Ambil</button>
                           </template>
-                          <template x-if="currentUser.role==='owner'">
+                          <template x-if="isOwnerOrDeveloper()">
                             <button @click="deleteProspect(p)" class="text-red-600 hover:text-red-800 text-xs whitespace-nowrap" title="Hapus prospek (Owner only)">
                               <i class="fa-solid fa-trash"></i>
                             </button>
@@ -1224,7 +1234,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <!-- JADWAL PENGECORAN -->
           <div x-show="page==='jadwal' && hasAccess('jadwal')">
             <template x-if="currentUser.role==='customer'">
-              <div class="mb-4 p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl flex items-center justify-between shadow">
+              <div class="mb-3 p-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl flex items-center justify-between shadow">
                 <div class="flex items-center gap-3">
                   <div class="bg-white/20 rounded-full w-12 h-12 flex items-center justify-center"><i class="fa-solid fa-cart-plus text-2xl"></i></div>
                   <div>
@@ -1236,7 +1246,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
               </div>
             </template>
 
-            <div class="card mb-4" style="padding:10px 14px">
+            <div class="card mb-3" style="padding:10px 14px">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label class="label">Plant (multi)</label>
@@ -1648,16 +1658,21 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           <!-- AFTER DELIVERY -->
           <div x-show="page==='afterDelivery' && hasAccess('afterDelivery')">
             <div class="card mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
-                <input x-model="adFilter.q" placeholder="Site No / Project / No SJ" class="input">
-                <input type="date" x-model="adFilter.date_from" class="input">
-                <input type="date" x-model="adFilter.date_to" class="input">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+                <input x-model="adFilter.q" placeholder="Order No / Site No / Project / No SJ" class="input">
+                <select x-model="adFilter.plant_id" class="input">
+                  <option value="">Semua Plant</option>
+                  <template x-for="p in plants" :key="p.id"><option :value="String(p.id)" x-text="p.name"></option></template>
+                </select>
+                <input type="date" x-model="adFilter.date_from" class="input" title="Tanggal kirim mulai">
+                <input type="date" x-model="adFilter.date_to" class="input" title="Tanggal kirim sampai">
                 <select x-model="adFilter.status" class="input">
                   <option value="">Semua Status</option>
                   <option value="delivered">Delivered (Aktif)</option>
                   <option value="rejected">Rejected</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+                <button type="button" @click="adFilter={q:'',plant_id:'',date_from:'',date_to:'',status:''}" class="btn-secondary text-sm"><i class="fa-solid fa-rotate-left mr-1"></i>Reset Filter</button>
               </div>
             </div>
             <div class="card overflow-x-auto">
@@ -1726,7 +1741,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- APPROVAL SITE NO -->
-          <div x-show="page==='proposeSiteNo' && currentUser.role==='owner'">
+          <div x-show="page==='proposeSiteNo' && isOwnerOrDeveloper()">
             <div class="card mb-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input x-model="psFilter.q" placeholder="Cari project / site no / mutu..." class="input md:col-span-2">
@@ -1825,7 +1840,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA USER -->
-          <div x-show="page==='kelolaUser' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaUser' && isOwnerOrDeveloper()">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="card">
                 <h3 class="font-semibold mb-3">Tambah User</h3>
@@ -1921,7 +1936,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA HAK AKSES -->
-          <div x-show="page==='kelolaHakAkses' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaHakAkses' && isOwnerOrDeveloper()">
             <div class="card mb-4">
               <div class="flex items-center justify-between">
                 <div>
@@ -1980,7 +1995,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA PLANT -->
-          <div x-show="page==='kelolaPlant' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaPlant' && isOwnerOrDeveloper()">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="card">
                 <h3 class="font-semibold mb-3">Tambah Plant</h3>
@@ -2018,7 +2033,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA MUTU -->
-          <div x-show="page==='kelolaMutu' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaMutu' && isOwnerOrDeveloper()">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="card">
                 <h3 class="font-semibold mb-3">Tambah Mutu</h3>
@@ -2056,7 +2071,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA KOMPETITOR -->
-          <div x-show="page==='kelolaKompetitor' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaKompetitor' && isOwnerOrDeveloper()">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="card">
                 <h3 class="font-semibold mb-3">Tambah Kompetitor</h3>
@@ -2094,7 +2109,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- KELOLA ALAMAT -->
-          <div x-show="page==='kelolaAlamat' && currentUser.role==='owner'">
+          <div x-show="page==='kelolaAlamat' && isOwnerOrDeveloper()">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div class="card">
                 <h3 class="font-semibold mb-3">Tambah Alamat</h3>
@@ -2131,7 +2146,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
           </div>
 
           <!-- LOG AKTIVITAS -->
-          <div x-show="page==='logAktivitas' && currentUser.role==='owner'">
+          <div x-show="page==='logAktivitas' && isOwnerOrDeveloper()">
             <div class="card mb-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input x-model="logFilter.q" placeholder="Cari User ID / Nama..." class="input">
@@ -2145,7 +2160,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
             </div>
             <div class="card overflow-x-auto">
               <table>
-                <thead><tr><th class="th">Waktu</th><th class="th">User ID</th><th class="th">Nama</th><th class="th">Role</th><th class="th">Status</th><th class="th">Device</th></tr></thead>
+                <thead><tr><th class="th">Waktu</th><th class="th">User ID</th><th class="th">Nama</th><th class="th">Role</th><th class="th">Status</th><th class="th">Activity</th></tr></thead>
                 <tbody>
                   <template x-for="l in filteredLogs" :key="l.id">
                     <tr :class="l.status==='failed'?'bg-red-50':(l.status==='inactive'?'bg-amber-50':'')">
@@ -2158,7 +2173,7 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
                         <template x-if="l.status==='failed'"><span class="badge bg-red-100 text-red-700">✗ Gagal</span></template>
                         <template x-if="l.status==='inactive'"><span class="badge bg-amber-100 text-amber-700">🚫 Nonaktif</span></template>
                       </td>
-                      <td class="td text-xs text-slate-500 truncate max-w-xs" x-text="l.user_agent"></td>
+                      <td class="td text-xs text-slate-600 min-w-[220px]" x-text="l.activity || 'Aktivitas user'"></td>
                     </tr>
                   </template>
                   <template x-if="filteredLogs.length===0">
@@ -2411,10 +2426,10 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
         </template>
         <div class="p-4 border-t flex justify-end gap-2">
           <button @click="orderDetailModal.show=false" class="btn-secondary">Tutup</button>
-          <template x-if="currentUser?.role==='owner' && orderDetailModal.data && !isOrderFinished(orderDetailModal.data)">
+          <template x-if="isOwnerOrDeveloper() && orderDetailModal.data && !isOrderFinished(orderDetailModal.data)">
             <button @click="openEditOrderFromDetail()" class="btn-primary"><i class="fa-solid fa-pen-to-square"></i> Edit Order</button>
           </template>
-          <template x-if="currentUser?.role==='owner' && orderDetailModal.data && isOrderFinished(orderDetailModal.data)">
+          <template x-if="isOwnerOrDeveloper() && orderDetailModal.data && isOrderFinished(orderDetailModal.data)">
             <span class="text-emerald-600 text-xs font-medium flex items-center"><i class="fa-solid fa-lock mr-1"></i> Complete / Finished — terkunci</span>
           </template>
         </div>
@@ -2906,15 +2921,75 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
 </div>
 
 <script>
+// Log aktivitas disimpan maksimal 24 jam sejak waktu aktivitas dibuat.
+const ACTIVITY_LOG_RETENTION_MS = 24 * 60 * 60 * 1000;
+function pruneActivityLogs() {
+  let logs = [];
+  try { logs = JSON.parse(localStorage.getItem('beton_login_logs') || '[]'); } catch (_) { logs = []; }
+  const cutoff = Date.now() - ACTIVITY_LOG_RETENTION_MS;
+  logs = (Array.isArray(logs) ? logs : []).filter(log => {
+    const stamp = new Date(log.login_at || log.created_at || 0).getTime();
+    // FILTER: aktivitas akun developer tidak ditampilkan ke akun lain
+    const isDeveloper = String(log.role || '') === 'developer';
+    return Number.isFinite(stamp) && stamp >= cutoff && !isDeveloper;
+  }).map(log => ({
+    ...log,
+    activity: log.activity || (log.status === 'success' ? 'Login berhasil' : log.status === 'inactive' ? 'Percobaan login — akun nonaktif' : 'Percobaan login gagal')
+  }));
+  localStorage.setItem('beton_login_logs', JSON.stringify(logs));
+  return logs;
+}
+function appendActivityLog(user, activity, status='success', usernameFallback='') {
+  if (!user && !usernameFallback) return;
+  const logs = pruneActivityLogs();
+  const stamp = new Date().toISOString();
+  logs.unshift({
+    id: logs.length ? Math.max(...logs.map(l => Number(l.id) || 0)) + 1 : 1,
+    user_id: user?.id || null,
+    username: user?.username || usernameFallback || '-',
+    name: user?.name || '(tidak dikenal)',
+    role: user?.role || '-',
+    status,
+    activity: String(activity || 'Aktivitas user'),
+    login_at: stamp
+  });
+  localStorage.setItem('beton_login_logs', JSON.stringify(logs));
+}
 const DB = {
-  get: (k, def=[]) => JSON.parse(localStorage.getItem('beton_'+k) || JSON.stringify(def)),
-  set: (k, v) => localStorage.setItem('beton_'+k, JSON.stringify(v)),
+  get: (k, def=[]) => {
+    if (k === 'login_logs') return pruneActivityLogs();
+    return JSON.parse(localStorage.getItem('beton_'+k) || JSON.stringify(def));
+  },
+  set: (k, v) => {
+    localStorage.setItem('beton_'+k, JSON.stringify(v));
+    // Setiap perubahan data oleh user yang sedang login otomatis tercatat.
+    if (k !== 'login_logs') {
+      let user = null;
+      try { user = JSON.parse(localStorage.getItem('beton_current') || 'null'); } catch (_) {}
+      if (user && user.role !== 'developer') {
+        const labels = {
+          users:'data user / akun', plants:'data plant', mutu:'data mutu beton',
+          competitors:'data kompetitor', addresses:'data alamat', prospects:'data prospek project',
+          orders:'data order', deliveries:'data pengiriman', visits:'data visit project',
+          propose:'data approval site no', notifications:'notifikasi'
+        };
+        appendActivityLog(user, 'Memperbarui ' + (labels[k] || ('data ' + k)));
+      }
+    }
+  },
   nextId: (k) => {
     const arr = DB.get(k);
     return arr.length ? Math.max(...arr.map(x=>+x.id))+1 : 1;
   }
 };
 const todayISO = () => new Date().toISOString().slice(0,10);
+// Akun Developer sementara (localStorage only). Tidak disimpan di tabel beton_users.
+const DEVELOPER_ACCOUNT_KEY = 'beton_developer_account';
+const DEVELOPER_DEFAULT_ACCOUNT = {
+  id: -999999, username: 'developer', name: 'Application Developer',
+  email: 'developer@dutaintinusa.local', password: 'D1N-Dev#2026',
+  role: 'developer', is_active: true, permissions: ['*']
+};
 
 const DEFAULT_PERMISSIONS = {
   owner: ['dashboard','inputProspek','dataProspek','inputOrder','orderSearch','marketing','jadwal','afterDelivery','proposeSiteNo','kelolaUser','kelolaHakAkses','kelolaPlant','kelolaMutu','kelolaKompetitor','kelolaAlamat','logAktivitas'],
@@ -2957,7 +3032,7 @@ function app() {
     sFilter: { q:'',plant_id:'',mutu_id:'',status:'' },
     mktFilter: { site_no:'', siteSearch:'', q:'' },
     mktSuggestOpen: false,
-    adFilter: { q:'',date_from:'',date_to:'',status:'' },
+    adFilter: { q:'',plant_id:'',date_from:'',date_to:'',status:'' },
     psFilter: { q:'', status:'' },
 
     visitModal: { show:false, id:null, project_name:'', current_status:'not_yet' },
@@ -3033,6 +3108,7 @@ function app() {
     editAlamatModal: { show:false, id:null }, eaForm:{ label:'',address:'',city:'',province:'',type:'site' },
 
     init() {
+      this.ensureDeveloperAccount();
       if (!localStorage.getItem('beton_users')) this.seed();
       this.ensureDefaultUsers();
       this.reload();
@@ -3041,14 +3117,24 @@ function app() {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          const found = this.users.find(u => {
-            if (parsed.username && u.username) {
-              return String(u.username).toLowerCase() === String(parsed.username).toLowerCase();
+          const devAccount = this.getDeveloperAccount();
+          const found = parsed.role === 'developer' && parsed.username === devAccount.username
+            ? devAccount
+            : this.users.find(u => {
+                if (parsed.username && u.username) {
+                  return String(u.username).toLowerCase() === String(parsed.username).toLowerCase();
+                }
+                return false;
+              });
+          if (found) {
+            this.currentUser = found;
+            if (found.role === 'customer') this.page = 'jadwal';
+            const requestedPage = (location.hash.match(/(?:^#|&)page=([^&]+)/) || [])[1];
+            if (requestedPage) {
+              const targetPage = decodeURIComponent(requestedPage);
+              if (found.role === 'owner' || found.role === 'developer' || this.hasAccess(targetPage)) this.page = targetPage;
             }
-            return false;
-          });
-          if (found) { this.currentUser = found; if (found.role === 'customer') this.page = 'jadwal'; }
-          else localStorage.removeItem('beton_current');
+          } else localStorage.removeItem('beton_current');
         } catch (e) {
           localStorage.removeItem('beton_current');
         }
@@ -3264,6 +3350,22 @@ function app() {
       return result.sort((a,b) => b.remain - a.remain).slice(0, 8);
     },
 
+    ensureDeveloperAccount() {
+      // Jika key belum ada, buat akun lokal default satu kali. Tidak pernah menambahkannya ke beton_users.
+      if (!localStorage.getItem(DEVELOPER_ACCOUNT_KEY)) {
+        localStorage.setItem(DEVELOPER_ACCOUNT_KEY, JSON.stringify({ ...DEVELOPER_DEFAULT_ACCOUNT }));
+      }
+    },
+    getDeveloperAccount() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(DEVELOPER_ACCOUNT_KEY) || 'null');
+        return saved && saved.role === 'developer' ? saved : { ...DEVELOPER_DEFAULT_ACCOUNT };
+      } catch (_) { return { ...DEVELOPER_DEFAULT_ACCOUNT }; }
+    },
+    isOwnerOrDeveloper() {
+      return !!this.currentUser && ['owner','developer'].includes(this.currentUser.role);
+    },
+
     defaultPermsFor(role) {
       return DEFAULT_PERMISSIONS[role] || [];
     },
@@ -3274,7 +3376,7 @@ function app() {
     hasAccess(menuKey) {
       const u = this.currentUser;
       if (!u) return false;
-      if (u.role === 'owner') return true;
+      if (u.role === 'owner' || u.role === 'developer') return true;
       const perms = Array.isArray(u.permissions) && u.permissions.length > 0
                     ? u.permissions
                     : this.defaultPermsFor(u.role);
@@ -3402,7 +3504,15 @@ function app() {
       return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     },
     toastMsg(m, type='success') { this.toast = m; this.toastType = type; setTimeout(()=>this.toast='',3000); },
-    nav(page) { this.page = page; this.toast=''; },
+    nav(page) {
+      const previousPage = this.page;
+      this.page = page;
+      this.toast='';
+      if (this.currentUser && page !== previousPage) {
+        appendActivityLog(this.currentUser, 'Membuka menu: ' + (this.pageTitle || page));
+        this.loginLogs = DB.get('login_logs');
+      }
+    },
 
     salesName(id) { return this.users.find(u=>Number(u.id)===Number(id))?.name || '-'; },
     plantName(id) { return this.plants.find(p=>Number(p.id)===Number(id))?.name || '-'; },
@@ -3497,6 +3607,21 @@ function app() {
     login() {
       const uid = (this.loginForm.username || '').trim().toLowerCase();
       if (!uid) { this.loginError = 'User ID wajib diisi'; return; }
+      const developer = this.getDeveloperAccount();
+      if (uid === String(developer.username).toLowerCase()) {
+        if (String(developer.password) !== String(this.loginForm.password)) {
+          this.loginError = 'Password salah';
+          return;
+        }
+        if (developer.is_active === false) { this.loginError = 'Akun Developer nonaktif'; return; }
+        this.currentUser = { ...developer };
+        localStorage.setItem('beton_current', JSON.stringify(this.currentUser));
+        this.loginError = '';
+        this.loginForm = { username:'', password:'' };
+        this.nav('dashboard');
+        this.toastMsg('Login Developer berhasil');
+        return;
+      }
       const users = DB.get('users');
       const u = users.find(x =>
         (x.username && String(x.username).toLowerCase() === uid) ||
@@ -3533,21 +3658,21 @@ function app() {
         else if (this.hasAccess('marketing'))     defaultPage = 'marketing';
         else if (this.hasAccess('afterDelivery')) defaultPage = 'afterDelivery';
       }
+      const requestedPage = (location.hash.match(/(?:^#|&)page=([^&]+)/) || [])[1];
+      if (requestedPage) {
+        const targetPage = decodeURIComponent(requestedPage);
+        if (u.role === 'owner' || u.role === 'developer' || this.hasAccess(targetPage)) defaultPage = targetPage;
+      }
       this.nav(defaultPage);
       this.toastMsg('Selamat datang, ' + u.name);
     },
 
     recordLogin(user, uidInput, status) {
-      const logs = DB.get('login_logs');
-      logs.unshift({
-        id: logs.length ? Math.max(...logs.map(l=>+l.id))+1 : 1,
-        user_id: user?.id || null, username: user?.username || uidInput,
-        name: user?.name || '(tidak dikenal)', role: user?.role || '-', status,
-        login_at: new Date().toISOString(),
-        user_agent: (navigator.userAgent || '').slice(0, 100),
-      });
-      if (logs.length > 500) logs.length = 500;
-      DB.set('login_logs', logs);
+      const activity = status === 'success' ? 'Login berhasil' :
+        status === 'inactive' ? 'Percobaan login ditolak — akun nonaktif' :
+        'Percobaan login gagal';
+      appendActivityLog(user, activity, status, uidInput);
+      this.loginLogs = DB.get('login_logs');
     },
 
     uploadAvatar(event) {
@@ -3852,9 +3977,13 @@ function app() {
       this.onSiteChange();
     },
     get completeSites() { return this.prospects.filter(p=>p.site_no_status==='complete' && p.source !== 'customer_repeat'); },
-    get siteFound() { return this.completeSites.some(s => s.site_no === this.oForm.site_no); },
+    get siteFound() {
+      const q = String(this.oForm.site_no || '').trim().toLowerCase();
+      return this.completeSites.some(s => String(s.site_no || '').trim().toLowerCase() === q);
+    },
     onSiteChange() {
-      const p = this.prospects.find(x => x.site_no === this.oForm.site_no);
+      const q = String(this.oForm.site_no || '').trim().toLowerCase();
+      const p = this.prospects.find(x => String(x.site_no || '').trim().toLowerCase() === q);
       if (!p || p.site_no_status !== 'complete') {
         this.oForm.project_name = ''; this.oForm.address = ''; this.oForm.po_no = '';
         this.oForm.pic_name = ''; this.oForm.pic_contact = ''; this.oForm.mutu_list = [];
@@ -3880,8 +4009,9 @@ function app() {
     },
 
     saveOrder() {
-      const p = this.prospects.find(x=>x.site_no===this.oForm.site_no);
-      if (!p) { this.toastMsg('Site No tidak valid','error'); return; }
+      const requestedSiteNo = String(this.oForm.site_no || '').trim().toLowerCase();
+      const p = this.prospects.find(x => String(x.site_no || '').trim().toLowerCase() === requestedSiteNo);
+      if (!p || p.site_no_status !== 'complete') { this.toastMsg('Site No tidak valid atau belum di-approve','error'); return; }
 
       const qty_po = Number(p.qty_po) || 0;
       if (qty_po > 0) {
@@ -3936,13 +4066,25 @@ function app() {
     get groupedOrders() {
       const u = this.currentUser;
       if (!u) return [];
-      const allowed = this.accessibleSites;
       let list = this.orders.slice();
-      if (u.role === 'sales') list = list.filter(o=>Number(o.sales_id)===Number(u.id));
-      if (u.role === 'customer') list = list.filter(o=>allowed.includes(o.site_no));
-      if (this.jFilter.plants.length) list = list.filter(o=>this.jFilter.plants.map(Number).includes(Number(o.plant_id)));
-      if (this.jFilter.status) list = list.filter(o=>o.status===this.jFilter.status);
-      if (this.jFilter.date) list = list.filter(o=>o.delivery_date===this.jFilter.date);
+      // Akun internal (Owner, Admin, Sales, Logistik) dapat melihat seluruh jadwal.
+      // Akun Customer tetap dibatasi pada Site No yang ditugaskan.
+      if (u.role === 'customer') {
+        const allowed = Array.isArray(this.accessibleSites) ? this.accessibleSites : [];
+        const allowedSet = new Set(allowed.map(v => String(v || '').trim().toLowerCase()));
+        list = list.filter(o => allowedSet.has(String(o.site_no || '').trim().toLowerCase()));
+      }
+      const selectedPlants = Array.isArray(this.jFilter.plants)
+        ? this.jFilter.plants.map(v => String(v)).filter(Boolean) : [];
+      if (selectedPlants.length) list = list.filter(o => selectedPlants.includes(String(o.plant_id)));
+      if (this.jFilter.status) {
+        const wantedStatus = String(this.jFilter.status).trim().toLowerCase();
+        list = list.filter(o => String(o.status || 'scheduled').trim().toLowerCase() === wantedStatus);
+      }
+      if (this.jFilter.date) {
+        const wantedDate = String(this.jFilter.date).trim().slice(0, 10);
+        list = list.filter(o => String(o.delivery_date || '').trim().slice(0, 10) === wantedDate);
+      }
       list = list.map(o=>({ ...o, deliveries: this.deliveries.filter(d=>Number(d.order_id)===Number(o.id)) }));
       list.sort((a,b)=> (a.delivery_date+a.pouring_time).localeCompare(b.delivery_date+b.pouring_time));
       const map = {};
@@ -4203,14 +4345,28 @@ function app() {
       const u = this.currentUser;
       if (!u) return [];
       let list = this.orders.slice();
-      if (u.role === 'sales') list = list.filter(o=>Number(o.sales_id)===Number(u.id));
+      // Semua akun internal yang memiliki izin Order Search dapat mencari seluruh order,
+      // tidak hanya order yang dibuat oleh Sales ID sendiri.
+      if (u.role === 'customer') {
+        const assigned = Array.isArray(u.assigned_sites) ? u.assigned_sites : [];
+        const assignedSet = new Set(assigned.map(v => String(v || '').trim().toLowerCase()));
+        list = list.filter(o => assignedSet.has(String(o.site_no || '').trim().toLowerCase()));
+      }
       if (this.sFilter.q) {
-        const q = this.sFilter.q.toLowerCase();
-        list = list.filter(o=>o.order_no.toLowerCase().includes(q) || o.site_no.toLowerCase().includes(q) || o.project_name.toLowerCase().includes(q));
+        const q = String(this.sFilter.q || '').trim().toLowerCase();
+        list = list.filter(o =>
+          String(o.order_no || '').toLowerCase().includes(q) ||
+          String(o.site_no || '').toLowerCase().includes(q) ||
+          String(o.project_name || '').toLowerCase().includes(q) ||
+          String(o.po_no || '').toLowerCase().includes(q)
+        );
       }
       if (this.sFilter.plant_id) list = list.filter(o=>Number(o.plant_id)===Number(this.sFilter.plant_id));
       if (this.sFilter.mutu_id) list = list.filter(o=>Number(o.mutu_id)===Number(this.sFilter.mutu_id));
-      if (this.sFilter.status) list = list.filter(o=>o.status===this.sFilter.status);
+      if (this.sFilter.status) {
+        const wantedStatus = String(this.sFilter.status).trim().toLowerCase();
+        list = list.filter(o=>String(o.status || 'scheduled').trim().toLowerCase()===wantedStatus);
+      }
       return list.sort((a,b)=>b.id-a.id);
     },
 
@@ -4218,23 +4374,49 @@ function app() {
       const u = this.currentUser;
       if (!u) return [];
       let list = this.deliveries.slice();
-      if (u.role === 'sales') {
-        const myOrders = this.orders.filter(o=>Number(o.sales_id)===Number(u.id)).map(o=>Number(o.id));
-        list = list.filter(d=>myOrders.includes(Number(d.order_id)));
+
+      // Customer hanya dapat melihat delivery dari Site No yang ditugaskan.
+      // Akun internal yang memiliki akses After Delivery dapat melihat seluruh data.
+      if (u.role === 'customer') {
+        const assigned = Array.isArray(u.assigned_sites) ? u.assigned_sites : [];
+        const assignedSet = new Set(assigned.map(v => String(v || '').trim().toLowerCase()));
+        const allowedOrderIds = new Set(this.orders
+          .filter(o => assignedSet.has(String(o.site_no || '').trim().toLowerCase()))
+          .map(o => String(o.id)));
+        list = list.filter(d => allowedOrderIds.has(String(d.order_id)));
       }
-      if (this.adFilter.q) {
-        const q = this.adFilter.q.toLowerCase();
-        list = list.filter(d=>{
-          const o = this.orderById(d.order_id)||{};
-          return (o.site_no||'').toLowerCase().includes(q) || (o.project_name||'').toLowerCase().includes(q) || (d.sj_no||'').toLowerCase().includes(q);
+
+      const q = String(this.adFilter.q || '').trim().toLowerCase();
+      if (q) {
+        list = list.filter(d => {
+          const o = this.orderById(d.order_id) || {};
+          const fields = [o.order_no, o.site_no, o.project_name, o.po_no, d.sj_no, d.truck_no, d.driver_name];
+          return fields.some(v => String(v == null ? '' : v).trim().toLowerCase().includes(q));
         });
       }
-      if (this.adFilter.status) {
-        list = list.filter(d => (d.status || 'delivered') === this.adFilter.status);
+
+      if (this.adFilter.plant_id) {
+        const selectedPlant = String(this.adFilter.plant_id).trim();
+        list = list.filter(d => {
+          const o = this.orderById(d.order_id) || {};
+          return String(o.plant_id == null ? '' : o.plant_id).trim() === selectedPlant;
+        });
       }
-      if (this.adFilter.date_from) list = list.filter(d=>d.delivery_date>=this.adFilter.date_from);
-      if (this.adFilter.date_to) list = list.filter(d=>d.delivery_date<=this.adFilter.date_to);
-      return list.sort((a,b)=>b.id-a.id);
+
+      if (this.adFilter.status) {
+        const wantedStatus = String(this.adFilter.status).trim().toLowerCase();
+        list = list.filter(d => String(d.status || 'delivered').trim().toLowerCase() === wantedStatus);
+      }
+
+      if (this.adFilter.date_from) {
+        const from = String(this.adFilter.date_from).slice(0, 10);
+        list = list.filter(d => String(d.delivery_date || '').slice(0, 10) >= from);
+      }
+      if (this.adFilter.date_to) {
+        const to = String(this.adFilter.date_to).slice(0, 10);
+        list = list.filter(d => String(d.delivery_date || '').slice(0, 10) <= to);
+      }
+      return list.sort((a,b) => Number(b.id || 0) - Number(a.id || 0));
     },
 
     // MARKETING GETTERS
@@ -4567,6 +4749,7 @@ function app() {
       if (password.length < 6) { this.toastMsg('Password minimal 6 karakter','error'); return; }
       if (!this.uForm.role) { this.toastMsg('Role wajib dipilih','error'); return; }
 
+      if (uid === String(this.getDeveloperAccount().username).toLowerCase()) { this.toastMsg('User ID ini dicadangkan untuk akun sistem','error'); return; }
       const validRoles = ['owner','admin','sales','logistik','customer'];
       if (!validRoles.includes(this.uForm.role)) {
         this.toastMsg('Role tidak valid','error'); return;
@@ -4597,7 +4780,7 @@ function app() {
       this.reload();
       this.toastMsg('User "' + uid + '" berhasil ditambahkan. Akun dapat langsung login.');
     },
-    delUser(id) { DB.set('users', DB.get('users').filter(u=>Number(u.id)!==Number(id))); this.reload(); },
+    delUser(id) { const target = DB.get('users').find(u=>Number(u.id)===Number(id)); if (!target || target.role==='developer') return; DB.set('users', DB.get('users').filter(u=>Number(u.id)!==Number(id))); this.reload(); },
     addPlant() { const list = DB.get('plants'); list.push({ id: DB.nextId('plants'), ...this.plForm, is_active:1 }); DB.set('plants', list); this.plForm={ code:'',name:'',address:'',phone:'' }; this.reload(); this.toastMsg('Plant ditambahkan'); },
     addMutu() { const list = DB.get('mutu'); list.push({ id: DB.nextId('mutu'), ...this.mForm, is_active:1 }); DB.set('mutu', list); this.mForm={ code:'',name:'',slump:'',price:0 }; this.reload(); this.toastMsg('Mutu ditambahkan'); },
     addCompetitor() { const list = DB.get('competitors'); list.push({ id: DB.nextId('competitors'), ...this.cForm }); DB.set('competitors', list); this.cForm={ name:'',address:'',contact_person:'',phone:'' }; this.reload(); this.toastMsg('Kompetitor ditambahkan'); },
@@ -4606,5 +4789,53 @@ function app() {
   };
 }
 </script>
+
+<style id="compact-header-adjustments">
+/* Header dipadatkan agar tinggi area atas lebih ringkas */
+.topbar{
+  min-height:46px!important;
+  height:auto!important;
+  padding:5px 18px 5px 20px!important;
+  gap:10px!important;
+}
+.topbar-title-wrap{gap:10px!important}
+.topbar-title{font-size:16px!important;line-height:1.2!important}
+.sidebar-toggle-inline{
+  width:32px!important;height:32px!important;min-height:32px!important;
+  border-radius:8px!important;box-shadow:none!important;
+}
+.topbar-right{gap:10px!important}
+.topbar-user{padding:3px 8px!important;gap:6px!important}
+.top-avatar{width:27px!important;height:27px!important}
+.topbar-refresh{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:30px!important;height:30px!important;min-height:30px!important;
+  padding:0!important;border:0!important;outline:0!important;
+  background:transparent!important;box-shadow:none!important;
+  color:#64748B!important;border-radius:50%!important;cursor:pointer!important;
+  font-size:15px!important;transition:color .15s ease,transform .2s ease!important;
+}
+.topbar-refresh:hover{background:transparent!important;color:#DC2626!important;transform:rotate(35deg)!important}
+.live-indicator{
+  display:inline-block!important;position:relative!important;flex:0 0 9px!important;
+  width:9px!important;height:9px!important;border-radius:50%!important;
+  background:#10B981!important;box-shadow:0 0 0 0 rgba(16,185,129,.55)!important;
+  animation:live-dot-pulse 1.6s infinite!important;
+}
+@keyframes live-dot-pulse{
+  0%{box-shadow:0 0 0 0 rgba(16,185,129,.55);opacity:1}
+  70%{box-shadow:0 0 0 7px rgba(16,185,129,0);opacity:.9}
+  100%{box-shadow:0 0 0 0 rgba(16,185,129,0);opacity:1}
+}
+@media(max-width:768px){
+  .topbar{min-height:42px!important;padding:4px 10px 4px 12px!important}
+  .topbar-title{font-size:14px!important}
+  .topbar-right{gap:6px!important}
+  .topbar-user{padding:2px!important;background:transparent!important}
+  .top-avatar{width:26px!important;height:26px!important}
+}
+</style>
+
+
 </body>
 </html>
