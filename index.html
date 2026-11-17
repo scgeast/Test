@@ -6,6 +6,7 @@
 <title>ALVEND Readymix Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
   [x-cloak]{display:none!important}
@@ -612,6 +613,23 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
 <body class="bg-slate-100 text-slate-800">
 
 <div x-data="app()" x-init="init()" x-cloak>
+<template x-if="fatalError">
+  <div class="fixed inset-0 z-[9999] bg-white flex items-center justify-center p-6">
+    <div class="max-w-md text-center">
+      <div class="text-6xl mb-4">⚠️</div>
+      <h2 class="text-xl font-bold text-red-600 mb-2">Koneksi Supabase Gagal</h2>
+      <p class="text-slate-600 text-sm mb-4" x-text="fatalError"></p>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 text-left">
+        <p class="font-bold mb-1">Cek hal berikut:</p>
+        <ul class="list-disc list-inside space-y-1">
+          <li>File <code>supabase_schema.sql</code> sudah dijalankan di Supabase SQL Editor</li>
+          <li><code>SUPABASE_URL</code> dan <code>SUPABASE_PUBLISHABLE_KEY</code> sudah benar di dalam &lt;script&gt;</li>
+          <li>Koneksi internet aktif</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</template>
 
   <!-- LOGIN -->
   <div x-show="!currentUser" class="alvend-login">
@@ -2921,69 +2939,127 @@ button,.btn-primary,.btn-secondary,.btn-success,.btn-danger,.btn-warning{min-hei
 </div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
+//  SUPABASE CONFIG — Ganti dengan URL & Publishable Key Anda
+//  Ambil dari: Supabase Dashboard → Project Settings → API Keys
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://74S88rRafH0wVi70p40hWA.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_74S88rRafH0wVi70p40hWA_b8ivR...'; // ← GANTI dengan key LENGKAP dari dashboard
+
+let supabaseClient = null;
+try {
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  } else {
+    console.error('Library Supabase JS tidak ter-load. Cek koneksi internet.');
+  }
+} catch (e) {
+  console.error('Gagal inisialisasi Supabase:', e);
+}
+
 // Log aktivitas disimpan maksimal 24 jam sejak waktu aktivitas dibuat.
 const ACTIVITY_LOG_RETENTION_MS = 24 * 60 * 60 * 1000;
-function pruneActivityLogs() {
-  let logs = [];
-  try { logs = JSON.parse(localStorage.getItem('beton_login_logs') || '[]'); } catch (_) { logs = []; }
-  const cutoff = Date.now() - ACTIVITY_LOG_RETENTION_MS;
-  logs = (Array.isArray(logs) ? logs : []).filter(log => {
-    const stamp = new Date(log.login_at || log.created_at || 0).getTime();
-    // FILTER: aktivitas akun developer tidak ditampilkan ke akun lain
-    const isDeveloper = String(log.role || '') === 'developer';
-    return Number.isFinite(stamp) && stamp >= cutoff && !isDeveloper;
-  }).map(log => ({
+
+async function pruneActivityLogsAsync() {
+  if (!supabaseClient) return [];
+  const cutoff = new Date(Date.now() - ACTIVITY_LOG_RETENTION_MS).toISOString();
+  // Hapus log lebih tua dari 24 jam
+  await supabaseClient.from('login_logs').delete().lt('login_at', cutoff);
+  // Hanya tampilkan log yang rolenya bukan developer
+  const { data, error } = await supabaseClient.from('login_logs').select('*').neq('role','developer').order('id', { ascending: false });
+  if (error) return [];
+  return (data || []).map(log => ({
     ...log,
     activity: log.activity || (log.status === 'success' ? 'Login berhasil' : log.status === 'inactive' ? 'Percobaan login — akun nonaktif' : 'Percobaan login gagal')
   }));
-  localStorage.setItem('beton_login_logs', JSON.stringify(logs));
-  return logs;
 }
-function appendActivityLog(user, activity, status='success', usernameFallback='') {
+
+async function appendActivityLogAsync(user, activity, status='success', usernameFallback='') {
+  if (!supabaseClient) return;
   if (!user && !usernameFallback) return;
-  const logs = pruneActivityLogs();
-  const stamp = new Date().toISOString();
-  logs.unshift({
-    id: logs.length ? Math.max(...logs.map(l => Number(l.id) || 0)) + 1 : 1,
+  await supabaseClient.from('login_logs').insert({
     user_id: user?.id || null,
     username: user?.username || usernameFallback || '-',
     name: user?.name || '(tidak dikenal)',
     role: user?.role || '-',
     status,
     activity: String(activity || 'Aktivitas user'),
-    login_at: stamp
+    login_at: new Date().toISOString()
   });
-  localStorage.setItem('beton_login_logs', JSON.stringify(logs));
 }
+
 const DB = {
-  get: (k, def=[]) => {
-    if (k === 'login_logs') return pruneActivityLogs();
-    return JSON.parse(localStorage.getItem('beton_'+k) || JSON.stringify(def));
+  _ready() {
+    if (!supabaseClient) throw new Error('Supabase belum terhubung. Periksa SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY.');
   },
-  set: (k, v) => {
-    localStorage.setItem('beton_'+k, JSON.stringify(v));
-    // Setiap perubahan data oleh user yang sedang login otomatis tercatat.
-    if (k !== 'login_logs') {
-      let user = null;
-      try { user = JSON.parse(localStorage.getItem('beton_current') || 'null'); } catch (_) {}
-      if (user && user.role !== 'developer') {
-        const labels = {
-          users:'data user / akun', plants:'data plant', mutu:'data mutu beton',
-          competitors:'data kompetitor', addresses:'data alamat', prospects:'data prospek project',
-          orders:'data order', deliveries:'data pengiriman', visits:'data visit project',
-          propose:'data approval site no', notifications:'notifikasi'
-        };
-        appendActivityLog(user, 'Memperbarui ' + (labels[k] || ('data ' + k)));
-      }
+  async all(table) {
+    this._ready();
+    const { data, error } = await supabaseClient.from(table).select('*').order('id', { ascending: true });
+    if (error) { console.error('DB.all error ['+table+']:', error.message); return []; }
+    return (data || []).map(row => DB._normalize(table, row));
+  },
+  async insert(table, item) {
+    this._ready();
+    const payload = DB._strip(item);
+    const { data, error } = await supabaseClient.from(table).insert(payload).select();
+    if (error) { console.error('DB.insert error ['+table+']:', error.message); throw error; }
+    return data && data[0] ? DB._normalize(table, data[0]) : null;
+  },
+  async update(table, id, patch) {
+    this._ready();
+    const payload = DB._strip(patch);
+    const { data, error } = await supabaseClient.from(table).update(payload).eq('id', id).select();
+    if (error) { console.error('DB.update error ['+table+']:', error.message); throw error; }
+    return data && data[0] ? DB._normalize(table, data[0]) : null;
+  },
+  async upsert(table, item) {
+    this._ready();
+    const payload = DB._strip(item);
+    const { data, error } = await supabaseClient.from(table).upsert(payload, { onConflict: 'id' }).select();
+    if (error) { console.error('DB.upsert error ['+table+']:', error.message); throw error; }
+    return data && data[0] ? DB._normalize(table, data[0]) : null;
+  },
+  async remove(table, id) {
+    this._ready();
+    const { error } = await supabaseClient.from(table).delete().eq('id', id);
+    if (error) { console.error('DB.remove error ['+table+']:', error.message); throw error; }
+  },
+  _normalize(table, row) {
+    if (!row) return row;
+    if (table === 'users') {
+      if (!Array.isArray(row.assigned_sites)) row.assigned_sites = row.assigned_sites || [];
+      if (!Array.isArray(row.permissions)) row.permissions = row.permissions || [];
+      if (typeof row.is_active === 'undefined') row.is_active = true;
     }
+    if (table === 'propose') {
+      if (!Array.isArray(row.mutu)) row.mutu = [];
+      if (!Array.isArray(row.plant_ids)) row.plant_ids = [];
+    }
+    if (table === 'notifications') {
+      if (!Array.isArray(row.read_by)) row.read_by = [];
+    }
+    if (table === 'deliveries') {
+      if (typeof row.remarks === 'undefined') row.remarks = '';
+      if (!row.status) row.status = 'delivered';
+    }
+    if (table === 'prospects') {
+      if (!row.source) row.source = 'internal';
+      if (!row.site_no_status) row.site_no_status = 'waiting';
+      if (!row.visit_status) row.visit_status = 'not_yet';
+      if (typeof row.qty_po === 'undefined') row.qty_po = 0;
+    }
+    return row;
   },
-  nextId: (k) => {
-    const arr = DB.get(k);
-    return arr.length ? Math.max(...arr.map(x=>+x.id))+1 : 1;
+  _strip(item) {
+    // hapus field computed yang tidak ada di tabel
+    const out = { ...item };
+    delete out.deliveries;
+    return out;
   }
 };
+
 const todayISO = () => new Date().toISOString().slice(0,10);
-// Akun Developer sementara (localStorage only). Tidak disimpan di tabel beton_users.
+// Akun Developer sementara (localStorage only). Tidak disimpan di tabel users.
 const DEVELOPER_ACCOUNT_KEY = 'beton_developer_account';
 const DEVELOPER_DEFAULT_ACCOUNT = {
   id: -999999, username: 'developer', name: 'Application Developer',
@@ -3009,6 +3085,8 @@ const DEFAULT_USERS = [
 
 function app() {
   return {
+    fatalError: '',
+    isLoading: false,
     sidebarOpen: true,
     page: 'dashboard',
     toast: '', toastType: 'success',
@@ -3107,25 +3185,26 @@ function app() {
     editKompetitorModal: { show:false, id:null }, ecForm:{ name:'',address:'',contact_person:'',phone:'' },
     editAlamatModal: { show:false, id:null }, eaForm:{ label:'',address:'',city:'',province:'',type:'site' },
 
-    init() {
+    async init() {
       this.ensureDeveloperAccount();
-      if (!localStorage.getItem('beton_users')) this.seed();
-      this.ensureDefaultUsers();
-      this.reload();
+      try {
+        await this.reload();
+      } catch (e) {
+        this.fatalError = 'Gagal terhubung ke Supabase: ' + (e?.message || e);
+        return;
+      }
       this.normalizeData();
       const saved = localStorage.getItem('beton_current');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           const devAccount = this.getDeveloperAccount();
-          const found = parsed.role === 'developer' && parsed.username === devAccount.username
-            ? devAccount
-            : this.users.find(u => {
-                if (parsed.username && u.username) {
-                  return String(u.username).toLowerCase() === String(parsed.username).toLowerCase();
-                }
-                return false;
-              });
+          let found = null;
+          if (parsed.role === 'developer' && parsed.username === devAccount.username) {
+            found = devAccount;
+          } else {
+            found = this.users.find(u => u.username && String(u.username).toLowerCase() === String(parsed.username).toLowerCase());
+          }
           if (found) {
             this.currentUser = found;
             if (found.role === 'customer') this.page = 'jadwal';
@@ -3135,11 +3214,10 @@ function app() {
               if (found.role === 'owner' || found.role === 'developer' || this.hasAccess(targetPage)) this.page = targetPage;
             }
           } else localStorage.removeItem('beton_current');
-        } catch (e) {
-          localStorage.removeItem('beton_current');
-        }
+        } catch (e) { localStorage.removeItem('beton_current'); }
       }
-      this.adFilter.date_from = todayISO(); this.adFilter.date_to = todayISO();
+      this.adFilter.date_from = todayISO();
+      this.adFilter.date_to = todayISO();
       this.jFilter.date = todayISO();
       this.applyDashPreset('month');
     },
@@ -3351,7 +3429,7 @@ function app() {
     },
 
     ensureDeveloperAccount() {
-      // Jika key belum ada, buat akun lokal default satu kali. Tidak pernah menambahkannya ke beton_users.
+      // Jika key belum ada, buat akun lokal default satu kali. Tidak pernah menambahkannya ke tabel users.
       if (!localStorage.getItem(DEVELOPER_ACCOUNT_KEY)) {
         localStorage.setItem(DEVELOPER_ACCOUNT_KEY, JSON.stringify({ ...DEVELOPER_DEFAULT_ACCOUNT }));
       }
@@ -3397,103 +3475,53 @@ function app() {
         this.accessForm.permissions = this.allMenus.map(m => m.key);
       }
     },
-    saveAccess() {
-      const list = DB.get('users');
-      const i = list.findIndex(x => Number(x.id) === Number(this.accessModal.userId));
-      if (i < 0) return;
-      list[i].permissions = [...this.accessForm.permissions];
-      DB.set('users', list);
-      if (Number(this.accessModal.userId) === Number(this.currentUser.id)) {
-        this.currentUser = list[i];
-        localStorage.setItem('beton_current', JSON.stringify(list[i]));
-      }
-      this.reload();
-      this.accessModal.show = false;
-      this.toastMsg('Hak akses untuk ' + this.accessModal.userName + ' disimpan');
+    async saveAccess() {
+      try {
+        await DB.update('users', this.accessModal.userId, { permissions: [...this.accessForm.permissions] });
+        await this.reload();
+        if (Number(this.accessModal.userId) === Number(this.currentUser.id)) {
+          const updated = this.users.find(u => Number(u.id) === Number(this.accessModal.userId));
+          if (updated) {
+            this.currentUser = updated;
+            localStorage.setItem('beton_current', JSON.stringify(updated));
+          }
+        }
+        this.accessModal.show = false;
+        this.toastMsg('Hak akses untuk ' + this.accessModal.userName + ' disimpan');
+      } catch (e) { this.toastMsg('Gagal simpan hak akses: '+(e?.message||e),'error'); }
     },
 
-    refreshData() {
-      this.reload();
-      this.normalizeData();
-      this.toastMsg('Data berhasil di-refresh');
+    async refreshData() {
+      try {
+        await this.reload();
+        this.toastMsg('Data berhasil di-refresh');
+      } catch (e) { this.toastMsg('Refresh gagal: '+(e?.message||e),'error'); }
     },
 
-    ensureDefaultUsers() {
-      const list = DB.get('users');
-      let changed = false;
-      DEFAULT_USERS.forEach(def => {
-        const exist = list.find(u => (u.email && u.email === def.email) || (u.username && u.username === def.username));
-        if (!exist) { list.push({ ...def, id: list.length ? Math.max(...list.map(u=>+u.id))+1 : def.id }); changed = true; }
-        else if (!exist.username) { exist.username = def.username || (exist.email ? exist.email.split('@')[0] : ''); changed = true; }
-      });
-      list.forEach(u => {
-        if (!u.username) { u.username = (u.email || '').split('@')[0] || ('user' + u.id); changed = true; }
-        if (!u.role) { u.role = 'sales'; changed = true; }
-        if (u.role === 'customer' && !Array.isArray(u.assigned_sites)) { u.assigned_sites = []; changed = true; }
-        if (typeof u.is_active === 'undefined') { u.is_active = true; changed = true; }
-        if (!Array.isArray(u.permissions)) { u.permissions = this.defaultPermsFor(u.role).slice(); changed = true; }
-      });
-      if (changed) DB.set('users', list);
-    },
-
-    seed() {
-      DB.set('users', JSON.parse(JSON.stringify(DEFAULT_USERS)));
-      DB.set('plants', [
-        { id:1, code:'PL01', name:'Plant A', address:'Jl. Industri 1', phone:'021-111', is_active:1 },
-        { id:2, code:'PL02', name:'Plant B', address:'Jl. Industri 2', phone:'021-222', is_active:1 },
+    async reload() {
+      const [users, plants, mutuList, competitors, addresses, prospects, orders, deliveries, visits, propose, notifications, loginLogs] = await Promise.all([
+        DB.all('users'),
+        DB.all('plants'),
+        DB.all('mutu'),
+        DB.all('competitors'),
+        DB.all('addresses'),
+        DB.all('prospects'),
+        DB.all('orders'),
+        DB.all('deliveries'),
+        DB.all('visits'),
+        DB.all('propose'),
+        DB.all('notifications'),
+        DB.all('login_logs')
       ]);
-      DB.set('mutu', [
-        { id:1, code:'K-175', name:'Beton K-175', slump:'12±2', price:700000 },
-        { id:2, code:'K-225', name:'Beton K-225', slump:'12±2', price:820000 },
-        { id:3, code:'K-250', name:'Beton K-250', slump:'12±2', price:870000 },
-        { id:4, code:'K-300', name:'Beton K-300', slump:'12±2', price:920000 },
-        { id:5, code:'K-350', name:'Beton K-350', slump:'12±2', price:980000 },
-      ]);
-      DB.set('competitors', [
-        { id:1, name:'PT Beton Jaya', phone:'0811' },
-        { id:2, name:'PT Sinar Beton', phone:'0812' },
-      ]);
-      DB.set('addresses', []);
-      DB.set('prospects', []); DB.set('orders', []); DB.set('deliveries', []);
-      DB.set('visits', []); DB.set('propose', []); DB.set('notifications', []); DB.set('login_logs', []);
-    },
-
-    reload() {
-      this.users = DB.get('users'); this.plants = DB.get('plants');
-      this.mutuList = DB.get('mutu'); this.competitors = DB.get('competitors');
-      this.addresses = DB.get('addresses'); this.prospects = DB.get('prospects');
-      this.orders = DB.get('orders'); this.deliveries = DB.get('deliveries');
-      this.visits = DB.get('visits'); this.notifications = DB.get('notifications');
-      this.loginLogs = DB.get('login_logs');
+      this.users = users; this.plants = plants; this.mutuList = mutuList;
+      this.competitors = competitors; this.addresses = addresses;
+      this.prospects = prospects; this.orders = orders; this.deliveries = deliveries;
+      this.visits = visits; this.notifications = notifications; this.loginLogs = loginLogs;
     },
 
     normalizeData() {
-      const fixId = v => (v === '' || v === null || v === undefined || v === 'null') ? null : Number(v);
-      let fixed = 0;
-      ['orders','prospects','deliveries','visits','propose','users','notifications'].forEach(tbl => {
-        const list = DB.get(tbl);
-        list.forEach(item => {
-          ['mutu_id','plant_id','sales_id','sales_visit_id','prospect_id','order_id','competitor_id','created_by','requested_by'].forEach(k => {
-            if (k in item) { const before = item[k]; const after = fixId(before); if (before !== after) { item[k] = after; fixed++; } }
-          });
-          if (tbl === 'prospects') {
-            if (!item.source) { item.source = 'internal'; fixed++; }
-            if (!item.site_no_status) { item.site_no_status = 'waiting'; fixed++; }
-            if (!item.visit_status) { item.visit_status = 'not_yet'; fixed++; }
-            if (typeof item.qty_po === 'undefined') { item.qty_po = 0; fixed++; }
-          }
-          if (tbl === 'deliveries') {
-            if (!item.status) { item.status = 'delivered'; fixed++; }
-            if (typeof item.remarks === 'undefined') { item.remarks = ''; fixed++; }
-          }
-          if (tbl === 'propose') {
-            if (!Array.isArray(item.plant_ids)) { item.plant_ids = []; fixed++; }
-            if (typeof item.qty_po === 'undefined') { item.qty_po = 0; fixed++; }
-          }
-        });
-        DB.set(tbl, list);
-      });
-      if (fixed > 0) this.reload();
+      // Normalize sudah di-handle di DB._normalize saat fetch dari Supabase.
+      // Method ini dipertahankan untuk kompatibilitas tapi tidak melakukan apa-apa.
     },
 
     fmt(n) { return (Number(n)||0).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}); },
@@ -3504,13 +3532,13 @@ function app() {
       return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     },
     toastMsg(m, type='success') { this.toast = m; this.toastType = type; setTimeout(()=>this.toast='',3000); },
-    nav(page) {
+    async nav(page) {
       const previousPage = this.page;
       this.page = page;
       this.toast='';
       if (this.currentUser && page !== previousPage) {
-        appendActivityLog(this.currentUser, 'Membuka menu: ' + (this.pageTitle || page));
-        this.loginLogs = DB.get('login_logs');
+        await appendActivityLogAsync(this.currentUser, 'Membuka menu: ' + (this.pageTitle || page));
+        this.loginLogs = await DB.all('login_logs');
       }
     },
 
@@ -3570,13 +3598,11 @@ function app() {
       return list;
     },
     get filteredProposals() {
-      const propose = DB.get('propose');
-      const visits = DB.get('visits');
       return this.prospects
         .filter(p => ['propose_site_no','complete','held'].includes(p.site_no_status||''))
         .map(p => {
-          const pr = propose.find(x => Number(x.prospect_id) === Number(p.id));
-          const v = visits.find(x => Number(x.prospect_id) === Number(p.id));
+          const pr = this.propose.find(x => Number(x.prospect_id) === Number(p.id));
+          const v = this.visits.find(x => Number(x.prospect_id) === Number(p.id));
           const mutuDiminta = (v && v.mutu_id) ? this.mutuList.find(m => Number(m.id) === Number(v.mutu_id)) : null;
           return {
             ...p,
@@ -3604,58 +3630,38 @@ function app() {
     resetJadwalFilter() { this.jFilter = { plants:[], status:'', date: todayISO() }; },
     resetAdFilter() { this.adFilter = { q:'', date_from: todayISO(), date_to: todayISO(), status:'' }; },
 
-    login() {
+    async login() {
       const uid = (this.loginForm.username || '').trim().toLowerCase();
       if (!uid) { this.loginError = 'User ID wajib diisi'; return; }
       const developer = this.getDeveloperAccount();
       if (uid === String(developer.username).toLowerCase()) {
-        if (String(developer.password) !== String(this.loginForm.password)) {
-          this.loginError = 'Password salah';
-          return;
-        }
+        if (String(developer.password) !== String(this.loginForm.password)) { this.loginError = 'Password salah'; return; }
         if (developer.is_active === false) { this.loginError = 'Akun Developer nonaktif'; return; }
         this.currentUser = { ...developer };
         localStorage.setItem('beton_current', JSON.stringify(this.currentUser));
         this.loginError = '';
         this.loginForm = { username:'', password:'' };
-        this.nav('dashboard');
+        await this.nav('dashboard');
         this.toastMsg('Login Developer berhasil');
         return;
       }
-      const users = DB.get('users');
-      const u = users.find(x =>
-        (x.username && String(x.username).toLowerCase() === uid) ||
-        (x.email    && String(x.email).toLowerCase()    === uid)
-      );
-      if (!u) {
-        this.loginError = 'User ID tidak ditemukan. Pastikan akun sudah dibuat oleh Owner.';
-        this.recordLogin(null, uid, 'failed');
-        return;
-      }
-      if (String(u.password) !== String(this.loginForm.password)) {
-        this.loginError = 'Password salah';
-        this.recordLogin(u, uid, 'failed');
-        return;
-      }
-      if (u.is_active === false) {
-        this.loginError = 'Akun Anda dinonaktifkan. Hubungi owner.';
-        this.recordLogin(u, uid, 'inactive');
-        return;
-      }
-      this.users = users;
+      const u = this.users.find(x => (x.username && String(x.username).toLowerCase() === uid) || (x.email && String(x.email).toLowerCase() === uid));
+      if (!u) { this.loginError = 'User ID tidak ditemukan. Pastikan akun sudah dibuat oleh Owner.'; await this.recordLogin(null, uid, 'failed'); return; }
+      if (String(u.password) !== String(this.loginForm.password)) { this.loginError = 'Password salah'; await this.recordLogin(u, uid, 'failed'); return; }
+      if (u.is_active === false) { this.loginError = 'Akun Anda dinonaktifkan. Hubungi owner.'; await this.recordLogin(u, uid, 'inactive'); return; }
       this.currentUser = u;
       localStorage.setItem('beton_current', JSON.stringify(u));
       this.loginError = '';
       this.loginForm = { username:'', password:'' };
-      this.recordLogin(u, uid, 'success');
+      await this.recordLogin(u, uid, 'success');
       let defaultPage = 'dashboard';
       if (!this.hasAccess('dashboard')) {
-        if (this.hasAccess('jadwal'))        defaultPage = 'jadwal';
-        else if (this.hasAccess('inputProspek'))  defaultPage = 'inputProspek';
-        else if (this.hasAccess('dataProspek'))   defaultPage = 'dataProspek';
-        else if (this.hasAccess('inputOrder'))    defaultPage = 'inputOrder';
-        else if (this.hasAccess('orderSearch'))   defaultPage = 'orderSearch';
-        else if (this.hasAccess('marketing'))     defaultPage = 'marketing';
+        if (this.hasAccess('jadwal')) defaultPage = 'jadwal';
+        else if (this.hasAccess('inputProspek')) defaultPage = 'inputProspek';
+        else if (this.hasAccess('dataProspek')) defaultPage = 'dataProspek';
+        else if (this.hasAccess('inputOrder')) defaultPage = 'inputOrder';
+        else if (this.hasAccess('orderSearch')) defaultPage = 'orderSearch';
+        else if (this.hasAccess('marketing')) defaultPage = 'marketing';
         else if (this.hasAccess('afterDelivery')) defaultPage = 'afterDelivery';
       }
       const requestedPage = (location.hash.match(/(?:^#|&)page=([^&]+)/) || [])[1];
@@ -3663,16 +3669,16 @@ function app() {
         const targetPage = decodeURIComponent(requestedPage);
         if (u.role === 'owner' || u.role === 'developer' || this.hasAccess(targetPage)) defaultPage = targetPage;
       }
-      this.nav(defaultPage);
+      await this.nav(defaultPage);
       this.toastMsg('Selamat datang, ' + u.name);
     },
 
-    recordLogin(user, uidInput, status) {
+    async recordLogin(user, uidInput, status) {
       const activity = status === 'success' ? 'Login berhasil' :
         status === 'inactive' ? 'Percobaan login ditolak — akun nonaktif' :
         'Percobaan login gagal';
-      appendActivityLog(user, activity, status, uidInput);
-      this.loginLogs = DB.get('login_logs');
+      await appendActivityLogAsync(user, activity, status, uidInput);
+      this.loginLogs = await DB.all('login_logs');
     },
 
     uploadAvatar(event) {
@@ -3681,60 +3687,64 @@ function app() {
       if (file.size > 500 * 1024) { this.toastMsg('File terlalu besar. Maks 500 KB.','error'); event.target.value = ''; return; }
       if (!file.type.startsWith('image/')) { this.toastMsg('File harus berupa gambar.','error'); event.target.value = ''; return; }
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const list = DB.get('users');
-        const i = list.findIndex(u => Number(u.id) === Number(this.currentUser.id));
-        if (i < 0) return;
-        list[i].avatar = e.target.result;
-        DB.set('users', list);
-        this.currentUser = list[i];
-        localStorage.setItem('beton_current', JSON.stringify(list[i]));
-        this.reload();
-        this.toastMsg('Foto profil berhasil diupdate');
+      reader.onload = async (e) => {
+        try {
+          await DB.update('users', this.currentUser.id, { avatar: e.target.result });
+          await this.reload();
+          const updated = this.users.find(u => Number(u.id) === Number(this.currentUser.id));
+          if (updated) {
+            this.currentUser = updated;
+            localStorage.setItem('beton_current', JSON.stringify(updated));
+          }
+          this.toastMsg('Foto profil berhasil diupdate');
+        } catch (err) { this.toastMsg('Gagal update avatar: '+(err?.message||err),'error'); }
       };
       reader.readAsDataURL(file);
       event.target.value = '';
     },
 
-    removeAvatar() {
+    async removeAvatar() {
       if (!confirm('Hapus foto profil?')) return;
-      const list = DB.get('users');
-      const i = list.findIndex(u => Number(u.id) === Number(this.currentUser.id));
-      if (i < 0) return;
-      delete list[i].avatar;
-      DB.set('users', list);
-      this.currentUser = list[i];
-      localStorage.setItem('beton_current', JSON.stringify(list[i]));
-      this.reload();
-      this.toastMsg('Foto profil dihapus');
+      try {
+        await DB.update('users', this.currentUser.id, { avatar: null });
+        await this.reload();
+        const updated = this.users.find(u => Number(u.id) === Number(this.currentUser.id));
+        if (updated) {
+          this.currentUser = updated;
+          localStorage.setItem('beton_current', JSON.stringify(updated));
+        }
+        this.toastMsg('Foto profil dihapus');
+      } catch (e) { this.toastMsg('Gagal hapus avatar: '+(e?.message||e),'error'); }
     },
 
-    changeMyPassword() {
+    async changeMyPassword() {
       if (this.profileForm.new_password !== this.profileForm.confirm_password) { this.toastMsg('Konfirmasi password tidak sama','error'); return; }
       if ((this.profileForm.new_password||'').length < 6) { this.toastMsg('Password minimal 6 karakter','error'); return; }
       if (this.profileForm.old_password !== this.currentUser.password) { this.toastMsg('Password lama salah','error'); return; }
-      const list = DB.get('users');
-      const i = list.findIndex(u => Number(u.id) === Number(this.currentUser.id));
-      if (i < 0) return;
-      list[i].password = this.profileForm.new_password;
-      DB.set('users', list);
-      this.currentUser = list[i];
-      localStorage.setItem('beton_current', JSON.stringify(list[i]));
-      this.profileForm = { old_password:'', new_password:'', confirm_password:'' };
-      this.reload();
-      this.toastMsg('Password berhasil diubah!');
+      try {
+        await DB.update('users', this.currentUser.id, { password: this.profileForm.new_password });
+        await this.reload();
+        const updated = this.users.find(u => Number(u.id) === Number(this.currentUser.id));
+        if (updated) {
+          this.currentUser = updated;
+          localStorage.setItem('beton_current', JSON.stringify(updated));
+        }
+        this.profileForm = { old_password:'', new_password:'', confirm_password:'' };
+        this.toastMsg('Password berhasil diubah!');
+      } catch (e) { this.toastMsg('Gagal ubah password: '+(e?.message||e),'error'); }
     },
 
     togglePwVisible(id) { this.pwVisible = { ...this.pwVisible, [id]: !this.pwVisible[id] }; },
-    toggleUserActive(id) {
-      const list = DB.get('users');
-      const i = list.findIndex(u => Number(u.id) === Number(id));
-      if (i < 0) return;
-      if (Number(list[i].id) === Number(this.currentUser.id)) { this.toastMsg('Tidak bisa nonaktifkan akun sendiri','error'); return; }
-      list[i].is_active = list[i].is_active === false ? true : false;
-      DB.set('users', list);
-      this.reload();
-      this.toastMsg('User "' + list[i].username + '" ' + (list[i].is_active ? 'diaktifkan' : 'dinonaktifkan'));
+    async toggleUserActive(id) {
+      try {
+        const target = this.users.find(u => Number(u.id) === Number(id));
+        if (!target) return;
+        if (Number(target.id) === Number(this.currentUser.id)) { this.toastMsg('Tidak bisa nonaktifkan akun sendiri','error'); return; }
+        await DB.update('users', id, { is_active: target.is_active === false ? true : false });
+        await this.reload();
+        const updated = this.users.find(u => Number(u.id) === Number(id));
+        this.toastMsg('User "' + (updated?.username || '') + '" ' + (updated?.is_active ? 'diaktifkan' : 'dinonaktifkan'));
+      } catch (e) { this.toastMsg('Gagal ubah status user: '+(e?.message||e),'error'); }
     },
     logout() { this.currentUser = null; localStorage.removeItem('beton_current'); },
 
@@ -3759,13 +3769,13 @@ function app() {
       };
     },
 
-    saveProspek() {
-      const list = DB.get('prospects');
+    async saveProspek() {
       const yy = new Date().toISOString().slice(0,7).replace('-','');
-      const no = `PRS/${yy}/${String(list.length+1).padStart(4,'0')}`;
+      const seq = this.prospects.length + 1;
+      const no = `PRS/${yy}/${String(seq).padStart(4,'0')}`;
       const comp = this.competitors.find(c=>Number(c.id)===Number(this.pForm.competitor_id));
-      list.push({
-        id: DB.nextId('prospects'), prospect_no: no,
+      const newItem = {
+        prospect_no: no,
         project_name: this.pForm.project_name, address: this.pForm.address,
         pic_name: this.pForm.pic_name, pic_contact: this.pForm.pic_contact,
         construction_type: this.pForm.construction_type,
@@ -3775,12 +3785,14 @@ function app() {
         site_no: null, site_no_status: 'waiting', po_no: null, qty_po: 0,
         visit_status: 'not_yet', final_status: 'open',
         source: 'internal', created_at: new Date().toISOString(),
-      });
-      DB.set('prospects', list);
-      this.reload();
-      this.pForm = { project_name:'',address:'',pic_name:'',pic_contact:'',construction_type:'',competitor_id:'',competitor_other:'' };
-      this.toastMsg('Prospek disimpan: '+no);
-      this.nav('dataProspek');
+      };
+      try {
+        await DB.insert('prospects', newItem);
+        await this.reload();
+        this.pForm = { project_name:'',address:'',pic_name:'',pic_contact:'',construction_type:'',competitor_id:'',competitor_other:'' };
+        this.toastMsg('Prospek disimpan: '+no);
+        await this.nav('dataProspek');
+      } catch (e) { this.toastMsg('Gagal simpan: '+(e?.message||e),'error'); }
     },
 
     get filteredProspek() {
@@ -3809,11 +3821,9 @@ function app() {
       };
     },
 
-    saveVisit() {
-      const list = DB.get('visits');
-      const idx = list.findIndex(v=>Number(v.prospect_id)===Number(this.visitModal.id));
-      const data = {
-        id: idx>=0 ? list[idx].id : DB.nextId('visits'),
+    async saveVisit() {
+      const existing = this.visits.find(v => Number(v.prospect_id) === Number(this.visitModal.id));
+      const payload = {
         prospect_id: this.visitModal.id,
         estimasi_tgl_cor: this.vForm.estimasi_tgl_cor, jam_loading: this.vForm.jam_loading,
         mutu_id: this.vForm.mutu_id ? Number(this.vForm.mutu_id) : null,
@@ -3823,72 +3833,105 @@ function app() {
         win: this.vForm.win, lost: this.vForm.lost,
         created_by: this.currentUser?.id,
       };
-      if (idx>=0) list[idx]=data; else list.push(data);
-      DB.set('visits', list);
-      const ps = DB.get('prospects');
-      const pi = ps.findIndex(p=>Number(p.id)===Number(this.visitModal.id));
-      if (pi>=0) {
-        ps[pi].visit_status = 'done';
-        ps[pi].visit_done_at = new Date().toISOString();
-        ps[pi].sales_visit_id = this.currentUser?.id;
-        if (ps[pi].site_no_status === 'waiting') ps[pi].site_no_status = 'propose_site_no';
-      }
-      DB.set('prospects', ps);
-      this.reload();
-      this.visitModal.show = false;
-      this.toastMsg('Visit disimpan (DONE / Final)');
+      try {
+        if (existing) {
+          await DB.update('visits', existing.id, payload);
+        } else {
+          await DB.insert('visits', payload);
+        }
+        // Update prospect
+        const p = this.prospects.find(x => Number(x.id) === Number(this.visitModal.id));
+        if (p) {
+          await DB.update('prospects', p.id, {
+            visit_status: 'done',
+            visit_done_at: new Date().toISOString(),
+            sales_visit_id: this.currentUser?.id,
+            site_no_status: p.site_no_status === 'waiting' ? 'propose_site_no' : p.site_no_status
+          });
+        }
+        await this.reload();
+        this.visitModal.show = false;
+        this.toastMsg('Visit disimpan (DONE / Final)');
+      } catch (e) { this.toastMsg('Gagal simpan visit: '+(e?.message||e),'error'); }
     },
 
-    claimProspek(p) {
+    async claimProspek(p) {
       if (!this.currentUser?.id) return;
-      const list = DB.get('prospects');
-      const i = list.findIndex(x => Number(x.id) === Number(p.id));
-      if (i < 0) return;
-      list[i].sales_id = this.currentUser.id;
-      list[i].final_status = 'follow_up';
-      DB.set('prospects', list);
-      const notifs = DB.get('notifications');
-      notifs.forEach(n => { if (Number(n.prospect_id) === Number(p.id)) n.read_by = [...(n.read_by || []), this.currentUser.id]; });
-      DB.set('notifications', notifs);
-      this.reload();
-      this.toastMsg('Prospek diambil!');
+      try {
+        await DB.update('prospects', p.id, {
+          sales_id: this.currentUser.id,
+          final_status: 'follow_up',
+        });
+        // Tandai notifikasi terkait sebagai dibaca oleh user saat ini
+        const relatedNotifs = this.notifications.filter(n => Number(n.prospect_id) === Number(p.id));
+        for (const n of relatedNotifs) {
+          const readBy = Array.isArray(n.read_by) ? [...n.read_by] : [];
+          if (!readBy.includes(this.currentUser.id)) {
+            readBy.push(this.currentUser.id);
+            await DB.update('notifications', n.id, { read_by: readBy });
+          }
+        }
+        await this.reload();
+        this.toastMsg('Prospek diambil!');
+      } catch (e) { this.toastMsg('Gagal klaim prospek: '+(e?.message||e),'error'); }
     },
 
-    deleteProspect(p) {
+    async deleteProspect(p) {
       if (!this.currentUser || this.currentUser.role !== 'owner') {
         this.toastMsg('Hanya Owner yang bisa menghapus prospek','error'); return;
       }
-      const relatedOrders = DB.get('orders').filter(o => Number(o.prospect_id) === Number(p.id));
+      const relatedOrders = this.orders.filter(o => Number(o.prospect_id) === Number(p.id));
       let msg = 'Hapus prospek "' + p.project_name + '" (' + (p.prospect_no||'-') + ')?';
       if (relatedOrders.length > 0) {
         msg += '\n\n⚠️ Prospek ini memiliki ' + relatedOrders.length + ' order terkait.\nOrder & delivery juga akan dihapus.';
       }
       if (!confirm(msg)) return;
 
-      DB.set('prospects', DB.get('prospects').filter(x => Number(x.id) !== Number(p.id)));
-      DB.set('visits', DB.get('visits').filter(v => Number(v.prospect_id) !== Number(p.id)));
-      DB.set('propose', DB.get('propose').filter(pr => Number(pr.prospect_id) !== Number(p.id)));
-      if (relatedOrders.length > 0) {
-        const orderIds = relatedOrders.map(o => Number(o.id));
-        DB.set('orders', DB.get('orders').filter(o => !orderIds.includes(Number(o.id))));
-        DB.set('deliveries', DB.get('deliveries').filter(d => !orderIds.includes(Number(d.order_id))));
-      }
-      DB.set('notifications', DB.get('notifications').filter(n => Number(n.prospect_id) !== Number(p.id)));
-
-      this.reload();
-      this.toastMsg('Prospek "' + p.project_name + '" berhasil dihapus');
+      try {
+        // Hapus deliveries dari order terkait
+        for (const o of relatedOrders) {
+          const delivs = this.deliveries.filter(d => Number(d.order_id) === Number(o.id));
+          for (const d of delivs) {
+            await DB.remove('deliveries', d.id);
+          }
+          await DB.remove('orders', o.id);
+        }
+        // Hapus visits terkait
+        const visits = this.visits.filter(v => Number(v.prospect_id) === Number(p.id));
+        for (const v of visits) {
+          await DB.remove('visits', v.id);
+        }
+        // Hapus propose terkait
+        const proposals = this.propose.filter(pr => Number(pr.prospect_id) === Number(p.id));
+        for (const pr of proposals) {
+          await DB.remove('propose', pr.id);
+        }
+        // Hapus notifikasi terkait
+        const notifs = this.notifications.filter(n => Number(n.prospect_id) === Number(p.id));
+        for (const n of notifs) {
+          await DB.remove('notifications', n.id);
+        }
+        // Hapus prospect
+        await DB.remove('prospects', p.id);
+        await this.reload();
+        this.toastMsg('Prospek "' + p.project_name + '" berhasil dihapus');
+      } catch (e) { this.toastMsg('Gagal hapus prospek: '+(e?.message||e),'error'); }
     },
 
-    showRequestDetail(p) {
+    async showRequestDetail(p) {
       this.reqModal = { show:true, data:p };
-      const notifs = DB.get('notifications');
-      notifs.forEach(n => {
-        if (Number(n.prospect_id) === Number(p.id) && !(n.read_by || []).includes(this.currentUser.id)) {
-          n.read_by = [...(n.read_by || []), this.currentUser.id];
+      try {
+        // Tandai notifikasi terkait sebagai dibaca oleh user saat ini
+        const relatedNotifs = this.notifications.filter(n => Number(n.prospect_id) === Number(p.id));
+        for (const n of relatedNotifs) {
+          const readBy = Array.isArray(n.read_by) ? [...n.read_by] : [];
+          if (!readBy.includes(this.currentUser.id)) {
+            readBy.push(this.currentUser.id);
+            await DB.update('notifications', n.id, { read_by: readBy });
+          }
         }
-      });
-      DB.set('notifications', notifs);
-      this.reload();
+        await this.reload();
+      } catch (e) { console.error('showRequestDetail error:', e); }
     },
 
     get customerSites() {
@@ -3910,7 +3953,7 @@ function app() {
       const tgl = new Date(); tgl.setDate(tgl.getDate() + 3);
       this.ocForm = { site_no: '', delivery_date: tgl.toISOString().slice(0,10), pouring_time: '08:00', qty_order: 0, metode_cor: 'Pompa', note: '' };
     },
-    saveOneClickOrder() {
+    async saveOneClickOrder() {
       if (!this.ocForm.delivery_date || !this.ocForm.pouring_time || !this.ocForm.qty_order || !this.ocForm.metode_cor) {
         this.toastMsg('Lengkapi semua field', 'error'); return;
       }
@@ -3933,11 +3976,11 @@ function app() {
         ref_order_no = lastOrder?.order_no || '-';
         ref_prospect_id = p.id;
       }
-      const prospects = DB.get('prospects');
       const yy = new Date().toISOString().slice(0,7).replace('-','');
-      const no = `RPT/${yy}/${String(prospects.length+1).padStart(4,'0')}`;
-      prospects.push({
-        id: DB.nextId('prospects'), prospect_no: no,
+      const seq = this.prospects.length + 1;
+      const no = `RPT/${yy}/${String(seq).padStart(4,'0')}`;
+      const newProspect = {
+        prospect_no: no,
         project_name, address, pic_name, pic_contact,
         construction_type: 'Repeat', competitor_name: '-',
         sales_id: null, sales_visit_id: null,
@@ -3953,26 +3996,27 @@ function app() {
         request_mutu_id: mutu_id, request_plant_id: plant_id,
         request_note: this.ocForm.note,
         created_at: new Date().toISOString(),
-      });
-      DB.set('prospects', prospects);
-      const notifs = DB.get('notifications');
-      notifs.push({
-        id: DB.nextId('notifications'), type: 'repeat_order',
-        prospect_id: prospects[prospects.length-1].id, prospect_no: no,
-        message: `${customer.name} minta order ${site_no}`,
-        customer_id: customer.id, customer_name: customer.name,
-        site_no, project_name, qty: this.ocForm.qty_order, mutu_id, plant_id,
-        created_at: new Date().toISOString(), read_by: [],
-      });
-      DB.set('notifications', notifs);
-      this.reload();
-      this.ocModal.show = false;
-      this.ocForm = { site_no:'', delivery_date:'', pouring_time:'', qty_order:0, metode_cor:'', note:'' };
-      this.toastMsg('Permintaan order terkirim!');
+      };
+      try {
+        const created = await DB.insert('prospects', newProspect);
+        // Buat notifikasi
+        await DB.insert('notifications', {
+          type: 'repeat_order',
+          prospect_id: created?.id || null, prospect_no: no,
+          message: `${customer.name} minta order ${site_no}`,
+          customer_id: customer.id, customer_name: customer.name,
+          site_no, project_name, qty: this.ocForm.qty_order, mutu_id, plant_id,
+          created_at: new Date().toISOString(), read_by: [],
+        });
+        await this.reload();
+        this.ocModal.show = false;
+        this.ocForm = { site_no:'', delivery_date:'', pouring_time:'', qty_order:0, metode_cor:'', note:'' };
+        this.toastMsg('Permintaan order terkirim!');
+      } catch (e) { this.toastMsg('Gagal kirim permintaan order: '+(e?.message||e),'error'); }
     },
 
-    goOrder(p) {
-      this.nav('inputOrder');
+    async goOrder(p) {
+      await this.nav('inputOrder');
       this.oForm.site_no = p.site_no;
       this.onSiteChange();
     },
@@ -3992,7 +4036,7 @@ function app() {
       }
       this.oForm.project_name = p.project_name; this.oForm.address = p.address;
       this.oForm.po_no = p.po_no; this.oForm.pic_name = p.pic_name; this.oForm.pic_contact = p.pic_contact;
-      const prop = DB.get('propose').find(pr => Number(pr.prospect_id) === Number(p.id));
+      const prop = this.propose.find(pr => Number(pr.prospect_id) === Number(p.id));
       const ids = (prop?.mutu || []).map(Number);
       const filtered = this.mutuList.filter(m => ids.includes(Number(m.id)));
       this.oForm.mutu_list = filtered.length ? filtered : this.mutuList;
@@ -4008,7 +4052,7 @@ function app() {
       }
     },
 
-    saveOrder() {
+    async saveOrder() {
       const requestedSiteNo = String(this.oForm.site_no || '').trim().toLowerCase();
       const p = this.prospects.find(x => String(x.site_no || '').trim().toLowerCase() === requestedSiteNo);
       if (!p || p.site_no_status !== 'complete') { this.toastMsg('Site No tidak valid atau belum di-approve','error'); return; }
@@ -4026,11 +4070,11 @@ function app() {
         }
       }
 
-      const list = DB.get('orders');
       const yy = new Date().toISOString().slice(0,7).replace('-','');
-      const no = `ORD/${yy}/${String(list.length+1).padStart(4,'0')}`;
-      list.push({
-        id: DB.nextId('orders'), order_no: no,
+      const seq = this.orders.length + 1;
+      const no = `ORD/${yy}/${String(seq).padStart(4,'0')}`;
+      const newOrder = {
+        order_no: no,
         prospect_id: p.id, site_no: p.site_no, project_name: p.project_name,
         address: p.address, po_no: p.po_no, pic_name: p.pic_name, pic_contact: p.pic_contact,
         mutu_id: Number(this.oForm.mutu_id), plant_id: Number(this.oForm.plant_id),
@@ -4040,12 +4084,14 @@ function app() {
         cancel_reason: '',
         sales_id: p.sales_visit_id || p.sales_id || this.currentUser?.id,
         created_by: this.currentUser?.id, created_at: new Date().toISOString(),
-      });
-      DB.set('orders', list);
-      this.reload();
-      this.oForm = { site_no:'',project_name:'',address:'',po_no:'',pic_name:'',pic_contact:'',mutu_id:'',plant_id:'',delivery_date:'',pouring_time:'',qty_order:0,metode_cor:'',mutu_list:[],plant_list:[] };
-      this.toastMsg('Order dibuat');
-      this.nav('jadwal');
+      };
+      try {
+        await DB.insert('orders', newOrder);
+        await this.reload();
+        this.oForm = { site_no:'',project_name:'',address:'',po_no:'',pic_name:'',pic_contact:'',mutu_id:'',plant_id:'',delivery_date:'',pouring_time:'',qty_order:0,metode_cor:'',mutu_list:[],plant_list:[] };
+        this.toastMsg('Order dibuat');
+        await this.nav('jadwal');
+      } catch (e) { this.toastMsg('Gagal simpan order: '+(e?.message||e),'error'); }
     },
 
     get jadwalPlantOptions() {
@@ -4096,12 +4142,10 @@ function app() {
       return Object.values(map);
     },
 
-    recalcOrderStatus(orderId) {
-      const oList = DB.get('orders');
-      const oi = oList.findIndex(x => Number(x.id) === Number(orderId));
-      if (oi < 0) return;
-      const order = oList[oi];
-      const activeDeliv = DB.get('deliveries').filter(d =>
+    async recalcOrderStatus(orderId) {
+      const order = this.orders.find(o => Number(o.id) === Number(orderId));
+      if (!order) return;
+      const activeDeliv = this.deliveries.filter(d =>
         Number(d.order_id) === Number(orderId) && (d.status || 'delivered') === 'delivered'
       );
       const total = activeDeliv.reduce((s,d) => s + (+d.qty || 0), 0);
@@ -4110,8 +4154,9 @@ function app() {
       if (status !== 'cancelled') {
         status = total <= 0 ? 'scheduled' : (remain <= 0 ? 'completed' : 'partial');
       }
-      oList[oi] = { ...order, qty_delivery: total, qty_remain: remain, status };
-      DB.set('orders', oList);
+      try {
+        await DB.update('orders', orderId, { qty_delivery: total, qty_remain: remain, status });
+      } catch (e) { console.error('recalcOrderStatus error:', e); }
     },
 
     openDelivery(o) {
@@ -4122,20 +4167,19 @@ function app() {
       this.dvForm = { sj_no:'', delivery_date: o.delivery_date, truck_no:'', qty:0, driver_name:'' };
     },
 
-    saveDelivery() {
+    async saveDelivery() {
       const o = this.orders.find(x=>Number(x.id)===Number(this.dvModal.order_id));
       if (!o) return;
       if (+this.dvForm.qty > o.qty_remain) { this.toastMsg('Muatan melebihi sisa','error'); return; }
 
       const sjNo = (this.dvForm.sj_no || '').trim();
       if (sjNo) {
-        const dupe = DB.get('deliveries').find(d => (d.sj_no||'').toLowerCase() === sjNo.toLowerCase());
+        const dupe = this.deliveries.find(d => (d.sj_no||'').toLowerCase() === sjNo.toLowerCase());
         if (dupe) { this.toastMsg('No SJ sudah dipakai. Gunakan nomor lain.','error'); return; }
       }
 
-      const dList = DB.get('deliveries');
-      dList.push({
-        id: DB.nextId('deliveries'), order_id: o.id,
+      const newDelivery = {
+        order_id: o.id,
         sj_no: sjNo || null,
         delivery_date: o.delivery_date,
         truck_no: this.dvForm.truck_no,
@@ -4145,12 +4189,14 @@ function app() {
         remarks: '',
         created_by: this.currentUser?.id,
         created_at: new Date().toISOString(),
-      });
-      DB.set('deliveries', dList);
-      this.recalcOrderStatus(o.id);
-      this.reload();
-      this.dvModal.show = false;
-      this.toastMsg('Delivery disimpan' + (sjNo ? '. No SJ: ' + sjNo : ' (tanpa No SJ).'));
+      };
+      try {
+        await DB.insert('deliveries', newDelivery);
+        await this.recalcOrderStatus(o.id);
+        await this.reload();
+        this.dvModal.show = false;
+        this.toastMsg('Delivery disimpan' + (sjNo ? '. No SJ: ' + sjNo : ' (tanpa No SJ).'));
+      } catch (e) { this.toastMsg('Gagal simpan delivery: '+(e?.message||e),'error'); }
     },
 
     openEditDelivery(d) {
@@ -4171,12 +4217,11 @@ function app() {
       };
     },
 
-    saveEditDelivery() {
+    async saveEditDelivery() {
       const parentOrder = this.orderById(this.editDvModal.order_id || this.editDvModal.data?.order_id);
       if (parentOrder && this.isOrderFinished(parentOrder)) { this.toastMsg('Order sudah Complete/Finished. Pengiriman tidak dapat diedit.','error'); this.editDvModal.show=false; return; }
-      const dList = DB.get('deliveries');
-      const i = dList.findIndex(x => Number(x.id) === Number(this.editDvModal.deliveryId));
-      if (i < 0) return;
+      const existing = this.deliveries.find(d => Number(d.id) === Number(this.editDvModal.deliveryId));
+      if (!existing) return;
 
       const newStatus = this.edvForm.status || 'delivered';
       const remarks = (this.edvForm.remarks || '').trim();
@@ -4187,28 +4232,27 @@ function app() {
 
       const sjNo = (this.edvForm.sj_no || '').trim();
       if (sjNo) {
-        const dupe = dList.find(d => Number(d.id) !== Number(this.editDvModal.deliveryId)
+        const dupe = this.deliveries.find(d => Number(d.id) !== Number(this.editDvModal.deliveryId)
                                   && (d.sj_no||'').toLowerCase() === sjNo.toLowerCase());
         if (dupe) { this.toastMsg('No SJ sudah dipakai.','error'); return; }
       }
 
-      const orderId = dList[i].order_id;
-      dList[i] = {
-        ...dList[i],
-        status: newStatus,
-        remarks: remarks,
-        sj_no: sjNo || null,
-        truck_no: this.edvForm.truck_no,
-        qty: +this.edvForm.qty,
-        driver_name: this.edvForm.driver_name,
-        updated_at: new Date().toISOString(),
-      };
-      DB.set('deliveries', dList);
-
-      this.recalcOrderStatus(orderId);
-      this.reload();
-      this.editDvModal.show = false;
-      this.toastMsg('Pengiriman diupdate — Status: ' + newStatus);
+      const orderId = existing.order_id;
+      try {
+        await DB.update('deliveries', this.editDvModal.deliveryId, {
+          status: newStatus,
+          remarks: remarks,
+          sj_no: sjNo || null,
+          truck_no: this.edvForm.truck_no,
+          qty: +this.edvForm.qty,
+          driver_name: this.edvForm.driver_name,
+          updated_at: new Date().toISOString(),
+        });
+        await this.recalcOrderStatus(orderId);
+        await this.reload();
+        this.editDvModal.show = false;
+        this.toastMsg('Pengiriman diupdate — Status: ' + newStatus);
+      } catch (e) { this.toastMsg('Gagal update delivery: '+(e?.message||e),'error'); }
     },
 
     downloadAfterDeliveryExcel() {
@@ -4257,12 +4301,9 @@ function app() {
       this.eoForm = { mutu_id:o.mutu_id, plant_id:o.plant_id, delivery_date:o.delivery_date,
                       pouring_time:o.pouring_time, qty_order:o.qty_order, metode_cor:o.metode_cor, status:o.status };
     },
-    saveEditOrder() {
+    async saveEditOrder() {
       const o = this.editOrderModal.data;
       if (this.isOrderFinished(o)) { this.toastMsg('Order sudah Complete/Finished dan tidak dapat diedit.','error'); this.editOrderModal.show=false; return; }
-      const list = DB.get('orders');
-      const i = list.findIndex(x => Number(x.id) === Number(o.id));
-      if (i < 0) return;
 
       const prospect = this.prospects.find(x => x.site_no === o.site_no);
       const qty_po = Number(prospect?.qty_po) || 0;
@@ -4280,40 +4321,41 @@ function app() {
       }
 
       const qty = Number(this.eoForm.qty_order);
-      const del = Number(list[i].qty_delivery) || 0;
+      const del = Number(o.qty_delivery) || 0;
       const remain = qty - del;
       let status = this.eoForm.status;
-      if (list[i].status === 'cancelled') {
+      if (o.status === 'cancelled') {
         status = 'cancelled';
       } else {
         status = del <= 0 ? 'scheduled' : (remain <= 0 ? 'completed' : 'partial');
       }
-      list[i] = { ...list[i], mutu_id: Number(this.eoForm.mutu_id), plant_id: Number(this.eoForm.plant_id),
-                  delivery_date: this.eoForm.delivery_date, pouring_time: this.eoForm.pouring_time,
-                  qty_order: qty, qty_remain: remain, metode_cor: this.eoForm.metode_cor, status };
-      DB.set('orders', list);
-      this.reload();
-      this.editOrderModal.show = false;
-      this.toastMsg('Order diupdate');
+      try {
+        await DB.update('orders', o.id, {
+          mutu_id: Number(this.eoForm.mutu_id), plant_id: Number(this.eoForm.plant_id),
+          delivery_date: this.eoForm.delivery_date, pouring_time: this.eoForm.pouring_time,
+          qty_order: qty, qty_remain: remain, metode_cor: this.eoForm.metode_cor, status
+        });
+        await this.reload();
+        this.editOrderModal.show = false;
+        this.toastMsg('Order diupdate');
+      } catch (e) { this.toastMsg('Gagal update order: '+(e?.message||e),'error'); }
     },
 
-    cancelOrderFromEdit() {
+    async cancelOrderFromEdit() {
       const o = this.editOrderModal.data;
       const reason = prompt('Masukkan alasan CANCEL ORDER ' + o.order_no + ':');
       if (!reason || !reason.trim()) {
         this.toastMsg('Alasan cancel wajib diisi','error'); return;
       }
-      const list = DB.get('orders');
-      const i = list.findIndex(x => Number(x.id) === Number(o.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], status: 'cancelled', cancel_reason: reason.trim(), cancelled_at: new Date().toISOString(), cancelled_by: this.currentUser?.id };
-      DB.set('orders', list);
-      this.reload();
-      this.editOrderModal.show = false;
-      this.toastMsg('Order ' + o.order_no + ' dibatalkan');
+      try {
+        await DB.update('orders', o.id, { status: 'cancelled', cancel_reason: reason.trim(), cancelled_at: new Date().toISOString(), cancelled_by: this.currentUser?.id });
+        await this.reload();
+        this.editOrderModal.show = false;
+        this.toastMsg('Order ' + o.order_no + ' dibatalkan');
+      } catch (e) { this.toastMsg('Gagal cancel order: '+(e?.message||e),'error'); }
     },
 
-    cancelOrderFromSearch(o) {
+    async cancelOrderFromSearch(o) {
       if (this.hasDelivery(o.id)) {
         this.toastMsg('Tidak bisa cancel — sudah ada pengiriman','error'); return;
       }
@@ -4321,13 +4363,11 @@ function app() {
       if (!reason || !reason.trim()) {
         this.toastMsg('Alasan cancel wajib diisi','error'); return;
       }
-      const list = DB.get('orders');
-      const i = list.findIndex(x => Number(x.id) === Number(o.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], status: 'cancelled', cancel_reason: reason.trim(), cancelled_at: new Date().toISOString(), cancelled_by: this.currentUser?.id };
-      DB.set('orders', list);
-      this.reload();
-      this.toastMsg('Order ' + o.order_no + ' dibatalkan');
+      try {
+        await DB.update('orders', o.id, { status: 'cancelled', cancel_reason: reason.trim(), cancelled_at: new Date().toISOString(), cancelled_by: this.currentUser?.id });
+        await this.reload();
+        this.toastMsg('Order ' + o.order_no + ' dibatalkan');
+      } catch (e) { this.toastMsg('Gagal cancel order: '+(e?.message||e),'error'); }
     },
 
     openOrderDetail(o) { this.orderDetailModal = { show:true, data:o }; },
@@ -4509,14 +4549,14 @@ function app() {
     get pendingProposals() { return this.prospects.filter(p=>p.site_no_status==='propose_site_no' && p.source !== 'customer_repeat'); },
     get propVisitMutuLabel() {
       if (!this.propModal.data?.id) return '-';
-      const v = DB.get('visits').find(x => Number(x.prospect_id) === Number(this.propModal.data.id));
+      const v = this.visits.find(x => Number(x.prospect_id) === Number(this.propModal.data.id));
       if (!v?.mutu_id) return 'Belum ada mutu dari Visit';
       const m = this.mutuList.find(x => Number(x.id) === Number(v.mutu_id));
       return m ? `${m.code} — ${m.name}` : '-';
     },
     get editPropVisitMutuLabel() {
       if (!this.editPropModal.prospectId) return '-';
-      const v = DB.get('visits').find(x => Number(x.prospect_id) === Number(this.editPropModal.prospectId));
+      const v = this.visits.find(x => Number(x.prospect_id) === Number(this.editPropModal.prospectId));
       if (!v?.mutu_id) return 'Belum ada mutu dari Visit';
       const m = this.mutuList.find(x => Number(x.id) === Number(v.mutu_id));
       return m ? `${m.code} — ${m.name}` : '-';
@@ -4526,14 +4566,13 @@ function app() {
       this.propModal = { show:true, data:p };
       this.propForm = { site_no:'', po_no:'', qty_po:0, mutu:[], plant_ids:[] };
     },
-    savePropose() {
+    async savePropose() {
       if (!this.propForm.site_no || !this.propForm.po_no || !this.propForm.qty_po || this.propForm.mutu.length===0) {
         this.toastMsg('Lengkapi Site No, PO No, Qty PO, dan Mutu','error'); return;
       }
       const p = this.propModal.data;
-      const prList = DB.get('propose');
-      prList.push({
-        id: DB.nextId('propose'), prospect_id: p.id, project_name: p.project_name,
+      const newPropose = {
+        prospect_id: p.id, project_name: p.project_name,
         address: p.address, pic_project: p.pic_name, pic_contact: p.pic_contact,
         sales_visit_id: p.sales_visit_id, site_no: this.propForm.site_no,
         po_no: this.propForm.po_no,
@@ -4542,25 +4581,25 @@ function app() {
         plant_ids: (this.propForm.plant_ids || []).map(Number),
         status: 'complete', created_by: this.currentUser?.id,
         created_at: new Date().toISOString(),
-      });
-      DB.set('propose', prList);
-      const ps = DB.get('prospects');
-      const pi = ps.findIndex(x=>Number(x.id)===Number(p.id));
-      if (pi>=0) {
-        ps[pi].site_no = this.propForm.site_no;
-        ps[pi].po_no = this.propForm.po_no;
-        ps[pi].qty_po = Number(this.propForm.qty_po) || 0;
-        ps[pi].site_no_status = 'complete';
-        ps[pi].site_no_completed_at = new Date().toISOString();
-      }
-      DB.set('prospects', ps);
-      this.reload();
-      this.propModal.show = false;
-      this.toastMsg('Site No ' + this.propForm.site_no + ' disetujui (Qty PO: ' + this.fmt(this.propForm.qty_po) + ' m³)');
+      };
+      try {
+        await DB.insert('propose', newPropose);
+        // Update prospect
+        await DB.update('prospects', p.id, {
+          site_no: this.propForm.site_no,
+          po_no: this.propForm.po_no,
+          qty_po: Number(this.propForm.qty_po) || 0,
+          site_no_status: 'complete',
+          site_no_completed_at: new Date().toISOString(),
+        });
+        await this.reload();
+        this.propModal.show = false;
+        this.toastMsg('Site No ' + this.propForm.site_no + ' disetujui (Qty PO: ' + this.fmt(this.propForm.qty_po) + ' m³)');
+      } catch (e) { this.toastMsg('Gagal simpan propose: '+(e?.message||e),'error'); }
     },
 
     openEditPropose(p) {
-      const pr = DB.get('propose').find(x => Number(x.prospect_id) === Number(p.id));
+      const pr = this.propose.find(x => Number(x.prospect_id) === Number(p.id));
       this.editPropModal = { show:true, prospectId: p.id, project_name: p.project_name, address: p.address };
       this.editPropForm = {
         site_no: p.site_no || (pr?.site_no || ''),
@@ -4570,76 +4609,74 @@ function app() {
         plant_ids: (pr?.plant_ids || []).map(Number),
       };
     },
-    saveEditPropose() {
+    async saveEditPropose() {
       if (!this.editPropForm.site_no || !this.editPropForm.po_no || !this.editPropForm.qty_po) {
         this.toastMsg('Site No, PO No, dan Qty PO wajib diisi','error'); return;
       }
       const pId = this.editPropModal.prospectId;
-      const ps = DB.get('prospects');
-      const pi = ps.findIndex(x => Number(x.id) === Number(pId));
-      if (pi < 0) return;
-      ps[pi].site_no = this.editPropForm.site_no;
-      ps[pi].po_no = this.editPropForm.po_no;
-      ps[pi].qty_po = Number(this.editPropForm.qty_po) || 0;
-      DB.set('prospects', ps);
-
-      const prList = DB.get('propose');
-      const pri = prList.findIndex(x => Number(x.prospect_id) === Number(pId));
-      if (pri >= 0) {
-        prList[pri].site_no = this.editPropForm.site_no;
-        prList[pri].po_no = this.editPropForm.po_no;
-        prList[pri].qty_po = Number(this.editPropForm.qty_po) || 0;
-        prList[pri].mutu = this.editPropForm.mutu.map(Number);
-        prList[pri].plant_ids = this.editPropForm.plant_ids.map(Number);
-        prList[pri].updated_at = new Date().toISOString();
-      } else {
-        prList.push({
-          id: DB.nextId('propose'), prospect_id: pId,
-          project_name: ps[pi].project_name, address: ps[pi].address,
-          pic_project: ps[pi].pic_name, pic_contact: ps[pi].pic_contact,
-          sales_visit_id: ps[pi].sales_visit_id,
+      const p = this.prospects.find(x => Number(x.id) === Number(pId));
+      if (!p) return;
+      try {
+        // Update prospect
+        await DB.update('prospects', pId, {
+          site_no: this.editPropForm.site_no,
+          po_no: this.editPropForm.po_no,
+          qty_po: Number(this.editPropForm.qty_po) || 0,
+        });
+        // Upsert propose
+        const existing = this.propose.find(x => Number(x.prospect_id) === Number(pId));
+        const payload = {
+          prospect_id: pId,
+          project_name: p.project_name, address: p.address,
+          pic_project: p.pic_name, pic_contact: p.pic_contact,
+          sales_visit_id: p.sales_visit_id,
           site_no: this.editPropForm.site_no, po_no: this.editPropForm.po_no,
           qty_po: Number(this.editPropForm.qty_po) || 0,
           mutu: this.editPropForm.mutu.map(Number),
           plant_ids: this.editPropForm.plant_ids.map(Number),
-          status: 'complete', created_by: this.currentUser?.id,
+          status: 'complete',
+          created_by: this.currentUser?.id,
           created_at: new Date().toISOString(),
-        });
-      }
-      DB.set('propose', prList);
-      this.reload();
-      this.editPropModal.show = false;
-      this.toastMsg('Site No berhasil diupdate');
+        };
+        if (existing) {
+          await DB.update('propose', existing.id, { ...payload, updated_at: new Date().toISOString() });
+        } else {
+          await DB.insert('propose', payload);
+        }
+        await this.reload();
+        this.editPropModal.show = false;
+        this.toastMsg('Site No berhasil diupdate');
+      } catch (e) { this.toastMsg('Gagal update propose: '+(e?.message||e),'error'); }
     },
 
-    toggleHoldSite(p) {
+    async toggleHoldSite(p) {
       if (!this.currentUser || this.currentUser.role !== 'owner') {
         this.toastMsg('Hanya Owner yang bisa Hold/Release','error'); return;
       }
       if (p.site_no_status === 'complete') {
         const reason = prompt('Alasan HOLD Site No ' + (p.site_no || '') + '?\n\nSales tidak akan bisa input order / jadwal cor untuk site ini.');
         if (!reason || !reason.trim()) { this.toastMsg('Alasan hold wajib diisi','error'); return; }
-        const ps = DB.get('prospects');
-        const i = ps.findIndex(x => Number(x.id) === Number(p.id));
-        if (i < 0) return;
-        ps[i].site_no_status = 'held';
-        ps[i].hold_reason = reason.trim();
-        ps[i].held_at = new Date().toISOString();
-        ps[i].held_by = this.currentUser.id;
-        DB.set('prospects', ps);
-        this.reload();
-        this.toastMsg('Site No ' + p.site_no + ' di-HOLD');
+        try {
+          await DB.update('prospects', p.id, {
+            site_no_status: 'held',
+            hold_reason: reason.trim(),
+            held_at: new Date().toISOString(),
+            held_by: this.currentUser.id,
+          });
+          await this.reload();
+          this.toastMsg('Site No ' + p.site_no + ' di-HOLD');
+        } catch (e) { this.toastMsg('Gagal hold site: '+(e?.message||e),'error'); }
       } else if (p.site_no_status === 'held') {
         if (!confirm('Release Site No ' + p.site_no + '?\nSales bisa input order kembali.')) return;
-        const ps = DB.get('prospects');
-        const i = ps.findIndex(x => Number(x.id) === Number(p.id));
-        if (i < 0) return;
-        ps[i].site_no_status = 'complete';
-        ps[i].hold_reason = '';
-        ps[i].released_at = new Date().toISOString();
-        DB.set('prospects', ps);
-        this.reload();
-        this.toastMsg('Site No ' + p.site_no + ' di-Release');
+        try {
+          await DB.update('prospects', p.id, {
+            site_no_status: 'complete',
+            hold_reason: '',
+            released_at: new Date().toISOString(),
+          });
+          await this.reload();
+          this.toastMsg('Site No ' + p.site_no + ' di-Release');
+        } catch (e) { this.toastMsg('Gagal release site: '+(e?.message||e),'error'); }
       }
     },
 
@@ -4654,88 +4691,80 @@ function app() {
       };
       this.showEditUserPw = false;
     },
-    saveEditUser() {
+    async saveEditUser() {
       const uid = (this.euForm.username || '').trim().toLowerCase();
       if (!uid || !/^[a-z0-9_.\-]+$/.test(uid)) { this.toastMsg('User ID tidak valid','error'); return; }
       if (!this.euForm.name.trim()) { this.toastMsg('Nama wajib diisi','error'); return; }
       if ((this.euForm.password||'').length < 6) { this.toastMsg('Password minimal 6 karakter','error'); return; }
-      const list = DB.get('users');
-      const i = list.findIndex(x => Number(x.id) === Number(this.editUserModal.userId));
-      if (i < 0) return;
-      if (list.find(x => Number(x.id) !== Number(this.editUserModal.userId) && (x.username||'').toLowerCase() === uid)) {
+      if (this.users.find(x => Number(x.id) !== Number(this.editUserModal.userId) && (x.username||'').toLowerCase() === uid)) {
         this.toastMsg('User ID sudah dipakai','error'); return;
       }
       const mail = (this.euForm.email||'').trim().toLowerCase();
-      if (mail && list.find(x => Number(x.id) !== Number(this.editUserModal.userId) && (x.email||'').toLowerCase() === mail)) {
+      if (mail && this.users.find(x => Number(x.id) !== Number(this.editUserModal.userId) && (x.email||'').toLowerCase() === mail)) {
         this.toastMsg('Email sudah dipakai','error'); return;
       }
       if (Number(this.editUserModal.userId) === Number(this.currentUser.id) && !this.euForm.is_active) {
         this.toastMsg('Tidak bisa nonaktifkan akun sendiri','error'); return;
       }
-      list[i] = {
-        ...list[i], username: uid, name: this.euForm.name, email: mail,
-        password: this.euForm.password, role: this.euForm.role,
-        plant_id: this.euForm.plant_id ? Number(this.euForm.plant_id) : null,
-        assigned_sites: this.euForm.role === 'customer' ? (this.euForm.assigned_sites || []) : [],
-        is_active: this.euForm.is_active,
-      };
-      DB.set('users', list);
-      if (Number(this.editUserModal.userId) === Number(this.currentUser.id)) {
-        this.currentUser = list[i];
-        localStorage.setItem('beton_current', JSON.stringify(list[i]));
-      }
-      this.reload();
-      this.editUserModal.show = false;
-      this.toastMsg('User diupdate');
+      try {
+        await DB.update('users', this.editUserModal.userId, {
+          username: uid, name: this.euForm.name, email: mail,
+          password: this.euForm.password, role: this.euForm.role,
+          plant_id: this.euForm.plant_id ? Number(this.euForm.plant_id) : null,
+          assigned_sites: this.euForm.role === 'customer' ? (this.euForm.assigned_sites || []) : [],
+          is_active: this.euForm.is_active,
+        });
+        await this.reload();
+        if (Number(this.editUserModal.userId) === Number(this.currentUser.id)) {
+          const updated = this.users.find(u => Number(u.id) === Number(this.editUserModal.userId));
+          if (updated) {
+            this.currentUser = updated;
+            localStorage.setItem('beton_current', JSON.stringify(updated));
+          }
+        }
+        this.editUserModal.show = false;
+        this.toastMsg('User diupdate');
+      } catch (e) { this.toastMsg('Gagal update user: '+(e?.message||e),'error'); }
     },
 
     openEditPlant(p) { this.editPlantModal = { show:true, id: p.id }; this.epForm = { code:p.code||'', name:p.name||'', address:p.address||'', phone:p.phone||'' }; },
-    saveEditPlant() {
-      const list = DB.get('plants');
-      const i = list.findIndex(x => Number(x.id) === Number(this.editPlantModal.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], ...this.epForm };
-      DB.set('plants', list);
-      this.reload();
-      this.editPlantModal.show = false;
-      this.toastMsg('Plant diupdate');
+    async saveEditPlant() {
+      try {
+        await DB.update('plants', this.editPlantModal.id, { ...this.epForm });
+        await this.reload();
+        this.editPlantModal.show = false;
+        this.toastMsg('Plant diupdate');
+      } catch (e) { this.toastMsg('Gagal update plant: '+(e?.message||e),'error'); }
     },
     openEditMutu(m) { this.editMutuModal = { show:true, id: m.id }; this.emForm = { code:m.code||'', name:m.name||'', slump:m.slump||'', price:m.price||0 }; },
-    saveEditMutu() {
-      const list = DB.get('mutu');
-      const i = list.findIndex(x => Number(x.id) === Number(this.editMutuModal.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], ...this.emForm };
-      DB.set('mutu', list);
-      this.reload();
-      this.editMutuModal.show = false;
-      this.toastMsg('Mutu diupdate');
+    async saveEditMutu() {
+      try {
+        await DB.update('mutu', this.editMutuModal.id, { ...this.emForm });
+        await this.reload();
+        this.editMutuModal.show = false;
+        this.toastMsg('Mutu diupdate');
+      } catch (e) { this.toastMsg('Gagal update mutu: '+(e?.message||e),'error'); }
     },
     openEditCompetitor(c) { this.editKompetitorModal = { show:true, id: c.id }; this.ecForm = { name:c.name||'', address:c.address||'', contact_person:c.contact_person||'', phone:c.phone||'' }; },
-    saveEditKompetitor() {
-      const list = DB.get('competitors');
-      const i = list.findIndex(x => Number(x.id) === Number(this.editKompetitorModal.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], ...this.ecForm };
-      DB.set('competitors', list);
-      this.reload();
-      this.editKompetitorModal.show = false;
-      this.toastMsg('Kompetitor diupdate');
+    async saveEditKompetitor() {
+      try {
+        await DB.update('competitors', this.editKompetitorModal.id, { ...this.ecForm });
+        await this.reload();
+        this.editKompetitorModal.show = false;
+        this.toastMsg('Kompetitor diupdate');
+      } catch (e) { this.toastMsg('Gagal update kompetitor: '+(e?.message||e),'error'); }
     },
     openEditAddress(a) { this.editAlamatModal = { show:true, id: a.id }; this.eaForm = { label:a.label||'', address:a.address||'', city:a.city||'', province:a.province||'', type:a.type||'site' }; },
-    saveEditAddress() {
-      const list = DB.get('addresses');
-      const i = list.findIndex(x => Number(x.id) === Number(this.editAlamatModal.id));
-      if (i < 0) return;
-      list[i] = { ...list[i], ...this.eaForm };
-      DB.set('addresses', list);
-      this.reload();
-      this.editAlamatModal.show = false;
-      this.toastMsg('Alamat diupdate');
+    async saveEditAddress() {
+      try {
+        await DB.update('addresses', this.editAlamatModal.id, { ...this.eaForm });
+        await this.reload();
+        this.editAlamatModal.show = false;
+        this.toastMsg('Alamat diupdate');
+      } catch (e) { this.toastMsg('Gagal update alamat: '+(e?.message||e),'error'); }
     },
 
-    addUser() {
-      const list = DB.get('users');
+    async addUser() {
       const uid      = (this.uForm.username || '').trim().toLowerCase();
       const mail     = (this.uForm.email || '').trim().toLowerCase();
       const name     = (this.uForm.name || '').trim();
@@ -4754,15 +4783,14 @@ function app() {
       if (!validRoles.includes(this.uForm.role)) {
         this.toastMsg('Role tidak valid','error'); return;
       }
-      if (list.find(u => (u.username || '').toLowerCase() === uid)) {
+      if (this.users.find(u => (u.username || '').toLowerCase() === uid)) {
         this.toastMsg('User ID sudah dipakai','error'); return;
       }
-      if (mail && list.find(u => (u.email || '').toLowerCase() === mail)) {
+      if (mail && this.users.find(u => (u.email || '').toLowerCase() === mail)) {
         this.toastMsg('Email sudah dipakai','error'); return;
       }
 
       const newUser = {
-        id: DB.nextId('users'),
         username: uid,
         name: name,
         email: mail,
@@ -4773,19 +4801,61 @@ function app() {
         is_active: true,
         permissions: this.defaultPermsFor(this.uForm.role).slice(),
       };
-      list.push(newUser);
-      DB.set('users', list);
-
-      this.uForm = { username:'', name:'', email:'', password:'', role:'', plant_id:'', assigned_sites:[] };
-      this.reload();
-      this.toastMsg('User "' + uid + '" berhasil ditambahkan. Akun dapat langsung login.');
+      try {
+        await DB.insert('users', newUser);
+        this.uForm = { username:'', name:'', email:'', password:'', role:'', plant_id:'', assigned_sites:[] };
+        await this.reload();
+        this.toastMsg('User "' + uid + '" berhasil ditambahkan. Akun dapat langsung login.');
+      } catch (e) { this.toastMsg('Gagal tambah user: '+(e?.message||e),'error'); }
     },
-    delUser(id) { const target = DB.get('users').find(u=>Number(u.id)===Number(id)); if (!target || target.role==='developer') return; DB.set('users', DB.get('users').filter(u=>Number(u.id)!==Number(id))); this.reload(); },
-    addPlant() { const list = DB.get('plants'); list.push({ id: DB.nextId('plants'), ...this.plForm, is_active:1 }); DB.set('plants', list); this.plForm={ code:'',name:'',address:'',phone:'' }; this.reload(); this.toastMsg('Plant ditambahkan'); },
-    addMutu() { const list = DB.get('mutu'); list.push({ id: DB.nextId('mutu'), ...this.mForm, is_active:1 }); DB.set('mutu', list); this.mForm={ code:'',name:'',slump:'',price:0 }; this.reload(); this.toastMsg('Mutu ditambahkan'); },
-    addCompetitor() { const list = DB.get('competitors'); list.push({ id: DB.nextId('competitors'), ...this.cForm }); DB.set('competitors', list); this.cForm={ name:'',address:'',contact_person:'',phone:'' }; this.reload(); this.toastMsg('Kompetitor ditambahkan'); },
-    addAddress() { const list = DB.get('addresses'); list.push({ id: DB.nextId('addresses'), ...this.aForm }); DB.set('addresses', list); this.aForm={ label:'',address:'',city:'',province:'',type:'site' }; this.reload(); this.toastMsg('Alamat ditambahkan'); },
-    delItem(table, id) { if (!confirm('Hapus item ini?')) return; DB.set(table, DB.get(table).filter(x=>Number(x.id)!==Number(id))); this.reload(); },
+    async delUser(id) {
+      const target = this.users.find(u=>Number(u.id)===Number(id));
+      if (!target || target.role==='developer') return;
+      try {
+        await DB.remove('users', id);
+        await this.reload();
+      } catch (e) { this.toastMsg('Gagal hapus user: '+(e?.message||e),'error'); }
+    },
+    async addPlant() {
+      try {
+        await DB.insert('plants', { ...this.plForm, is_active:1 });
+        this.plForm={ code:'',name:'',address:'',phone:'' };
+        await this.reload();
+        this.toastMsg('Plant ditambahkan');
+      } catch (e) { this.toastMsg('Gagal tambah plant: '+(e?.message||e),'error'); }
+    },
+    async addMutu() {
+      try {
+        await DB.insert('mutu', { ...this.mForm, is_active:1 });
+        this.mForm={ code:'',name:'',slump:'',price:0 };
+        await this.reload();
+        this.toastMsg('Mutu ditambahkan');
+      } catch (e) { this.toastMsg('Gagal tambah mutu: '+(e?.message||e),'error'); }
+    },
+    async addCompetitor() {
+      try {
+        await DB.insert('competitors', { ...this.cForm });
+        this.cForm={ name:'',address:'',contact_person:'',phone:'' };
+        await this.reload();
+        this.toastMsg('Kompetitor ditambahkan');
+      } catch (e) { this.toastMsg('Gagal tambah kompetitor: '+(e?.message||e),'error'); }
+    },
+    async addAddress() {
+      try {
+        await DB.insert('addresses', { ...this.aForm });
+        this.aForm={ label:'',address:'',city:'',province:'',type:'site' };
+        await this.reload();
+        this.toastMsg('Alamat ditambahkan');
+      } catch (e) { this.toastMsg('Gagal tambah alamat: '+(e?.message||e),'error'); }
+    },
+    async delItem(table, id) {
+      if (!confirm('Hapus item ini?')) return;
+      try {
+        await DB.remove(table, id);
+        await this.reload();
+        this.toastMsg('Item dihapus');
+      } catch (e) { this.toastMsg('Gagal hapus: '+(e?.message||e),'error'); }
+    },
   };
 }
 </script>
